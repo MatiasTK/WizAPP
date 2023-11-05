@@ -1,20 +1,30 @@
 {
   "name": "my-electron-app",
   "version": "1.0.0",
-  "description": "",
+  "description": "Simple ElectronJS APP to connect and control WiZ Bulbs.",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
   },
-  "author": "",
+  "author": "MatiasTK",
   "license": "ISC",
   "devDependencies": {
+    "@electron-forge/cli": "^6.4.2",
+    "@electron-forge/maker-deb": "^6.4.2",
+    "@electron-forge/maker-rpm": "^6.4.2",
+    "@electron-forge/maker-squirrel": "^6.4.2",
+    "@electron-forge/maker-zip": "^6.4.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
+    "@electron-forge/publisher-github": "^6.4.2",
     "electron": "^27.0.2"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.4.2",
     "bootstrap": "^5.3.2",
+    "electron-squirrel-startup": "^1.0.0",
     "wikari": "^0.1.0"
   }
 }

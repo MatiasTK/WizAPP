@@ -1,16 +1,17 @@
-const { app, Tray, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, Tray, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
 const path = require('node:path');
 const { discover, SCENES } = require('wikari');
 
 let bulb;
 let bulbState;
 let tray;
+const ICON = nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.ico'));
 
 const createWindow = () => {
   const win = new BrowserWindow({
     minWidth: 900,
     minHeight: 600,
-    icon: path.join(__dirname, 'assets', 'icon.png'),
+    icon: ICON,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -68,7 +69,7 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow();
-  tray = new Tray(path.join(__dirname, 'assets', 'icon.png'));
+  tray = new Tray(ICON);
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Show',
