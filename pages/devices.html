@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>WiZ APP</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../node_modules/@fortawesome/fontawesome-free/css/all.min.css" />
+  </head>
+  <body>
+    <main class="d-flex flex-nowrap bg-main vh-100">
+        <!-- Sidebar -->
+      <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w">
+        <a
+          href="/"
+          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto fw-bold text-decoration-none"
+        >
+          <span class="fs-4 ms-2">WiZ</span>
+        </a>
+        <hr />
+        <ul class="nav nav-pills flex-column mb-auto gap-2">
+          <li class="nav-item">
+            <a href="../index.html" class="nav-link text-bg-dark menu-button">
+              <i class="fa-regular fa-lightbulb"></i>
+              Lights
+            </a>
+            <li class="nav-item">
+                <a href="scenes.html" class="nav-link text-bg-dark menu-button">
+                    <i class="fa-regular fa-image"></i>
+                    Scenes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link active">
+                    <i class="fa-regular fa-circle-question"></i>
+                    Devices
+                </a>
+            </li>
+          </li>
+        </ul>
+        <hr />
+        <span class="text-center">Made by <a class="redirect" style="cursor: pointer;">MatiasTK</a></span>
+      </div>
+        <!-- Main -->
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mt-4 ms-4">
+                        <h1 class="text-white">Device Info</h1>
+                    </div>
+                    <hr />
+                </div>
+            </div>
+
+            <div class="info text-white d-flex">
+
+            </div>
+    </main>
+    <script src="devices.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  </body>
+</html>

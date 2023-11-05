@@ -1,0 +1,23 @@
+.sidebar-w {
+  width: 240px;
+}
+
+.bg-main {
+  background-color: #1d2024;
+}
+
+.scene-button {
+  cursor: pointer;
+}
+
+.scene-button:hover {
+  background-color: #0266c8 !important;
+}
+
+.menu-button:hover {
+  background-color: #084fab !important;
+}
+
+.active {
+  background-color: #0266c8 !important;
+}
