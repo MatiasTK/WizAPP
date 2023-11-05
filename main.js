@@ -1,4 +1,6 @@
 const { app, Tray, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
+if (require('electron-squirrel-startup')) app.quit();
+
 const path = require('node:path');
 const { discover, SCENES } = require('wikari');
 

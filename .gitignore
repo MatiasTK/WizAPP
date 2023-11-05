@@ -2,3 +2,4 @@ node_modules
 testing
 .vscode
 out/
+.env
