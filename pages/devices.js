@@ -6,6 +6,8 @@ function getLight() {
         <div class="d-flex flex-column bg-primary bg-opacity-50 rounded p-3 ms-4 border border-3 border-primary">
             <i class="fa-regular fa-lightbulb text-center fa-2xl my-5"></i>
             <span>Module Name: ${res.moduleName}</span>
+            <span>IP Address: ${res.ip}</span>
+            <span>Port: ${res.port}</span>
             <span>Mac Address: ${res.mac}</span>
             <span>Status: ${res.state ? 'ON' : 'OFF'}</span>
             <span>Scene Id: ${res.sceneId}</span>

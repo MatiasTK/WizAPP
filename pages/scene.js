@@ -10,6 +10,8 @@ const getActiveScene = () => {
   });
 };
 
+//TODO: Add more scenes
+
 window.addEventListener('DOMContentLoaded', () => {
   getActiveScene();
   const scenes = document.querySelectorAll('.scene');

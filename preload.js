@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSceneName: (callback) => ipcRenderer.on('get-scene-name', callback),
   setScene: (sceneId) => ipcRenderer.send('set-scene', sceneId),
   visitAuthor: () => ipcRenderer.send('visit-author'),
+  setBulbName: (newName) => ipcRenderer.send('set-bulb-name', newName),
 });

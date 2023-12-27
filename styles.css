@@ -21,3 +21,25 @@
 .active {
   background-color: #0266c8 !important;
 }
+
+.edit {
+  cursor: pointer;
+}
+
+.edit:hover {
+  color: #084fab !important;
+}
+
+.inputEdit {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  font-size: 16px;
+  outline: white solid 2px;
+  border-radius: 5px;
+  margin-right: 2rem;
+  padding-left: 0.5rem;
+  font-weight: 500;
+}
