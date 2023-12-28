@@ -111,6 +111,8 @@ const createWindow = () => {
 
   win.on('restore', () => {
     // TEMP FIX TO https://github.com/electron/electron/issues/31233
+    win.setSize(appData.width, appData.height);
+    win.setContentSize(appData.width, appData.height);
     win.setBounds({ width: appData.width, height: appData.height });
   });
 

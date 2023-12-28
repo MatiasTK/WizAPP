@@ -3,3 +3,4 @@ testing
 .vscode
 out/
 .env
+forge.config.js
