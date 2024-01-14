@@ -14,6 +14,11 @@
   background-color: #0266c8 !important;
 }
 
+.scene-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .menu-button:hover {
   background-color: #084fab !important;
 }

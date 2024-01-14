@@ -1,25 +1,30 @@
 const getActiveScene = () => {
   window.electronAPI.bulbStateRequest();
   window.electronAPI.bulbStateResponse((_event, res) => {
-    const scenes = document.querySelectorAll('.scene');
+    if (!res) {
+      return;
+    }
+    const scenes = document.querySelectorAll('.scene-button');
+
     scenes.forEach((scene) => {
-      if (parseInt(scene.dataset.sceneid) == res.sceneId) {
+      scene.removeAttribute('disabled');
+      if (parseInt(scene.dataset.sceneid, 10) === res.sceneId) {
         scene.classList.add('active');
       }
     });
   });
 };
 
-//TODO: Add more scenes
+// TODO: Add more scenes
 
 window.addEventListener('DOMContentLoaded', () => {
   getActiveScene();
-  const scenes = document.querySelectorAll('.scene');
+  const scenes = document.querySelectorAll('.scene-button');
 
   scenes.forEach((scene) => {
     scene.addEventListener('click', () => {
-      scenes.forEach((scene) => {
-        scene.classList.remove('active');
+      scenes.forEach((curScene) => {
+        curScene.classList.remove('active');
       });
       const sceneId = scene.dataset.sceneid;
       window.electronAPI.setScene(sceneId);

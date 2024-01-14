@@ -1,88 +1,128 @@
-const { app, Tray, BrowserWindow, ipcMain, Menu, nativeImage, Notification } = require('electron');
+const { app, Tray, BrowserWindow, ipcMain, Menu, shell } = require('electron');
+
+// eslint-disable-next-line global-require
 if (require('electron-squirrel-startup')) app.quit();
 
-const path = require('node:path');
-const { discover, SCENES, Bulb, WIZ_BULB_LISTEN_PORT } = require('wikari');
+// eslint-disable-next-line no-unused-vars
+const { discover, SCENES, Bulb } = require('wikari');
 const fs = require('fs');
+const { ICON, JSON_DATA_PATH, PRELOAD, MIN_WIDTH, MIN_HEIGHT, HIDE_MENU } = require('./constants');
+
+/**
+ * @typedef {Object} BulbState
+ * @property {string} mac
+ * @property {number} rssi
+ * @property {string} src
+ * @property {boolean} state
+ * @property {number} sceneId
+ * @property {number} temp
+ * @property {number} dimming
+ * @property {number} homeId
+ * @property {number} roomId
+ * @property {string} rgn
+ * @property {string} moduleName
+ * @property {string} fwVersion
+ * @property {number} groupId
+ * @property {number} ping
+ * @property {string} ip
+ * @property {number} port
+ * @property {string} name
+ */
+
+/**
+ * @typedef {Object} AppData
+ * @property {number} width
+ * @property {number} height
+ * @property {string} bulbIp
+ * @property {string} bulbName
+ */
 
 /** @type {Bulb | undefined} */
 let bulb;
+
+/** @type {BulbState | undefined}  */
 let bulbState;
-let tray;
-const ICONPATH = path.join(__dirname, 'assets', 'icon.ico');
-const ICON = nativeImage.createFromPath(ICONPATH);
-const JSONDATAPATH = path.join(app.getPath('userData'), 'config.json');
+
+/**  @type {AppData | undefined} */
+let appData;
+
+const setUpBulb = async () => {
+  try {
+    appData = JSON.parse(fs.readFileSync(JSON_DATA_PATH, 'utf-8'));
+    console.log(appData);
+  } catch (e) {
+    appData = { width: MIN_WIDTH, height: MIN_HEIGHT };
+  }
+
+  let { bulbIp } = appData;
+  console.log(`Current Stored Bulb ip:${bulbIp}`);
+  while (!bulb) {
+    if (bulbIp) {
+      const [firstBulb] = await discover({ bulbIp });
+      bulb = firstBulb;
+    } else {
+      console.log('No stored bulb ip, discovering new bulb...');
+      const [firstBulb] = await discover({});
+      bulb = firstBulb;
+    }
+
+    if (!bulb) {
+      appData.bulbIp = undefined;
+      bulbIp = undefined;
+    }
+  }
+
+  appData.bulbIp = bulb.address;
+
+  const pilot = (await bulb.getPilot()).result;
+  const config = (await bulb.sendRaw({ method: 'getSystemConfig' })).result;
+  bulbState = Object.assign(pilot, config, {
+    ip: bulb.address,
+    port: bulb.bulbPort,
+    name: appData.bulbName,
+  });
+};
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    minWidth: 900,
-    minHeight: 600,
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
     icon: ICON,
-    autoHideMenuBar: true,
+    autoHideMenuBar: HIDE_MENU,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: PRELOAD,
     },
   });
 
-  let appData;
-  try {
-    appData = JSON.parse(fs.readFileSync(JSONDATAPATH, 'utf-8'));
-  } catch {
-    appData = { width: 900, height: 600 };
-  }
   win.setBounds({ width: appData.width, height: appData.height });
 
   ipcMain.on('bulb-state-request', async (event) => {
     if (bulb) {
       event.sender.send('bulb-state-response', bulbState);
+      event.sender.send('get-scene-name', SCENES[bulbState.sceneId]);
       return;
     }
 
-    try {
-      const bulbIp = JSON.parse(fs.readFileSync(JSONDATAPATH, 'utf-8')).bulbIp;
-      console.log('Current Stored Bulb ip:' + bulbIp);
-      bulb = await new Bulb(bulbIp, WIZ_BULB_LISTEN_PORT).catch(() => {
-        throw new Error();
-      });
-    } catch {
-      console.log('Failed to connect to stored bulb, discovering new bulb...');
-      const bulbs = await discover({ timeout: 5000 });
-      bulb = bulbs[0];
-      if (!bulb) {
-        new Notification({
-          title: 'WiZ APP',
-          body: 'No bulb found, please make sure your bulb is connected to the same network as your computer.',
-        }).show();
-        appData.bulbIp = undefined;
-        return;
+    const loop = setInterval(() => {
+      console.log('Checking bulb state next check in 5 seconds...');
+      if (bulb) {
+        event.sender.send('bulb-state-response', bulbState);
+        event.sender.send('get-scene-name', SCENES[bulbState.sceneId]);
+        clearInterval(loop);
       }
-
-      appData.bulbIp = bulb.address;
-    }
-
-    if (bulb) {
-      const pilot = (await bulb.getPilot()).result;
-      const config = (await bulb.sendRaw({ method: 'getSystemConfig' })).result;
-      bulbState = Object.assign(pilot, config, {
-        name: appData.bulbName,
-        ip: bulb.address,
-        port: bulb.bulbPort,
-      });
-      event.sender.send('bulb-state-response', bulbState);
-      event.sender.send('get-scene-name', SCENES[bulbState.sceneId]);
-    }
+    }, 5000);
   });
 
-  ipcMain.on('toggle-bulb-state', async (event) => {
+  ipcMain.on('toggle-bulb-state', async () => {
     bulbState.state = !bulbState.state;
     await bulb.toggle();
   });
 
   ipcMain.on('set-scene', async (event, sceneId) => {
     if (!bulb) return;
-    bulbState.sceneId = sceneId;
+    bulbState.sceneId = parseInt(sceneId, 10);
     bulbState.state = true;
-    await bulb.scene(parseInt(sceneId));
+    await bulb.scene(bulbState.sceneId);
   });
 
   ipcMain.on('set-bulb-name', async (event, newName) => {
@@ -92,13 +132,13 @@ const createWindow = () => {
   });
 
   ipcMain.on('visit-author', () => {
-    require('electron').shell.openExternal('https://www.github.com/MatiasTK');
+    shell.openExternal('https://www.github.com/MatiasTK');
   });
 
   win.on('close', () => {
     appData.width = win.getBounds().width;
     appData.height = win.getBounds().height;
-    fs.writeFileSync(JSONDATAPATH, JSON.stringify(appData));
+    fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
     app.quit();
   });
 
@@ -119,54 +159,63 @@ const createWindow = () => {
   win.loadFile('index.html');
 };
 
-const gotTheLock = app.requestSingleInstanceLock();
+const createTray = () => {
+  const tray = new Tray(ICON);
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show',
+      click: () => {
+        BrowserWindow.getAllWindows().forEach((window) => {
+          window.show();
+        });
+      },
+    },
+    {
+      label: 'Toggle',
+      click: () => {
+        if (!bulb) return;
+        bulbState.state = !bulbState.state;
+        bulb.toggle();
+      },
+    },
+    {
+      label: 'Exit',
+      click: () => {
+        app.quit();
+      },
+    },
+  ]);
 
-if (!gotTheLock) {
+  tray.setToolTip('WiZ APP');
+  tray.setContextMenu(contextMenu);
+  tray.on('click', () => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.show();
+    });
+  });
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+
+  app.setName('WiZ APP');
+};
+
+if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  app.on('second-instance', () => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.show();
+    });
+  });
+
   app.whenReady().then(() => {
+    setUpBulb();
     createWindow();
-    tray = new Tray(ICON);
-    const contextMenu = Menu.buildFromTemplate([
-      {
-        label: 'Show',
-        click: () => {
-          BrowserWindow.getAllWindows().forEach((window) => {
-            window.show();
-          });
-        },
-      },
-      {
-        label: 'Toggle',
-        click: () => {
-          if (!bulb) return;
-          bulbState.state = !bulbState.state;
-          bulb.toggle();
-        },
-      },
-      {
-        label: 'Exit',
-        click: () => {
-          app.quit();
-        },
-      },
-    ]);
-
-    tray.setToolTip('WiZ APP');
-    tray.setContextMenu(contextMenu);
-    tray.on('click', () => {
-      BrowserWindow.getAllWindows().forEach((window) => {
-        window.show();
-      });
-    });
-
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-      }
-    });
-
-    app.setName('WiZ APP');
+    createTray();
   });
 }
 

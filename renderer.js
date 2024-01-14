@@ -1,8 +1,16 @@
+function toggleSwitch(switchName) {
+  const switchBtn = document.getElementById(switchName);
+  switchBtn.addEventListener('change', () => {
+    window.electronAPI.toggleBulb();
+  });
+}
+
 function getLight() {
   window.electronAPI.bulbStateRequest();
   window.electronAPI.bulbStateResponse((event, res) => {
     console.log(res);
     if (res) {
+      document.querySelector('.edit').classList.remove('visually-hidden');
       document.querySelector('.lights').innerHTML = `
       <div class="row">
       <div class="col-sm-4 w-50">
@@ -25,9 +33,26 @@ function getLight() {
     }
     toggleSwitch('lightSwitch');
   });
+
+  document.querySelector('.lights').innerHTML = `
+  <div class="row">
+  <div class="col-sm-4 w-50">
+  <div class="d-flex p-2 align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
+    <div class="rounded rounded-circle p-3">
+        <i class="fa-solid fa-lightbulb fa-2xl"></i>
+    </div>
+    <div class="d-flex justify-content-between flex-fill bulb align-items-center">
+        <span>Searching bulb...</span>
+        <div class="spinner-border text-white" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+</div>
+</div>`;
 }
 
-//TODO: Add manually bulb
+// TODO: Add manually bulb
 
 let editActive = false;
 
@@ -45,7 +70,7 @@ function disableEdit() {
 }
 
 function editName() {
-  const editBtn = document.querySelector('.edit');
+  const editBtn = document.querySelector('.edit i');
   editBtn.classList.toggle('fa-pencil');
   editBtn.classList.toggle('fa-floppy-disk');
 
@@ -69,14 +94,6 @@ function editName() {
   } else {
     disableEdit();
   }
-}
-
-function toggleSwitch(switchName) {
-  const switchBtn = document.getElementById(switchName);
-  switchBtn.addEventListener('change', () => {
-    const lights = document.querySelector('.lights');
-    window.electronAPI.toggleBulb();
-  });
 }
 
 window.addEventListener('DOMContentLoaded', () => {

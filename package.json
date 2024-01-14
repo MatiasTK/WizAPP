@@ -8,7 +8,9 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "dev": "nodemon --exec electron ."
+    "dev": "nodemon --exec electron .",
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix"
   },
   "author": "MatiasTK",
   "license": "ISC",
@@ -20,7 +22,13 @@
     "@electron-forge/maker-zip": "^6.4.2",
     "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
     "@electron-forge/publisher-github": "^6.4.2",
-    "electron": "^27.2.0"
+    "electron": "^27.2.0",
+    "eslint": "^8.56.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-html": "^7.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-node": "^11.1.0"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.4.2",
