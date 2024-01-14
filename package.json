@@ -1,6 +1,6 @@
 {
   "name": "WiZAPP",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Simple ElectronJS APP to connect and control WiZ Bulbs.",
   "main": "main.js",
   "scripts": {
