@@ -4,8 +4,8 @@ const { app, Tray, BrowserWindow, ipcMain, Menu, shell } = require('electron');
 if (require('electron-squirrel-startup')) app.quit();
 
 // eslint-disable-next-line no-unused-vars
-const { discover, SCENES, Bulb } = require('wikari');
 const fs = require('fs');
+const { discover, SCENES, Bulb } = require('./lib/mod');
 const { ICON, JSON_DATA_PATH, PRELOAD, MIN_WIDTH, MIN_HEIGHT, HIDE_MENU } = require('./constants');
 
 /**
@@ -139,6 +139,7 @@ const createWindow = () => {
     appData.width = win.getBounds().width;
     appData.height = win.getBounds().height;
     fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
+    bulb.closeConnection();
     app.quit();
   });
 

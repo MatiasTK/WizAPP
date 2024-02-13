@@ -1,6 +1,6 @@
 {
   "name": "WiZAPP",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Simple ElectronJS APP to connect and control WiZ Bulbs.",
   "main": "main.js",
   "scripts": {
@@ -33,7 +33,6 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.4.2",
     "bootstrap": "^5.3.2",
-    "electron-squirrel-startup": "^1.0.0",
-    "wikari": "^0.1.0"
+    "electron-squirrel-startup": "^1.0.0"
   }
 }
