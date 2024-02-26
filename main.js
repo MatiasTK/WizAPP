@@ -60,7 +60,7 @@ const setUpBulb = async () => {
   console.log(`Current Stored Bulb ip:${bulbIp}`);
   while (!bulb && keepSearching) {
     if (bulbIp) {
-      const [firstBulb] = await discover({ bulbIp });
+      const [firstBulb] = await discover({ addr: bulbIp, waitMs: 2500 });
       bulb = firstBulb;
     } else {
       console.log('No stored bulb ip, discovering new bulb...');

@@ -48,7 +48,7 @@ function getLight() {
         </div>
       </div>
     </div>
-    <p class="text-white position-absolute start-50 top-50 fw-bold">Can't find bulb?
+    <p class="text-white fw-bold mt-2 ms-2 text-xs">Can't find bulb?
       <button  class="fw-normal link-primary text-decoration-none border-0  bg-transparent add" type="button" data-bs-toggle="modal" data-bs-target="#addModal">Add it manually</button>
     </p>
   </div>
