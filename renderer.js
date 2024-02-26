@@ -35,24 +35,25 @@ function getLight() {
   });
 
   document.querySelector('.lights').innerHTML = `
-  <div class="row">
+<div class="row">
   <div class="col-sm-4 w-50">
-  <div class="d-flex p-2 align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
-    <div class="rounded rounded-circle p-3">
+    <div class="d-flex p-2 align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
+      <div class="rounded rounded-circle p-3">
         <i class="fa-solid fa-lightbulb fa-2xl"></i>
-    </div>
-    <div class="d-flex justify-content-between flex-fill bulb align-items-center">
+      </div>
+      <div class="d-flex justify-content-between flex-fill bulb align-items-center">
         <span>Searching bulb...</span>
         <div class="spinner-border text-white" role="status">
-            <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">Loading...</span>
         </div>
+      </div>
     </div>
-</div>
-</div>
+    <p class="text-white position-absolute start-50 top-50 fw-bold">Can't find bulb?
+      <button  class="fw-normal link-primary text-decoration-none border-0  bg-transparent add" type="button" data-bs-toggle="modal" data-bs-target="#addModal">Add it manually</button>
+    </p>
+  </div>
 </div>`;
 }
-
-// TODO: Add manually bulb
 
 let editActive = false;
 
@@ -96,8 +97,31 @@ function editName() {
   }
 }
 
+function addIp() {
+  const form = document.querySelector('.needs-validation');
+  const ipInput = document.querySelector('.ipInput');
+  document.getElementById('addModal').addEventListener('shown.bs.modal', () => {
+    ipInput.focus();
+  });
+
+  form.addEventListener('submit', (event) => {
+    if (ipInput.value.match('^(?:[0-9]{1,3}.){3}[0-9]{1,3}$')) {
+      ipInput.classList.remove('is-invalid');
+      ipInput.classList.add('is-valid');
+      form.classList.add('was-validated');
+      window.electronAPI.setIp(ipInput.value);
+    } else {
+      event.preventDefault();
+      event.stopPropagation();
+      form.classList.remove('was-validated');
+      ipInput.classList.add('is-invalid');
+    }
+  });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   getLight();
+  addIp();
   document.querySelector('.redirect').addEventListener('click', () => {
     window.electronAPI.visitAuthor();
   });

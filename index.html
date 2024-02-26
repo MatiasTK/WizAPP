@@ -57,7 +57,36 @@
             </div>
 
             <div class="lights">
+            </div>
 
+            <!-- Modal -->
+            <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true" data-bs-theme="dark">
+              <div class="modal-dialog">
+                <div class="modal-content text-white">
+                  <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addModalLabel">Add a Bulb</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <form class="needs-validation">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                          <label for="ip" class="form-label">IP</label>
+                          <input type="text" class="form-control ipInput" id="ip" aria-describedby="ipHelp" autofocus required>
+                          <div class="valid-feedback">
+                            Looks good!
+                          </div>
+                          <div class="invalid-feedback">
+                            Please provide a valid IP.
+                          </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="submit" class="btn btn-primary ipBtn" >Save changes</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
             </div>
     </main>
     <script src="renderer.js"></script>

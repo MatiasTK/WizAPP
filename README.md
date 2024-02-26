@@ -30,6 +30,10 @@ If you want to build the app yourself, you can do it by following these steps:
 - Run `npm run make` to build the app.
 - The app will be in the `out` folder.
 
+## Troubleshooting 🔨
+
+If the app have trouble discovering your bulbs, you can enter the IP manually. You can find the IP of your bulbs in the WiZ Android app.
+
 ## Built with 🛠️
 
 - [ElectronJS](https://www.electronjs.org/) - Framework used.

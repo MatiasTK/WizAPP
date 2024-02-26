@@ -35,6 +35,14 @@
   color: #084fab !important;
 }
 
+.add {
+  cursor: pointer;
+}
+
+.add:hover {
+  opacity: 0.5;
+}
+
 .inputEdit {
   width: 100%;
   height: 100%;

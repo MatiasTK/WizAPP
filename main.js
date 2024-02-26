@@ -46,6 +46,8 @@ let bulbState;
 /**  @type {AppData | undefined} */
 let appData;
 
+let keepSearching = true;
+
 const setUpBulb = async () => {
   try {
     appData = JSON.parse(fs.readFileSync(JSON_DATA_PATH, 'utf-8'));
@@ -56,7 +58,7 @@ const setUpBulb = async () => {
 
   let { bulbIp } = appData;
   console.log(`Current Stored Bulb ip:${bulbIp}`);
-  while (!bulb) {
+  while (!bulb && keepSearching) {
     if (bulbIp) {
       const [firstBulb] = await discover({ bulbIp });
       bulb = firstBulb;
@@ -70,6 +72,9 @@ const setUpBulb = async () => {
       appData.bulbIp = undefined;
       bulbIp = undefined;
     }
+  }
+  if (!keepSearching) {
+    return;
   }
 
   appData.bulbIp = bulb.address;
@@ -118,6 +123,31 @@ const createWindow = () => {
     await bulb.toggle();
   });
 
+  ipcMain.on('set-ip', async (event, ip) => {
+    if (!ip || bulb) {
+      return;
+    }
+
+    keepSearching = false;
+
+    const [firstBulb] = await discover({ addr: ip });
+    if (!firstBulb) {
+      keepSearching = true;
+      return;
+    }
+
+    bulb = firstBulb;
+    appData.bulbIp = bulb.address;
+
+    const pilot = (await bulb.getPilot()).result;
+    const config = (await bulb.sendRaw({ method: 'getSystemConfig' })).result;
+    bulbState = Object.assign(pilot, config, {
+      ip: bulb.address,
+      port: bulb.bulbPort,
+      name: appData.bulbName,
+    });
+  });
+
   ipcMain.on('set-scene', async (event, sceneId) => {
     if (!bulb) return;
     bulbState.sceneId = parseInt(sceneId, 10);
@@ -139,7 +169,9 @@ const createWindow = () => {
     appData.width = win.getBounds().width;
     appData.height = win.getBounds().height;
     fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
-    bulb.closeConnection();
+    if (bulb) {
+      bulb.closeConnection();
+    }
     app.quit();
   });
 
