@@ -155,6 +155,13 @@ const createWindow = () => {
     await bulb.scene(bulbState.sceneId);
   });
 
+  ipcMain.on('set-brightness', async (event, brightness) => {
+    if (!bulb) return;
+    console.log(bulbState);
+    bulbState.dimming = parseInt(brightness, 10);
+    await bulb.brightness(bulbState.dimming);
+  });
+
   ipcMain.on('set-bulb-name', async (event, newName) => {
     if (!bulb) return;
     appData.bulbName = newName;

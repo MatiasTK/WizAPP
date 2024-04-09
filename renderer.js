@@ -1,14 +1,55 @@
-function toggleSwitch(switchName) {
-  const switchBtn = document.getElementById(switchName);
+function toggleSwitch() {
+  const switchBtn = document.getElementById('lightSwitch');
+  const switchBtnMain = document.getElementById('lightSwitch-main');
   switchBtn.addEventListener('change', () => {
     window.electronAPI.toggleBulb();
+    switchBtnMain.checked = !switchBtnMain.checked;
+  });
+  switchBtnMain.addEventListener('change', () => {
+    window.electronAPI.toggleBulb();
+    switchBtn.checked = !switchBtn.checked;
+  });
+}
+
+function addSwitchToggleToSidebar(res) {
+  const shortcut = document.querySelector('.shortcut');
+
+  const div = document.createElement('div');
+  div.innerHTML = `
+  <span>${res.name}</span>
+  <div class="form-check form-switch mt-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="lightSwitch-main" ${
+        res.state ? 'checked' : ''
+      }>
+      <label class="form-check-label" for="lightSwitch-main"></label>
+  </div>
+  `;
+
+  div.classList.add(
+    'd-flex',
+    'gap-2',
+    'align-items-center',
+    'justify-content-around',
+    'w-100',
+    'text-white',
+    'fw-bold',
+    'p-2'
+  );
+
+  shortcut.appendChild(div);
+
+  const slider = document.querySelector('.form-range');
+  slider.disabled = false;
+  slider.value = res.dimming;
+
+  slider.addEventListener('change', (e) => {
+    window.electronAPI.setBrightness(e.target.value);
   });
 }
 
 function getLight() {
   window.electronAPI.bulbStateRequest();
   window.electronAPI.bulbStateResponse((event, res) => {
-    console.log(res);
     if (res) {
       document.querySelector('.edit').classList.remove('visually-hidden');
       document.querySelector('.lights').innerHTML = `
@@ -30,8 +71,9 @@ function getLight() {
     </div>
     </div>
     </div>`;
+      addSwitchToggleToSidebar(res);
     }
-    toggleSwitch('lightSwitch');
+    toggleSwitch();
   });
 
   document.querySelector('.lights').innerHTML = `

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../styles.css" />
     <link rel="stylesheet" href="../node_modules/@fortawesome/fontawesome-free/css/all.min.css" />
   </head>
-  <body>
+  <body class="overflow-hidden">
     <main class="d-flex flex-nowrap bg-main vh-100">
       <!-- Sidebar -->
       <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w">
@@ -26,14 +26,15 @@
               Lights
             </a>
           </li>
+
           <li class="nav-item">
-            <a href="scenes.html" class="nav-link text-bg-dark menu-button">
+            <a href="#" class="nav-link active">
               <i class="fa-regular fa-image"></i>
               Scenes
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link active">
+            <a href="devices.html" class="nav-link text-bg-dark menu-button">
               <i class="fa-regular fa-circle-question"></i>
               Devices
             </a>
@@ -62,19 +63,33 @@
         >
       </div>
       <!-- Main -->
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex justify-content-center align-items-center mt-4 ms-4">
-              <span class="text-white display-6 fw-bold">Device Info</span>
-            </div>
-            <hr />
+      <div class="container-fluid overflow-y-scroll">
+        <header class="d-flex flex-wrap flex-column align-items-center justify-content-center py-4">
+          <div class="pb-4">
+            <span class="text-white display-6 fw-bold">Scenes</span>
+          </div>
+          <ul class="nav nav-pills fs-5">
+            <li class="nav-item">
+              <a href="scenes.html" class="nav-link">Static</a>
+            </li>
+            <li class="nav-item">
+              <a href="dynamic.html" class="nav-link">Dynamic</a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link active">Custom</a>
+            </li>
+          </ul>
+        </header>
+        <div class="ms-3 d-flex flex-column h-50">
+          <div class="my-auto">
+            <h2 class="ms-4 text-white mb-4">Custom colors</h2>
+            <span class="display-4 text-white">Coming soon...</span>
+            <div class="row row-cols-3 row-cols-lg-4 row-cols-xl-5 row-gap-3"></div>
           </div>
         </div>
-        <div class="info text-white d-flex"></div>
       </div>
     </main>
-    <script src="devices.js"></script>
+    <script src="scene.js"></script>
     <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   </body>
 </html>

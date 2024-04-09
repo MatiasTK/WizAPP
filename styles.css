@@ -56,3 +56,32 @@
   padding-left: 0.5rem;
   font-weight: 500;
 }
+
+.shortcut {
+  background-color: #1d2024;
+  border-radius: 50%;
+  border: #2f5dc6 solid 2px;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 1rem;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: hsla(0, 0%, 100%, 0.1);
+  border-radius: 50rem;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(0, 0%, 100%, 0.3);
+}

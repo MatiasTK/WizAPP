@@ -1,7 +1,47 @@
+function addSwitchToggleToSidebar(res) {
+  const shortcut = document.querySelector('.shortcut');
+
+  const div = document.createElement('div');
+  div.innerHTML = `
+  <span>${res.name}</span>
+  <div class="form-check form-switch mt-1">
+      <input class="form-check-input" type="checkbox" role="switch" id="lightSwitch" ${
+        res.state ? 'checked' : ''
+      }>
+      <label class="form-check-label" for="lightSwitch"></label>
+  </div>
+  `;
+
+  div.classList.add(
+    'd-flex',
+    'gap-2',
+    'align-items-center',
+    'justify-content-around',
+    'w-100',
+    'text-white',
+    'fw-bold',
+    'p-2'
+  );
+
+  shortcut.appendChild(div);
+
+  const slider = document.querySelector('.form-range');
+  slider.disabled = false;
+  slider.value = res.dimming;
+
+  slider.addEventListener('change', (e) => {
+    window.electronAPI.setBrightness(e.target.value);
+  });
+
+  const switchBtn = document.getElementById('lightSwitch');
+  switchBtn.addEventListener('change', () => {
+    window.electronAPI.toggleBulb();
+  });
+}
+
 function getLight() {
   window.electronAPI.bulbStateRequest();
   window.electronAPI.bulbStateResponse((_event, res) => {
-    console.log(res);
     document.querySelector('.info').innerHTML = `
         <div class="d-flex flex-column bg-primary bg-opacity-50 rounded p-3 ms-4 border border-3 border-primary">
             <i class="fa-regular fa-lightbulb text-center fa-2xl my-5"></i>
@@ -17,6 +57,7 @@ function getLight() {
             <span>Room ID: ${res.roomId}</span>
         </div>
         `;
+    addSwitchToggleToSidebar(res);
   });
 }
 

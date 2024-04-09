@@ -10,13 +10,13 @@
   </head>
   <body>
     <main class="d-flex flex-nowrap bg-main vh-100">
-        <!-- Sidebar -->
+      <!-- Sidebar -->
       <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w">
         <a
           href="index.html"
           class="d-flex align-items-center mb-3 mb-md-0 me-md-auto fw-bold text-decoration-none"
         >
-          <span class="fs-4 ms-2 ">WiZ</span>
+          <span class="fs-4 ms-2">WiZ</span>
         </a>
         <hr />
         <ul class="nav nav-pills flex-column mb-auto gap-2">
@@ -25,69 +25,104 @@
               <i class="fa-regular fa-lightbulb"></i>
               Lights
             </a>
-            <li class="nav-item">
-                <a href="pages/scenes.html" class="nav-link text-bg-dark menu-button">
-                    <i class="fa-regular fa-image"></i>
-                    Scenes
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="pages/devices.html" class="nav-link text-bg-dark menu-button">
-                    <i class="fa-regular fa-circle-question"></i>
-                    Devices
-                </a>
-            </li>
+          </li>
+          <li class="nav-item">
+            <a href="pages/scenes.html" class="nav-link text-bg-dark menu-button">
+              <i class="fa-regular fa-image"></i>
+              Scenes
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="pages/devices.html" class="nav-link text-bg-dark menu-button">
+              <i class="fa-regular fa-circle-question"></i>
+              Devices
+            </a>
           </li>
         </ul>
+        <div
+          class="d-flex align-items-center flex-column-reverse gap-2 p-2 rounded justify-content-between shortcut"
+        >
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-moon"></i>
+            <input
+              type="range"
+              class="form-range"
+              id="customRange1"
+              min="0"
+              max="100"
+              step="5"
+              disabled
+            />
+            <i class="fa-solid fa-sun"></i>
+          </div>
+        </div>
         <hr />
-        <span class="text-center">Made by <a class="redirect" style="cursor: pointer;">MatiasTK</a></span>
+        <span class="text-center"
+          >Made by <a class="redirect" style="cursor: pointer">MatiasTK</a></span
+        >
       </div>
-        <!-- Main -->
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center mt-4 ms-4">
-                        <h1 class="text-white">Lights</h1>
-                        <button class="edit bg-main border-0 visually-hidden">
-                          <i class="text-white fa-solid fa-pencil fa-lg me-4"></i>
-                        </button>
-                    </div>
-                    <hr />
-                </div>
+      <!-- Main -->
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-12">
+            <div class="my-4 d-flex align-items-center justify-content-between">
+              <span class="text-white display-6 fw-bold ms-auto me-auto">Lights</span>
+              <button class="edit bg-main border-0 visually-hidden">
+                <i class="text-white fa-solid fa-pencil fa-xl"></i>
+              </button>
             </div>
+            <hr />
+          </div>
+        </div>
 
-            <div class="lights">
+        <div class="lights"></div>
+      </div>
+      <!-- Modal -->
+      <div
+        class="modal fade"
+        id="addModal"
+        tabindex="-1"
+        aria-labelledby="addModalLabel"
+        aria-hidden="true"
+        data-bs-theme="dark"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content text-white">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="addModalLabel">Add a Bulb</h1>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
             </div>
-
-            <!-- Modal -->
-            <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true" data-bs-theme="dark">
-              <div class="modal-dialog">
-                <div class="modal-content text-white">
-                  <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="addModalLabel">Add a Bulb</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <form class="needs-validation">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                          <label for="ip" class="form-label">IP</label>
-                          <input type="text" class="form-control ipInput" id="ip" aria-describedby="ipHelp" autofocus required>
-                          <div class="valid-feedback">
-                            Looks good!
-                          </div>
-                          <div class="invalid-feedback">
-                            Please provide a valid IP.
-                          </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                      <button type="submit" class="btn btn-primary ipBtn" >Save changes</button>
-                    </div>
-                  </form>
+            <form class="needs-validation">
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="ip" class="form-label">IP</label>
+                  <input
+                    type="text"
+                    class="form-control ipInput"
+                    id="ip"
+                    aria-describedby="ipHelp"
+                    autofocus
+                    required
+                  />
+                  <div class="valid-feedback">Looks good!</div>
+                  <div class="invalid-feedback">Please provide a valid IP.</div>
                 </div>
               </div>
-            </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  Close
+                </button>
+                <button type="submit" class="btn btn-primary ipBtn">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
     <script src="renderer.js"></script>
     <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
