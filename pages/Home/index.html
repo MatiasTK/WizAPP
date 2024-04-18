@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <title>WiZ APP</title>
-    <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css" />
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link
+      rel="stylesheet"
+      href="../../node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+    />
   </head>
   <body>
     <main class="d-flex flex-nowrap bg-main vh-100">
@@ -14,9 +17,15 @@
       <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w">
         <a
           href="index.html"
-          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto fw-bold text-decoration-none"
+          class="d-flex align-items-center justify-content-center mb-3 mb-md-0 fw-bold text-decoration-none"
         >
-          <span class="fs-4 ms-2">WiZ</span>
+          <img
+            src="../../assets/logo_sidebar.png"
+            alt="Wiz logo"
+            class="img-fluid"
+            height="40px"
+            width="80px"
+          />
         </a>
         <hr />
         <ul class="nav nav-pills flex-column mb-auto gap-2">
@@ -27,13 +36,13 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="pages/scenes.html" class="nav-link text-bg-dark menu-button">
+            <a href="../scenes/index.html" class="nav-link text-bg-dark menu-button">
               <i class="fa-regular fa-image"></i>
               Scenes
             </a>
           </li>
           <li class="nav-item">
-            <a href="pages/devices.html" class="nav-link text-bg-dark menu-button">
+            <a href="../devices/index.html" class="nav-link text-bg-dark menu-button">
               <i class="fa-regular fa-circle-question"></i>
               Devices
             </a>
@@ -48,7 +57,7 @@
               type="range"
               class="form-range"
               id="customRange1"
-              min="0"
+              min="10"
               max="100"
               step="5"
               disabled
@@ -65,16 +74,16 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-12">
-            <div class="my-4 d-flex align-items-center justify-content-between">
-              <span class="text-white display-6 fw-bold ms-auto me-auto">Lights</span>
-              <button class="edit bg-main border-0 visually-hidden">
-                <i class="text-white fa-solid fa-pencil fa-xl"></i>
-              </button>
+            <div class="my-4 d-flex align-items-center justify-content-center">
+              <span class="text-white display-6 fw-bold me-2">Lights</span>
             </div>
-            <hr />
           </div>
         </div>
 
+        <button class="edit bg-primary border-0 visually-hidden rounded-5 mb-3 p-2 px-4">
+          <i class="fa-solid fa-pencil fa"></i>
+          <span>Change Name</span>
+        </button>
         <div class="lights"></div>
       </div>
       <!-- Modal -->
@@ -86,7 +95,7 @@
         aria-hidden="true"
         data-bs-theme="dark"
       >
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content text-white">
             <div class="modal-header">
               <h1 class="modal-title fs-5" id="addModalLabel">Add a Bulb</h1>
@@ -124,7 +133,7 @@
         </div>
       </div>
     </main>
-    <script src="renderer.js"></script>
-    <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="script.js"></script>
+    <script src="../../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   </body>
 </html>

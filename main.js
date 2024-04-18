@@ -31,10 +31,9 @@ const { ICON, JSON_DATA_PATH, PRELOAD, MIN_WIDTH, MIN_HEIGHT, HIDE_MENU } = requ
 
 /**
  * @typedef {Object} AppData
- * @property {number} width
- * @property {number} height
  * @property {string} bulbIp
  * @property {string} bulbName
+ * @property {[{ id: int, name: string, hex: string }]} customColors
  */
 
 /** @type {Bulb | undefined} */
@@ -53,14 +52,14 @@ const setUpBulb = async () => {
     appData = JSON.parse(fs.readFileSync(JSON_DATA_PATH, 'utf-8'));
     console.log(appData);
   } catch (e) {
-    appData = { width: MIN_WIDTH, height: MIN_HEIGHT };
+    console.warn('No data file found, creating new one...');
+    appData = { bulbIp: undefined };
   }
 
-  let { bulbIp } = appData;
-  console.log(`Current Stored Bulb ip:${bulbIp}`);
   while (!bulb && keepSearching) {
-    if (bulbIp) {
-      const [firstBulb] = await discover({ addr: bulbIp, waitMs: 2500 });
+    if (appData.bulbIp) {
+      console.log(`Current Stored Bulb ip:${appData.bulbIp}`);
+      const [firstBulb] = await discover({ addr: appData.bulbIp, waitMs: 2500 });
       bulb = firstBulb;
     } else {
       console.log('No stored bulb ip, discovering new bulb...');
@@ -70,7 +69,6 @@ const setUpBulb = async () => {
 
     if (!bulb) {
       appData.bulbIp = undefined;
-      bulbIp = undefined;
     }
   }
   if (!keepSearching) {
@@ -85,6 +83,7 @@ const setUpBulb = async () => {
     ip: bulb.address,
     port: bulb.bulbPort,
     name: appData.bulbName,
+    customColors: appData.customColors,
   });
 };
 
@@ -96,26 +95,70 @@ const createWindow = () => {
     autoHideMenuBar: HIDE_MENU,
     webPreferences: {
       preload: PRELOAD,
+      devTools: false,
     },
   });
 
-  win.setBounds({ width: appData.width, height: appData.height });
+  let requestConter = 0;
 
   ipcMain.on('bulb-state-request', async (event) => {
-    if (bulb) {
-      event.sender.send('bulb-state-response', bulbState);
-      event.sender.send('get-scene-name', SCENES[bulbState.sceneId]);
+    console.log('Bulb State Requested');
+    requestConter += 1;
+    const currentRequest = requestConter;
+    while (!bulb || !bulbState) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      if (currentRequest !== requestConter) {
+        return;
+      }
+    }
+
+    event.sender.send('bulb-state-response', bulbState);
+    event.sender.send('get-scene-name', SCENES[bulbState.sceneId]);
+  });
+
+  ipcMain.on('add-custom-color', async (event, colorName, colorHex) => {
+    console.log('Adding Custom Color');
+    if (!appData.customColors || appData.customColors.length === 0) {
+      appData.customColors = [];
+      appData.customColors.push({ id: 0, name: colorName, hex: colorHex });
+      bulbState.customColors = appData.customColors;
+      fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
       return;
     }
 
-    const loop = setInterval(() => {
-      console.log('Checking bulb state next check in 5 seconds...');
-      if (bulb) {
-        event.sender.send('bulb-state-response', bulbState);
-        event.sender.send('get-scene-name', SCENES[bulbState.sceneId]);
-        clearInterval(loop);
-      }
-    }, 5000);
+    const lastId = appData.customColors[appData.customColors.length - 1].id;
+    appData.customColors.push({ id: lastId + 1, name: colorName, hex: colorHex });
+    bulbState.customColors = appData.customColors;
+    console.log(appData.customColors);
+    fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
+  });
+
+  ipcMain.on('set-custom-color', async (event, colorId) => {
+    if (!bulb) return;
+    bulbState.sceneId = colorId;
+    bulbState.state = true;
+    const colorHex = appData.customColors.find((color) => color.id === colorId).hex;
+    await bulb.color(colorHex);
+  });
+
+  ipcMain.on('edit-color', async (event, colorId, newName, newHex) => {
+    if (!appData.customColors) return;
+    const colorIndex = appData.customColors.findIndex((color) => color.id === colorId);
+    if (colorIndex === -1) return;
+    appData.customColors[colorIndex] = { id: colorId, name: newName, hex: newHex };
+    bulbState.customColors = appData.customColors;
+    fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
+  });
+
+  ipcMain.on('remove-color', async (event, colorId) => {
+    console.log('Removing Color', colorId);
+    if (!appData.customColors) return;
+    const colorIndex = appData.customColors.findIndex((color) => color.id === colorId);
+    if (colorIndex === -1) return;
+    appData.customColors.splice(colorIndex, 1);
+    bulbState.customColors = appData.customColors;
+    fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
   });
 
   ipcMain.on('toggle-bulb-state', async () => {
@@ -157,7 +200,7 @@ const createWindow = () => {
 
   ipcMain.on('set-brightness', async (event, brightness) => {
     if (!bulb) return;
-    console.log(bulbState);
+
     bulbState.dimming = parseInt(brightness, 10);
     await bulb.brightness(bulbState.dimming);
   });
@@ -166,6 +209,7 @@ const createWindow = () => {
     if (!bulb) return;
     appData.bulbName = newName;
     bulbState.name = newName;
+    fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
   });
 
   ipcMain.on('visit-author', () => {
@@ -173,8 +217,6 @@ const createWindow = () => {
   });
 
   win.on('close', () => {
-    appData.width = win.getBounds().width;
-    appData.height = win.getBounds().height;
     fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
     if (bulb) {
       bulb.closeConnection();
@@ -183,20 +225,11 @@ const createWindow = () => {
   });
 
   win.on('minimize', (event) => {
-    appData.width = win.getBounds().width;
-    appData.height = win.getBounds().height;
     event.preventDefault();
     win.hide();
   });
 
-  win.on('restore', () => {
-    // TEMP FIX TO https://github.com/electron/electron/issues/31233
-    win.setSize(appData.width, appData.height);
-    win.setContentSize(appData.width, appData.height);
-    win.setBounds({ width: appData.width, height: appData.height });
-  });
-
-  win.loadFile('index.html');
+  win.loadFile('./pages/Home/index.html');
 };
 
 const createTray = () => {
@@ -210,6 +243,7 @@ const createTray = () => {
         });
       },
     },
+    { type: 'separator' },
     {
       label: 'Toggle',
       click: () => {
@@ -218,6 +252,7 @@ const createTray = () => {
         bulb.toggle();
       },
     },
+    { type: 'separator' },
     {
       label: 'Exit',
       click: () => {

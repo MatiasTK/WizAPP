@@ -4,24 +4,33 @@
     <meta charset="UTF-8" />
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <title>WiZ APP</title>
-    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="../node_modules/@fortawesome/fontawesome-free/css/all.min.css" />
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link
+      rel="stylesheet"
+      href="../../node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+    />
   </head>
   <body class="overflow-hidden">
     <main class="d-flex flex-nowrap bg-main vh-100">
       <!-- Sidebar -->
       <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w">
         <a
-          href="../index.html"
-          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto fw-bold text-decoration-none"
+          href="../Home/index.html"
+          class="d-flex align-items-center mb-3 mb-md-0 me-auto ms-auto fw-bold text-decoration-none"
         >
-          <span class="fs-4 ms-2">WiZ</span>
+          <img
+            src="../../assets/logo_sidebar.png"
+            alt="Wiz logo"
+            class="img-fluid"
+            height="40px"
+            width="80px"
+          />
         </a>
         <hr />
         <ul class="nav nav-pills flex-column mb-auto gap-2">
           <li class="nav-item">
-            <a href="../index.html" class="nav-link text-bg-dark menu-button">
+            <a href="../Home/index.html" class="nav-link text-bg-dark menu-button">
               <i class="fa-regular fa-lightbulb"></i>
               Lights
             </a>
@@ -33,7 +42,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="devices.html" class="nav-link text-bg-dark menu-button">
+            <a href="../devices/index.html" class="nav-link text-bg-dark menu-button">
               <i class="fa-regular fa-circle-question"></i>
               Devices
             </a>
@@ -48,7 +57,7 @@
               type="range"
               class="form-range"
               id="customRange1"
-              min="0"
+              min="10"
               max="100"
               step="5"
               disabled
@@ -69,7 +78,7 @@
           </div>
           <ul class="nav nav-pills fs-5">
             <li class="nav-item">
-              <a href="#" class="nav-link active">Static</a>
+              <a href="#" class="nav-link active rounded-5">Static</a>
             </li>
             <li class="nav-item">
               <a href="dynamic.html" class="nav-link">Dynamic</a>
@@ -85,7 +94,7 @@
             <div class="row row-cols-3 row-cols-lg-4 row-cols-xl-5 row-gap-3">
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded scene-button p-4 border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 scene-button p-4 border-0 w-100"
                   data-sceneId="11"
                   disabled
                 >
@@ -97,7 +106,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="12"
                   disabled
                 >
@@ -109,7 +118,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="13"
                   disabled
                 >
@@ -121,12 +130,12 @@
               </div>
             </div>
           </div>
-          <div>
+          <div class="pb-4">
             <h2 class="ms-4 text-white my-4">Functional</h2>
             <div class="row row-cols-3 row-cols-lg-4 row-cols-xl-5 row-gap-3">
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="14"
                   disabled
                 >
@@ -138,7 +147,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="6"
                   disabled
                 >
@@ -150,7 +159,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="17"
                   disabled
                 >
@@ -162,7 +171,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="16"
                   disabled
                 >
@@ -176,7 +185,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="15"
                   disabled
                 >
@@ -188,7 +197,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="18"
                   disabled
                 >
@@ -200,7 +209,7 @@
               </div>
               <div class="col">
                 <button
-                  class="bg-secondary bg-opacity-25 text-white rounded p-4 scene-button border-0 w-100"
+                  class="bg-secondary bg-opacity-25 text-white rounded-4 p-4 scene-button border-0 w-100"
                   data-sceneId="19"
                   disabled
                 >
@@ -215,7 +224,7 @@
         </div>
       </div>
     </main>
-    <script src="scene.js"></script>
-    <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="script.js"></script>
+    <script src="../../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   </body>
 </html>

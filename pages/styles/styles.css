@@ -12,6 +12,7 @@
 
 .scene-button:hover {
   background-color: #0266c8 !important;
+  opacity: 0.75;
 }
 
 .scene-button:disabled {
@@ -29,10 +30,11 @@
 
 .edit {
   cursor: pointer;
+  color: white;
 }
 
 .edit:hover {
-  color: #084fab !important;
+  opacity: 0.5;
 }
 
 .add {
@@ -61,6 +63,13 @@
   background-color: #1d2024;
   border-radius: 50%;
   border: #2f5dc6 solid 2px;
+}
+
+.dot {
+  height: 25px;
+  width: 25px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 /* width */

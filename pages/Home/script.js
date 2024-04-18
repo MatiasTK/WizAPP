@@ -11,13 +11,15 @@ function toggleSwitch() {
   });
 }
 
+let shortcutCreated = false;
 function addSwitchToggleToSidebar(res) {
+  if (shortcutCreated) return;
   const shortcut = document.querySelector('.shortcut');
 
   const div = document.createElement('div');
   div.innerHTML = `
-  <span>${res.name}</span>
-  <div class="form-check form-switch mt-1">
+  <span class="sidebar-nombre">${res.name || res.moduleName}</span>
+  <div class="form-check form-switch">
       <input class="form-check-input" type="checkbox" role="switch" id="lightSwitch-main" ${
         res.state ? 'checked' : ''
       }>
@@ -29,7 +31,7 @@ function addSwitchToggleToSidebar(res) {
     'd-flex',
     'gap-2',
     'align-items-center',
-    'justify-content-around',
+    'justify-content-between',
     'w-100',
     'text-white',
     'fw-bold',
@@ -41,6 +43,7 @@ function addSwitchToggleToSidebar(res) {
   const slider = document.querySelector('.form-range');
   slider.disabled = false;
   slider.value = res.dimming;
+  shortcutCreated = true;
 
   slider.addEventListener('change', (e) => {
     window.electronAPI.setBrightness(e.target.value);
@@ -99,12 +102,17 @@ function getLight() {
 
 let editActive = false;
 
-function disableEdit() {
+function disableEdit(editLabel) {
   const input = document.querySelector('.inputEdit');
   const bulb = document.querySelector('.bulb');
 
   const newName = input.value;
   window.electronAPI.setBulbName(newName);
+
+  const sidebarName = document.querySelector('.sidebar-nombre');
+  sidebarName.innerText = newName;
+
+  editLabel.innerText = 'Change Name';
 
   const span = document.createElement('span');
   span.innerText = newName;
@@ -114,19 +122,22 @@ function disableEdit() {
 
 function editName() {
   const editBtn = document.querySelector('.edit i');
+  const editLabel = document.querySelector('.edit span');
   editBtn.classList.toggle('fa-pencil');
   editBtn.classList.toggle('fa-floppy-disk');
+  editLabel.innerText = 'Save Name';
 
   if (!editActive) {
     const input = document.createElement('input');
     input.type = 'text';
     input.classList.add('inputEdit');
+    input.maxLength = 15;
 
     input.addEventListener('keyup', (e) => {
       if (e.key === 'Enter') {
         editBtn.classList.toggle('fa-pencil');
         editBtn.classList.toggle('fa-floppy-disk');
-        disableEdit();
+        disableEdit(editLabel);
       }
     });
 
@@ -135,7 +146,7 @@ function editName() {
     bulb.replaceChild(input, bulb.childNodes[1]);
     editActive = true;
   } else {
-    disableEdit();
+    disableEdit(editLabel);
   }
 }
 

@@ -26,6 +26,9 @@ You can download the latest release from [here](https://github.com/MatiasTK/WizA
 If you want to build the app yourself, you can do it by following these steps:
 
 - Clone the repo.
+- Build [wikari](https://github.com/uditkarode/wikari)
+  - `cd wikari`
+  - `npm run build`
 - Install the dependencies with `npm install`.
 - Run `npm run make` to build the app.
 - The app will be in the `out` folder.
