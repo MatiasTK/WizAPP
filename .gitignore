@@ -4,4 +4,3 @@ testing
 out/
 .env
 lib/
-forge.config.js

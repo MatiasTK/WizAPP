@@ -1,13 +1,13 @@
 {
   "name": "WiZAPP",
-  "version": "1.4.0",
-  "description": "Simple ElectronJS APP to connect and control WiZ Bulbs.",
+  "version": "1.5.0",
+  "description": "Simple ElectronJS APP to connect and control WiZ Bulbs",
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
+    "publish-app": "electron-forge publish",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"
   },
