@@ -2,14 +2,10 @@
 name: Release app
 on:
   workflow_dispatch:
-env:
-  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [{ name: 'windows', image: 'windows-latest' }]
-    runs-on: ${{ matrix.os.image }}
+    environment: release
+    runs-on: windows-latest
     steps:
       - name: Github checkout
         uses: actions/checkout@v4
@@ -19,4 +15,6 @@ jobs:
           node-version: 20
       - run: npm ci
       - name: Publish app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run publish
