@@ -63,6 +63,23 @@ const getActiveScene = () => {
   });
 };
 
+function editModalHandler(colorId, colorDiv) {
+  const editColorForm = document.querySelector('.edit-color-form');
+  editColorForm.addEventListener('submit', () => {
+    const colorName = document.getElementById('colorEdit').value;
+    const colorInput = document.getElementById('colorEditInput').value;
+    window.electronAPI.editColor(colorId, colorName, colorInput);
+    window.electronAPI.bulbStateRequest();
+    getActiveScene();
+  });
+
+  const removeColorBtn = document.querySelector('.remove-color');
+  removeColorBtn.addEventListener('click', () => {
+    window.electronAPI.removeColor(colorId);
+    colorDiv.remove();
+  });
+}
+
 function addCustomColorHandler() {
   const colorName = document.getElementById('colorName').value;
   const colorInput = document.getElementById('colorInput').value;
@@ -78,6 +95,8 @@ function addCustomColor() {
   customColorsCreated = true;
 
   const customColors = document.querySelector('.custom-colors');
+  if (!customColors) return;
+
   window.electronAPI.bulbStateResponse((_event, res) => {
     if (!res || !res.customColors) {
       return;
@@ -117,23 +136,7 @@ function addCustomColor() {
         const colorInput = document.getElementById('colorEditInput');
         colorName.value = color.name;
         colorInput.value = color.hex;
-      });
-
-      const editColorForm = document.querySelector('.edit-color-form');
-      editColorForm.addEventListener('submit', () => {
-        const colorName = document.getElementById('colorEdit').value;
-        const colorInput = document.getElementById('colorEditInput').value;
-        window.electronAPI.editColor(color.id, colorName, colorInput);
-        window.electronAPI.bulbStateRequest();
-        getActiveScene();
-      });
-
-      const removeColorBtn = document.querySelector('.remove-color');
-      removeColorBtn.addEventListener('click', () => {
-        div.remove();
-        window.electronAPI.removeColor(color.id);
-        window.electronAPI.bulbStateRequest();
-        getActiveScene();
+        editModalHandler(color.id, div);
       });
 
       const colorBtn = div.querySelector('.scene-button');
@@ -170,12 +173,13 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const newColorForm = document.querySelector('.new-color-form');
-  newColorForm.addEventListener('submit', () => {
-    addCustomColorHandler();
-  });
-
   document.querySelector('.redirect').addEventListener('click', () => {
     window.electronAPI.visitAuthor();
+  });
+
+  const newColorForm = document.querySelector('.new-color-form');
+  if (!newColorForm) return;
+  newColorForm.addEventListener('submit', () => {
+    addCustomColorHandler();
   });
 });

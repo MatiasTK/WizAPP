@@ -121,7 +121,7 @@ const createWindow = () => {
     console.log('Adding Custom Color');
     if (!appData.customColors || appData.customColors.length === 0) {
       appData.customColors = [];
-      appData.customColors.push({ id: 0, name: colorName, hex: colorHex });
+      appData.customColors.push({ id: 33, name: colorName, hex: colorHex });
       bulbState.customColors = appData.customColors;
       fs.writeFileSync(JSON_DATA_PATH, JSON.stringify(appData));
       return;
@@ -144,6 +144,7 @@ const createWindow = () => {
 
   ipcMain.on('edit-color', async (event, colorId, newName, newHex) => {
     if (!appData.customColors) return;
+    console.log('Editing Color', colorId, newName, newHex);
     const colorIndex = appData.customColors.findIndex((color) => color.id === colorId);
     if (colorIndex === -1) return;
     appData.customColors[colorIndex] = { id: colorId, name: newName, hex: newHex };

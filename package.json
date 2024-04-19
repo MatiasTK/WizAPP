@@ -1,6 +1,6 @@
 {
   "name": "WiZAPP",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Simple ElectronJS APP to connect and control WiZ Bulbs",
   "main": "main.js",
   "scripts": {
@@ -14,24 +14,24 @@
   "author": "MatiasTK",
   "license": "ISC",
   "devDependencies": {
-    "@electron-forge/cli": "^6.4.2",
-    "@electron-forge/maker-deb": "^6.4.2",
-    "@electron-forge/maker-rpm": "^6.4.2",
-    "@electron-forge/maker-squirrel": "^6.4.2",
-    "@electron-forge/maker-zip": "^6.4.2",
-    "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
-    "@electron-forge/publisher-github": "^6.4.2",
-    "electron": "^27.2.0",
-    "eslint": "^8.56.0",
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
+    "@electron-forge/publisher-github": "^7.4.0",
+    "electron": "^30.0.1",
+    "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-html": "^7.1.0",
+    "eslint-plugin-html": "^8.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-node": "^11.1.0"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.4.2",
-    "bootstrap": "^5.3.2",
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "bootstrap": "^5.3.3",
     "electron-squirrel-startup": "^1.0.0"
   }
 }
