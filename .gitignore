@@ -90,3 +90,10 @@ typings/
 
 # Electron-Forge
 out/
+
+# Others
+testing/
+.vscode
+lib/
+.env
+out/
