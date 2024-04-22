@@ -1,0 +1,99 @@
+@import url(../node_modules/bootstrap/dist/css/bootstrap.min.css);
+@import url(../node_modules/@fortawesome/fontawesome-free/css/all.min.css);
+
+.sidebar-w {
+  width: 240px;
+}
+
+.bg-main {
+  background-color: #1d2024;
+}
+
+.scene-button {
+  cursor: pointer;
+}
+
+.scene-button:hover {
+  background-color: #0266c8 !important;
+  opacity: 0.75;
+}
+
+.scene-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.menu-button:hover {
+  background-color: #084fab !important;
+}
+
+.active {
+  background-color: #0266c8 !important;
+}
+
+.edit {
+  cursor: pointer;
+  color: white;
+}
+
+.edit:hover {
+  opacity: 0.5;
+}
+
+.add {
+  cursor: pointer;
+}
+
+.add:hover {
+  opacity: 0.5;
+}
+
+.inputEdit {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  font-size: 16px;
+  outline: white solid 2px;
+  border-radius: 5px;
+  margin-right: 2rem;
+  padding-left: 0.5rem;
+  font-weight: 500;
+}
+
+.shortcut {
+  background-color: #1d2024;
+  border-radius: 50%;
+  border: #2f5dc6 solid 2px;
+}
+
+.dot {
+  height: 25px;
+  width: 25px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 1rem;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: hsla(0, 0%, 100%, 0.1);
+  border-radius: 50rem;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(0, 0%, 100%, 0.3);
+}
