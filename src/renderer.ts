@@ -28,11 +28,4 @@
 
 import './index.css';
 import 'bootstrap';
-import './script.ts';
-
-const logo = require('./assets/logo_sidebar.png');
-
-const sidebarImage = document.querySelector('.sidebar-image') as HTMLImageElement;
-sidebarImage.src = logo;
-
-console.log('👋 This message is being logged by "renderer.js", included via webpack');
+import './components/App.tsx';

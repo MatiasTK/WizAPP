@@ -1,21 +1,19 @@
-import { BulbState } from './types';
+import { BulbState } from '../../src/types';
 
-function toggleSwitch() {
+function switchToggleHandler() {
   const switchBtn = document.getElementById('lightSwitch') as HTMLInputElement;
   const switchBtnMain = document.getElementById('lightSwitch-main') as HTMLInputElement;
   switchBtn.addEventListener('change', () => {
-    //window.electronAPI.toggleBulb();
+    window.electronAPI.toggleBulb();
     switchBtnMain.checked = !switchBtnMain.checked;
   });
   switchBtnMain.addEventListener('change', () => {
-    //window.electronAPI.toggleBulb();
+    window.electronAPI.toggleBulb();
     switchBtn.checked = !switchBtn.checked;
   });
 }
 
-let shortcutCreated = false;
 function addSwitchToggleToSidebar(res: BulbState) {
-  if (shortcutCreated) return;
   const shortcut = document.querySelector('.shortcut');
 
   const div = document.createElement('div');
@@ -45,19 +43,18 @@ function addSwitchToggleToSidebar(res: BulbState) {
   const slider = document.querySelector('.form-range') as HTMLInputElement;
   slider.disabled = false;
   slider.value = String(res.dimming);
-  shortcutCreated = true;
 
   slider.addEventListener('change', (e) => {
-    //window.electronAPI.setBrightness(e.target.value);
+    const target = e.target as HTMLInputElement;
+    window.electronAPI.setBrightness(parseInt(target.value, 10));
   });
+
+  switchToggleHandler();
 }
 
-function getLight() {
-  window.electronAPI.bulbStateRequest();
-  window.electronAPI.bulbStateResponse((event, res) => {
-    if (res) {
-      document.querySelector('.edit').classList.remove('visually-hidden');
-      document.querySelector('.lights').innerHTML = `
+function createBulbDiv(res: BulbState) {
+  document.querySelector('.edit').classList.remove('visually-hidden');
+  document.querySelector('.lights').innerHTML = `
           <div class="row">
           <div class="col-sm-4 w-50">
           <div class="d-flex p-2 align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
@@ -76,11 +73,9 @@ function getLight() {
         </div>
         </div>
         </div>`;
-      addSwitchToggleToSidebar(res);
-    }
-    toggleSwitch();
-  });
+}
 
+function createManualIpDiv() {
   document.querySelector('.lights').innerHTML = `
     <div class="row">
       <div class="col-sm-4 w-50">
@@ -102,14 +97,24 @@ function getLight() {
     </div>`;
 }
 
-let editActive = false;
+function setUpLight() {
+  window.electronAPI.bulbStateRequest();
+  window.electronAPI.bulbStateResponse((res) => {
+    if (res) {
+      createBulbDiv(res);
+      addSwitchToggleToSidebar(res);
+    } else {
+      createManualIpDiv();
+    }
+  });
+}
 
 function disableEdit(editLabel: HTMLLabelElement) {
   const input = document.querySelector('.inputEdit') as HTMLInputElement;
   const bulb = document.querySelector('.bulb');
 
   const newName = input.value;
-  //window.electronAPI.setBulbName(newName);
+  window.electronAPI.setBulbName(newName);
 
   const sidebarName = document.querySelector('.sidebar-nombre') as HTMLSpanElement;
   sidebarName.innerText = newName;
@@ -119,40 +124,46 @@ function disableEdit(editLabel: HTMLLabelElement) {
   const span = document.createElement('span');
   span.innerText = newName;
   bulb.replaceChild(span, bulb.childNodes[1]);
-  editActive = false;
 }
 
 function editName() {
-  const editBtn = document.querySelector('.edit i');
-  const editLabel = document.querySelector('.edit span') as HTMLLabelElement;
-  editBtn.classList.toggle('fa-pencil');
-  editBtn.classList.toggle('fa-floppy-disk');
-  editLabel.innerText = 'Save Name';
+  let isEditActive = false;
 
-  if (!editActive) {
-    const input = document.createElement('input') as HTMLInputElement;
-    input.type = 'text';
-    input.classList.add('inputEdit');
-    input.maxLength = 15;
+  return function () {
+    const editBtn = document.querySelector('.edit i');
+    const editLabel = document.querySelector('.edit span') as HTMLLabelElement;
+    editBtn.classList.toggle('fa-pencil');
+    editBtn.classList.toggle('fa-floppy-disk');
+    editLabel.innerText = 'Save Name';
 
-    input.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') {
-        editBtn.classList.toggle('fa-pencil');
-        editBtn.classList.toggle('fa-floppy-disk');
-        disableEdit(editLabel);
-      }
-    });
+    if (!isEditActive) {
+      console.log('edit active');
+      const input = document.createElement('input') as HTMLInputElement;
+      input.type = 'text';
+      input.classList.add('inputEdit');
+      input.maxLength = 15;
 
-    const bulb = document.querySelector('.bulb') as HTMLDivElement;
-    input.value = (bulb.childNodes[1] as HTMLElement).innerText;
-    bulb.replaceChild(input, bulb.childNodes[1]);
-    editActive = true;
-  } else {
-    disableEdit(editLabel);
-  }
+      input.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+          editBtn.classList.toggle('fa-pencil');
+          editBtn.classList.toggle('fa-floppy-disk');
+          disableEdit(editLabel);
+          isEditActive = false;
+        }
+      });
+
+      const bulb = document.querySelector('.bulb') as HTMLDivElement;
+      input.value = (bulb.childNodes[1] as HTMLElement).innerText;
+      bulb.replaceChild(input, bulb.childNodes[1]);
+      isEditActive = true;
+    } else {
+      disableEdit(editLabel);
+      isEditActive = false;
+    }
+  };
 }
 
-function addIp() {
+function setIpHandler() {
   const form = document.querySelector('.needs-validation');
   const ipInput = document.querySelector('.ipInput') as HTMLInputElement;
   document.getElementById('addModal').addEventListener('shown.bs.modal', () => {
@@ -164,7 +175,7 @@ function addIp() {
       ipInput.classList.remove('is-invalid');
       ipInput.classList.add('is-valid');
       form.classList.add('was-validated');
-      //window.electronAPI.setIp(ipInput.value);
+      window.electronAPI.setIp(ipInput.value);
     } else {
       event.preventDefault();
       event.stopPropagation();
@@ -174,14 +185,23 @@ function addIp() {
   });
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  getLight();
-  console.log('HELLO FROM SCRIPT!');
-  /* addIp();
+function visitAuthorHandler() {
   document.querySelector('.redirect').addEventListener('click', () => {
     window.electronAPI.visitAuthor();
   });
-  document.querySelector('.edit').addEventListener('click', () => {
-    editName();
-  }); */
+}
+
+function editNameHandler() {
+  const editBtn = document.querySelector('.edit');
+  const handleEdit = editName();
+  editBtn.addEventListener('click', () => {
+    handleEdit();
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setUpLight();
+  setIpHandler();
+  visitAuthorHandler();
+  editNameHandler();
 });

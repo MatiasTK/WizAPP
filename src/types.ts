@@ -1,7 +1,7 @@
 export type AppData = {
   bulbName: string;
   bulbIp: string;
-  customColors: Array<{ id: number; name: string; color: string }>;
+  customColors: Array<{ id: number; name: string; hex: string }>;
 };
 
 export type BulbState = {
@@ -28,5 +28,5 @@ export type BulbState = {
   ip: string;
   port: number;
   name: string;
-  customColors: Array<{ id: number; name: string; color: string }>;
+  customColors: Array<{ id: number; name: string; hex: string }>;
 };
