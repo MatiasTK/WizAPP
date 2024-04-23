@@ -17,12 +17,6 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - name: Build API
-        run: |
-          cd wikari
-          npm ci
-          npm run build
-          cd ..
       - name: Publish app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

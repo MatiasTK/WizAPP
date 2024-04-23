@@ -80,7 +80,6 @@ export default function ModalCreateColor() {
                   id="colorInput"
                   value="#ffffff"
                   title="Choose your color"
-                  defaultValue={colorHex}
                   onChange={(e) => setColorHex(e.target.value)}
                 />
               </div>

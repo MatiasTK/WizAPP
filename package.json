@@ -2,6 +2,7 @@
   "name": "wiz_app",
   "productName": "WiZApp",
   "version": "2.0.0",
+  "icon": "src/assets/icon.ico",
   "description": "Simple ElectronJS APP to connect and control WiZ Bulbs",
   "main": ".webpack/main",
   "scripts": {
@@ -20,6 +21,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
     "@electron-forge/plugin-fuses": "^7.4.0",
     "@electron-forge/plugin-webpack": "^7.4.0",
+    "@electron-forge/publisher-github": "^7.4.0",
     "@electron/fuses": "^1.8.0",
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",

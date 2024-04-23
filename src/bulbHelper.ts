@@ -41,6 +41,11 @@ class BulbHelper {
       data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'));
       console.log('CONFIG DATA FOUND:', data);
     } catch (e) {
+      data = {
+        bulbIp: undefined,
+        bulbName: undefined,
+        customColors: [],
+      };
       console.warn('CONFIG DATA NOT FOUND');
     }
 
@@ -49,24 +54,26 @@ class BulbHelper {
 
     while (!bulbFound) {
       if (data && data.bulbIp) {
-        console.log('STORED BULB IP FOUND:', data.bulbIp);
         const res = await discover({ addr: data.bulbIp, waitMs: 2500 });
         if (res && res.length > 0) {
+          console.log('BULB FOUND:', res[0].address);
           bulb = res[0];
+          data.bulbIp = res[0].address;
           bulbFound = true;
         }
       } else {
-        console.log('NO STORED BULB IP FOUND');
         const res = await discover({});
         if (res && res.length > 0) {
+          console.log('BULB FOUND:', res[0].address);
           bulb = res[0];
+          data.bulbIp = res[0].address;
           bulbFound = true;
         }
       }
 
-      if (!bulbFound) {
-        console.warn('NO BULB FOUND, RETRYING...');
-        this.appData.bulbIp = undefined;
+      console.warn('NO BULB FOUND, RETRYING...');
+      if (!bulbFound && data) {
+        data.bulbIp = undefined;
       }
     }
 
@@ -82,8 +89,8 @@ class BulbHelper {
       ...configResult,
       ip: bulb.address,
       port: bulb.bulbPort,
-      name: data.bulbName,
-      customColors: data.customColors,
+      name: data && data.bulbName ? data.bulbName : configResult.moduleName,
+      customColors: data && data.customColors ? data.customColors : [],
     };
 
     this.bulb = bulb;
@@ -148,7 +155,6 @@ class BulbHelper {
   }
 
   public async setCustomColor(colorId: number) {
-    console.log(colorId);
     await this.bulbStateReady;
     const color = this.bulbState.customColors.find((c) => c.id === colorId);
     if (!color) return;
@@ -172,6 +178,12 @@ class BulbHelper {
     this.bulbState.customColors = this.bulbState.customColors.filter((c) => c.id !== colorId);
     this.appData.customColors = this.bulbState.customColors;
     this.saveConfig();
+  }
+
+  public endConnection() {
+    if (this.bulb) {
+      this.bulb.closeConnection();
+    }
   }
 }
 

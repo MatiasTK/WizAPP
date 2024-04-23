@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { app, nativeImage } from 'electron';
-const icon = require('./assets/icon.ico');
+import icon from './assets/icon.ico';
 
 const ICON = nativeImage.createFromPath(path.join(__dirname, icon));
 const CONFIG = path.join(app.getPath('userData'), 'config.json');

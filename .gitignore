@@ -94,6 +94,5 @@ out/
 # Others
 testing/
 .vscode
-lib/
 .env
 out/

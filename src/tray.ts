@@ -1,7 +1,8 @@
 import { BrowserWindow, Menu, Tray } from 'electron';
 import { ICON } from './constants';
+import BulbHelper from './bulbHelper';
 
-const createTray = (mainWindow: BrowserWindow, app: Electron.App) => {
+const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: BulbHelper) => {
   const tray = new Tray(ICON);
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -14,7 +15,7 @@ const createTray = (mainWindow: BrowserWindow, app: Electron.App) => {
     {
       label: 'Toggle Bulb',
       click: () => {
-        // TODO
+        bulbHelper.toggleBulb();
       },
     },
     { type: 'separator' },

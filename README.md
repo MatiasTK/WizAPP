@@ -4,12 +4,11 @@ _Simple ElectronJS APP to connect and control [WiZ](https://www.wizconnected.com
 
 ## Preview 📌
 
-![Preview](https://i.imgur.com/d4RZz9v.png)
+![Preview](https://i.imgur.com/vs6W5wM.png)
 
-![Scenes](https://i.imgur.com/JySYM8y.png)
+![Scenes](https://i.imgur.com/8AsMpvc.png)
 
-> [!IMPORTANT]
-> This app is still in development, so it may have some bugs.
+![Custom](https://i.imgur.com/AIDfSRU.png)
 
 ## Installation 🔧
 
@@ -26,9 +25,6 @@ You can download the latest release from [here](https://github.com/MatiasTK/WizA
 If you want to build the app yourself, you can do it by following these steps:
 
 - Clone the repo.
-- Build [wikari](https://github.com/uditkarode/wikari)
-  - `cd wikari`
-  - `npm run build`
 - Install the dependencies with `npm install`.
 - Run `npm run make` to build the app.
 - The app will be in the `out` folder.
@@ -39,8 +35,9 @@ If the app have trouble discovering your bulbs, you can enter the IP manually. Y
 
 ## Built with 🛠️
 
-- [ElectronJS](https://www.electronjs.org/) - Framework used.
+- [ElectronJS](https://www.electronjs.org/) - Desktop Framework used.
 - [Bootstrap](https://getbootstrap.com/) - Used for the UI.
+- [React](https://react.dev/) - Web framework used.
 
 ## Responsibilities 📖
 

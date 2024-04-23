@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import IpModal from './IpModal';
 import Sidebar from './Sidebar';
 import { useBulb } from './BulbContext';

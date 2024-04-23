@@ -26,7 +26,7 @@ export default function Devices() {
               <span>Mac Address: {bulb.mac}</span>
               <span>Status: {bulb.state ? 'ON' : 'OFF'}</span>
               <span>Scene Id: {bulb.sceneId}</span>
-              {bulb.dimming ? `<span>Brightness: ${bulb.dimming}%</span>` : ''}
+              <span>{bulb.dimming ? `Brightness: ${bulb.dimming}%` : ''}</span>
               <span>Firmware Version: {bulb.fwVersion}</span>
               <span>Home ID: {bulb.homeId}</span>
               <span>Room ID: {bulb.roomId}</span>

@@ -23,12 +23,12 @@ const createWindow = (): void => {
     autoHideMenuBar: HIDE_MENU,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-      //devTools: false,
+      devTools: !app.isPackaged,
     },
   });
 
   const bulbHelper = new BulbHelper();
-  createTray(mainWindow, app);
+  createTray(mainWindow, app, bulbHelper);
 
   ipcMain.on('bulb-state-request', (event) => {
     bulbHelper.getBulbState().then((res) => {
@@ -80,15 +80,36 @@ const createWindow = (): void => {
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  mainWindow.on('close', () => {
+    bulbHelper.endConnection();
+  });
+
+  mainWindow.on('minimize', (event: Event) => {
+    event.preventDefault();
+    mainWindow.hide();
+  });
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
-app.setName('WiZ App');
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  });
+
+  // This method will be called when Electron has finished
+  // initialization and is ready to create browser windows.
+  // Some APIs can only be used after this event occurs.
+  app.setName('WiZ App');
+  app.on('ready', createWindow);
+}
 
 app.whenReady().then(() => {
   installExtension(REACT_DEVELOPER_TOOLS)
