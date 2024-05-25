@@ -1,13 +1,23 @@
 import { useBulb } from './BulbContext';
 import { BulbState } from '../types';
 import { useEffect, useState } from 'react';
+import { Button, Form, Modal } from 'react-bootstrap';
+import { FaFloppyDisk, FaTrash } from 'react-icons/fa6';
+import { useTranslation } from 'react-i18next';
 
 interface ModalEditColorProps {
   currentEditColor: BulbState['customColors'][0];
+  show: boolean;
+  handleClose: () => void;
 }
 
-export default function ModalEditColor({ currentEditColor }: ModalEditColorProps) {
+export default function ModalEditColor({
+  currentEditColor,
+  show,
+  handleClose,
+}: ModalEditColorProps) {
   const { setBulb } = useBulb();
+  const { t } = useTranslation();
 
   const [colorName, setColorName] = useState('');
   const [colorHex, setColorHex] = useState('#ffffff');
@@ -30,6 +40,7 @@ export default function ModalEditColor({ currentEditColor }: ModalEditColorProps
       };
     });
     window.electronAPI.editCustomColor(currentEditColor.id, colorName, colorHex);
+    handleClose();
   };
 
   const removeColorHandler = () => {
@@ -40,77 +51,46 @@ export default function ModalEditColor({ currentEditColor }: ModalEditColorProps
       };
     });
     window.electronAPI.removeCustomColor(currentEditColor.id);
+    handleClose();
   };
 
   return (
-    <div
-      className="modal fade text-white"
-      id="editColor"
-      tabIndex={-1}
-      aria-labelledby="editColorLabel"
-      aria-hidden="true"
-      data-bs-theme="dark"
-    >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h1 className="modal-title fs-5" id="editColorLabel">
-              Edit Color
-            </h1>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <form className="edit-color-form" onSubmit={editColorHandler}>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="colorEdit" className="form-label">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="colorEdit"
-                  maxLength={20}
-                  minLength={1}
-                  value={colorName}
-                  onChange={(e) => setColorName(e.target.value)}
-                  placeholder="e.g Red"
-                />
-                <label htmlFor="colorEditInput" className="mt-2">
-                  Pick a color:
-                </label>
-                <input
-                  type="color"
-                  className="form-control form-control-color mt-2 w-100"
-                  id="colorEditInput"
-                  value={colorHex}
-                  onChange={(e) => setColorHex(e.target.value)}
-                  title="Choose your color"
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-danger remove-color"
-                data-bs-dismiss="modal"
-                onClick={removeColorHandler}
-              >
-                <i className="fa-solid fa-trash-can"></i>
-                <span className="ms-1">Remove</span>
-              </button>
-              <button type="submit" data-bs-dismiss="modal" className="btn btn-primary">
-                <i className="fa-solid fa-floppy-disk"></i>
-                <span className="ms-1">Save changes</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <Modal show={show} onHide={handleClose} data-bs-theme="dark" className="text-white" centered>
+      <Modal.Header closeButton>
+        <Modal.Title>{t('scenes.custom.editColor')}</Modal.Title>
+      </Modal.Header>
+      <Form onSubmit={editColorHandler}>
+        <Modal.Body>
+          <Form.Label>{t('scenes.custom.name')}</Form.Label>
+          <Form.Control
+            type="text"
+            maxLength={20}
+            minLength={1}
+            value={colorName}
+            autoFocus
+            onChange={(e) => setColorName(e.target.value)}
+            placeholder={t('scenes.custom.namePlaceholder')}
+          />
+          <Form.Label className="mt-2">{t('scenes.custom.pickColor')}:</Form.Label>
+          <Form.Control
+            type="color"
+            value={colorHex}
+            className="w-100"
+            onChange={(e) => setColorHex(e.target.value)}
+            title={t('scenes.custom.pickColorPlaceholder')}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="danger" onClick={removeColorHandler}>
+            <FaTrash />
+            <span className="ms-1">{t('remove')}</span>
+          </Button>
+          <Button type="submit" variant="primary">
+            <FaFloppyDisk />
+            <span className="ms-1">{t('SaveChanges')}</span>
+          </Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
   );
 }

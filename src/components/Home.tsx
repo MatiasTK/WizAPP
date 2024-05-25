@@ -2,10 +2,17 @@ import { useState } from 'react';
 import IpModal from './IpModal';
 import Sidebar from './Sidebar';
 import { useBulb } from './BulbContext';
+import { Button, Col, Container, FormCheck, FormControl, Row, Spinner } from 'react-bootstrap';
+import { FaFloppyDisk, FaLightbulb } from 'react-icons/fa6';
+import { FaEdit } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 export default function Home() {
   const { bulb, setBulb } = useBulb();
   const [isEditActive, setIsEditActive] = useState(false);
+  const [showIpModal, setShowIpModal] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const { t } = useTranslation();
 
   const lightSwitchHandler = () => {
     window.electronAPI.toggleBulb();
@@ -14,7 +21,13 @@ export default function Home() {
     });
   };
 
+  const handleCloseIpModal = () => {
+    setShowIpModal(false);
+  };
+
   const handleChangeName = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((event.target as HTMLInputElement).value === '') return;
+
     if (event.key === 'Enter') {
       setBulb((prev) => {
         return { ...prev, name: (event.target as HTMLInputElement).value };
@@ -26,99 +39,99 @@ export default function Home() {
   };
 
   const bulbElement = () => (
-    <div className="row">
-      <div className="col-sm-4 w-50">
-        <div className="d-flex p-2 align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
-          <div className="rounded rounded-circle p-3">
-            <i className="fa-solid fa-lightbulb fa-2xl"></i>
-          </div>
+    <Row>
+      <Col sm={6} style={{ maxWidth: '20rem' }}>
+        <div className="d-flex p-3 justify-content-between gap-3 align-items-center text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold fs-6">
+          <FaLightbulb size={35} />
           {isEditActive ? (
-            <div className="d-flex justify-content-between flex-fill bulb">
-              <input
-                type="text"
-                className="inputEdit"
-                maxLength={15}
-                defaultValue={bulb.name}
-                onKeyUp={handleChangeName}
-              />
-            </div>
+            <FormControl
+              type="text"
+              maxLength={15}
+              defaultValue={bulb.name}
+              onKeyUp={handleChangeName}
+              autoFocus
+              onChange={(e) => setNameInput(e.target.value)}
+              data-bs-theme="dark"
+            />
           ) : (
-            <div className="d-flex justify-content-between flex-fill bulb">
+            <div className="d-flex justify-content-between flex-fill bulb gap-4">
               <span>{bulb.name || bulb.moduleName}</span>
-              <div className="form-check form-switch">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                  id="lightSwitch"
-                  checked={bulb.state}
-                  onChange={lightSwitchHandler}
-                />
-                <label className="form-check-label" htmlFor="lightSwitch"></label>
-              </div>
+              <FormCheck
+                id="lightSwitch"
+                type="switch"
+                checked={bulb.state}
+                onChange={lightSwitchHandler}
+              />
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Col>
+    </Row>
   );
 
   const editBtnHandler = () => {
     setIsEditActive((prev) => !prev);
+    if (!isEditActive || nameInput === '') {
+      return;
+    }
+
+    setBulb((prev) => {
+      return { ...prev, name: nameInput };
+    });
+
+    window.electronAPI.setBulbName(nameInput);
   };
 
   const searchingForBulbElement = () => (
-    <div className="row">
-      <div className="col-sm-4 w-50">
-        <div className="d-flex p-2 align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
-          <div className="rounded rounded-circle p-3">
-            <i className="fa-solid fa-lightbulb fa-2xl"></i>
-          </div>
+    <Row>
+      <Col sm={6} style={{ maxWidth: '20rem' }}>
+        <div className="d-flex p-3 justify-content-between align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
+          <FaLightbulb size={35} />
           <div className="d-flex justify-content-between flex-fill bulb align-items-center">
-            <span>Searching bulb...</span>
-            <div className="spinner-border text-white" role="status">
+            <span>{t('searchingBulb.search')}</span>
+            <Spinner animation="border" role="status">
               <span className="visually-hidden">Loading...</span>
-            </div>
+            </Spinner>
           </div>
         </div>
-        <p className="text-white fw-bold mt-3 ms-2 text-xs">
-          Can't find bulb?
-          <button
-            className="fw-normal link-primary text-decoration-none border-0  bg-transparent add"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#addModal"
+        <div className="text-white fw-bold mt-3 ms-2 text-xs d-flex align-items-center justify-content-around">
+          <span>{t('searchingBulb.notFound')}</span>
+          <Button
+            className="text-decoration-none add p-0 m-0 border-0"
+            variant="link"
+            onClick={() => setShowIpModal(true)}
           >
-            Add it manually
-          </button>
-        </p>
-      </div>
-    </div>
+            {t('searchingBulb.manual')}
+          </Button>
+        </div>
+      </Col>
+    </Row>
   );
 
   return (
     <main className="d-flex flex-nowrap bg-main vh-100">
       <Sidebar />
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col-12">
-            <div className="my-4 d-flex align-items-center justify-content-center">
-              <span className="text-white display-6 fw-bold me-2">Lights</span>
-            </div>
-          </div>
-        </div>
-        <button
-          className={`edit bg-primary border-0 rounded-5 mb-3 p-2 px-4 ${
+      <Container fluid>
+        <Row>
+          <Col>
+            <h1 className="my-4 d-flex align-items-center justify-content-center">
+              <span className="text-white display-6 fw-bold me-2">{t('lightTitle')}</span>
+            </h1>
+          </Col>
+        </Row>
+        <Button
+          variant="primary"
+          className={`edit border-0 rounded-5 mb-3 p-2 px-4 ${
             bulb ? '' : 'visually-hidden'
-          }`}
+          } d-flex align-items-center`}
           onClick={editBtnHandler}
         >
-          <i className={`fa-solid ${isEditActive ? 'fa-floppy-disk' : 'fa-pencil'} fa`}></i>
-          <span className="ms-1">{isEditActive ? 'Save Changes' : 'Change Name'}</span>
-        </button>
+          {isEditActive ? <FaFloppyDisk /> : <FaEdit />}
+          <span className="ms-1">{isEditActive ? t('SaveChanges') : t('ChangeBulbName')}</span>
+        </Button>
         <div className="lights">{bulb ? bulbElement() : searchingForBulbElement()}</div>
-      </div>
-      <IpModal />
+      </Container>
+      <IpModal show={showIpModal} handleClose={handleCloseIpModal} />
     </main>
   );
 }

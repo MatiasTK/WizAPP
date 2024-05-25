@@ -4,6 +4,7 @@ import { RouterProvider, createHashRouter } from 'react-router-dom';
 import Scenes from './Scenes';
 import { BulbProvider } from './BulbContext';
 import Devices from './Devices';
+import '../i18n';
 
 const router = createHashRouter([
   {

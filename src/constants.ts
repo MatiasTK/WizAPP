@@ -8,5 +8,6 @@ const AUTHOR_URL = 'https://www.github.com/MatiasTK';
 const MIN_WIDTH = 900;
 const MIN_HEIGHT = 600;
 const HIDE_MENU = true;
+const RELEASE_URL = 'https://api.github.com/repos/MatiasTK/WizAPP/releases/latest';
 
-export { ICON, CONFIG, MIN_WIDTH, MIN_HEIGHT, HIDE_MENU, AUTHOR_URL };
+export { ICON, CONFIG, MIN_WIDTH, MIN_HEIGHT, HIDE_MENU, AUTHOR_URL, RELEASE_URL };

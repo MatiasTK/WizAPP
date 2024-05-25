@@ -1,65 +1,75 @@
 import { useState } from 'react';
+import {
+  Button,
+  Form,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
-export default function IpModal() {
+interface IpModalProps {
+  show: boolean;
+  handleClose: () => void;
+}
+
+export default function IpModal({ show, handleClose }: IpModalProps) {
   const [value, setValue] = useState<string>('');
+  const [invalidIP, setInvalidIP] = useState<boolean>(false);
+  const ipRegex =
+    /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  const { t } = useTranslation();
 
-  const setIpHandler = () => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!ipRegex.test(value)) {
+      setInvalidIP(true);
+      return;
+    }
     window.electronAPI.setIp(value);
+    handleClose();
+  };
+
+  const handleChangeIp = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvalidIP(false);
+    setValue(e.target.value);
   };
 
   return (
-    <div
-      className="modal fade"
-      id="addModal"
-      tabIndex={-1}
-      aria-labelledby="addModalLabel"
-      aria-hidden="true"
-      data-bs-theme="dark"
-    >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content text-white">
-          <div className="modal-header">
-            <h1 className="modal-title fs-5" id="addModalLabel">
-              Add a Bulb
-            </h1>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <form className="needs-validation" onSubmit={setIpHandler}>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="ip" className="form-label">
-                  IP
-                </label>
-                <input
-                  type="text"
-                  className="form-control ipInput"
-                  id="ip"
-                  aria-describedby="ipHelp"
-                  autoFocus
-                  required
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                />
-                <div className="valid-feedback">Looks good!</div>
-                <div className="invalid-feedback">Please provide a valid IP.</div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
-                Close
-              </button>
-              <button type="submit" className="btn btn-primary ipBtn">
-                Save changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <Modal show={show} onHide={handleClose} data-bs-theme="dark" className="text-white" centered>
+      <ModalHeader closeButton>
+        <ModalTitle>{t('ip.add')}</ModalTitle>
+      </ModalHeader>
+      <Form noValidate onSubmit={handleSubmit}>
+        <ModalBody>
+          <Form.Group className="mb-3" controlId="ip">
+            <Form.Label>IP</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder={t('ip.placeholder')}
+              autoFocus
+              required
+              value={value}
+              onChange={handleChangeIp}
+              isValid={ipRegex.test(value)}
+              isInvalid={invalidIP}
+            />
+            <Form.Control.Feedback type="invalid">{t('ip.invalid')}</Form.Control.Feedback>
+            <Form.Control.Feedback type="valid">{t('ip.valid')}</Form.Control.Feedback>
+          </Form.Group>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={handleClose}>
+            {t('close')}
+          </Button>
+          <Button variant="primary" type="submit">
+            {t('SaveChanges')}
+          </Button>
+        </ModalFooter>
+      </Form>
+    </Modal>
   );
 }

@@ -27,5 +27,5 @@
  */
 
 import './index.css';
-import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './components/App.tsx';

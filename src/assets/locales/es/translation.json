@@ -1,0 +1,100 @@
+{
+  "lightTitle": "Luces",
+  "searchingBulb": {
+    "search": "Buscando Lampara...",
+    "notFound": "No se encuentra?",
+    "manual": "Añadir manualmente"
+  },
+  "ChangeBulbName": "Cambiar nombre",
+  "SaveChanges": "Guardar Cambios",
+  "MadeBy": "Hecho por ",
+  "Scenes": "Escenas",
+  "Devices": "Información",
+  "ip": {
+    "add": "Agregar una lampara",
+    "placeholder": "Escribe una ip",
+    "invalid": "Escribe una ip valida",
+    "valid": "Se ve bien!"
+  },
+  "close": "Cerrar",
+  "scenes": {
+    "static": {
+      "title": "Estática",
+      "whites": "Blanco",
+      "warmWhite": "Blanco cálido",
+      "dayLight": "Luz de día",
+      "coldWhite": "Blanco frío",
+      "functional": "Funcional",
+      "nightLight": "Luz Nocturna",
+      "cozy": "Acogedor",
+      "trueColors": "Colores Reales",
+      "relax": "Relax",
+      "focus": "Concentración",
+      "tvTime": "Hora de la TV",
+      "plantGrowth": "Plantas"
+    },
+    "dynamic": {
+      "title": "Dinámica",
+      "whites": "Blanco",
+      "candleLight": "Luz de vela",
+      "pulse": "Pulso",
+      "goldenWhite": "Blanco dorado",
+      "steampunk": "Steampunk",
+      "color": "Color",
+      "fireplace": "Chimenea",
+      "fall": "Otoño",
+      "club": "Club",
+      "sunset": "Atardecer",
+      "romance": "Romance",
+      "party": "Fiesta",
+      "pastelColors": "Colores Pastel",
+      "spring": "Primavera",
+      "summer": "Verano",
+      "forest": "Bosque",
+      "jungle": "Jungla",
+      "mojito": "Mojito",
+      "ocean": "Océano",
+      "deepDive": "Inmersión",
+      "christmas": "Navidad",
+      "halloween": "Halloween",
+      "progressive": "Progresivo",
+      "bedtime": "Acostarse",
+      "wakeUp": "Despertarse"
+    },
+    "custom": {
+      "title": "Colores",
+      "customColors": "Colores personalizados",
+      "new": "Nuevo",
+      "addColor": "Agregar nuevo color",
+      "name": "Nombre",
+      "namePlaceholder": "ej. Rojo",
+      "pickColor": "Seleccionar color",
+      "pickColorPlaceholder": "Selecciona un color",
+      "add": "Agregar",
+      "editColor": "Editar Color"
+    }
+  },
+  "remove": "Eliminar",
+  "device": {
+    "title": "Información",
+    "moduleName": "Nombre del Módulo",
+    "ipAddress": "Dirección IP",
+    "port": "Puerto",
+    "macAddress": "Dirección MAC",
+    "status": "Estado",
+    "sceneId": "ID de la Escena",
+    "brightness": "Brillo",
+    "firmwareVersion": "Versión del Firmware",
+    "homeId": "ID del hogar",
+    "roomId": "ID de la Habitación"
+  },
+  "tray": {
+    "show": "Mostrar App",
+    "quit": "Salir",
+    "toggle": "Alternar Luz"
+  },
+  "updateDialog": {
+    "title": "Actualización de WiZ App Available",
+    "message": "Hay una nueva versión disponible. ¿Desea descargar"
+  }
+}

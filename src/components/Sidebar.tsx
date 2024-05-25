@@ -1,17 +1,28 @@
 import logo from '../assets/logo_sidebar.png';
-import { memo, useState } from 'react';
+import { ReactNode, memo, useState } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import { useBulb } from './BulbContext';
+import { FaCircleQuestion, FaImage, FaLightbulb } from 'react-icons/fa6';
+
+import { Form, FormCheck } from 'react-bootstrap';
+import { MdBrightness5, MdBrightness7 } from 'react-icons/md';
+import { useTranslation } from 'react-i18next';
 
 function Sidebar() {
   const { bulb, setBulb } = useBulb();
   const [isDragging, setIsDragging] = useState(false);
   const [brightness, setBrightness] = useState(100);
+  const { t } = useTranslation();
 
-  const renderItem = (label: string, faIcon: string, ref: string) => (
+  const renderItem = (label: string, faIcon: ReactNode, ref: string) => (
     <li className="nav-item">
-      <Link className={`nav-link ${useMatch(ref) ? 'active' : ''} fw-b text-white`} to={ref}>
-        <i className={`fa-regular ${faIcon}`}></i>
+      <Link
+        className={`nav-link ${
+          useMatch(ref) ? 'active' : ''
+        } fw-b text-white d-flex align-items-center gap-1`}
+        to={ref}
+      >
+        {faIcon}
         <span className="ms-1 text-white text-decoration-none">{label}</span>
       </Link>
     </li>
@@ -42,34 +53,26 @@ function Sidebar() {
   const renderShortcut = () => (
     <div className="d-flex align-items-center flex-column-reverse gap-2 p-2 rounded justify-content-between shortcut">
       <div className="d-flex align-items-center gap-2">
-        <i className="fa-solid fa-moon"></i>
-        <input
-          type="range"
-          className="form-range"
-          id="customRange1"
-          min="10"
-          max="100"
-          step="5"
+        <MdBrightness5 size={25} />
+        <Form.Range
+          min={10}
+          max={100}
+          step={5}
           onChange={brightnessHandler}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           defaultValue={bulb.dimming}
         />
-        <i className="fa-solid fa-sun"></i>
+        <MdBrightness7 size={25} />
       </div>
       <div className="d-flex gap-2 align-items-center justify-content-between w-100 text-white fw-bold p-2">
         <span className="sidebar-nombre">{bulb.name || bulb.moduleName}</span>
-        <div className="form-check form-switch">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            role="switch"
-            id="lightSwitch-main"
-            checked={bulb.state}
-            onChange={lightSwitchHandler}
-          />
-          <label className="form-check-label" htmlFor="lightSwitch-main"></label>
-        </div>
+        <FormCheck
+          id="lightSwitch"
+          type="switch"
+          checked={bulb.state}
+          onChange={lightSwitchHandler}
+        />
       </div>
     </div>
   );
@@ -91,14 +94,14 @@ function Sidebar() {
       </a>
       <hr />
       <ul className="nav nav-pills flex-column mb-auto gap-2">
-        {renderItem('Lights', 'fa-lightbulb', '/')}
-        {renderItem('Scenes', 'fa-image', '/scenes')}
-        {renderItem('Devices', 'fa-circle-question', '/devices')}
+        {renderItem(t('lightTitle'), <FaLightbulb size={20} />, '/')}
+        {renderItem(t('Scenes'), <FaImage size={20} />, '/scenes')}
+        {renderItem(t('Devices'), <FaCircleQuestion size={20} />, '/devices')}
       </ul>
       {bulb ? renderShortcut() : null}
       <hr />
       <span className="text-center">
-        Made by{' '}
+        {t('MadeBy')}
         <a className="redirect" style={{ cursor: 'pointer' }} onClick={visitAuthorHandler}>
           MatiasTK
         </a>

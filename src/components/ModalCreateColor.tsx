@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { useBulb } from './BulbContext';
+import { Button, Form, Modal, ModalHeader } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
-export default function ModalCreateColor() {
+interface ModalCreateColorProps {
+  show: boolean;
+  handleClose: () => void;
+}
+
+export default function ModalCreateColor({ show, handleClose }: ModalCreateColorProps) {
   const { setBulb } = useBulb();
+  const { t } = useTranslation();
 
   const [colorName, setColorName] = useState('');
   const [colorHex, setColorHex] = useState('#ffffff');
@@ -31,70 +39,43 @@ export default function ModalCreateColor() {
 
     setColorName('');
     setColorHex('#ffffff');
+    handleClose();
   };
 
   return (
-    <div
-      className="modal fade text-white"
-      id="newColor"
-      tabIndex={-1}
-      aria-labelledby="newColorLabel"
-      aria-hidden="true"
-      data-bs-theme="dark"
-    >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h1 className="modal-title fs-5" id="newColorLabel">
-              Add a new custom color
-            </h1>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <form className="new-color-form" onSubmit={addNewColorHandler}>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="colorName" className="form-label">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="colorName"
-                  maxLength={20}
-                  minLength={1}
-                  placeholder="e.g Red"
-                  value={colorName}
-                  onChange={(e) => setColorName(e.target.value)}
-                />
-                <label htmlFor="colorInput" className="mt-2">
-                  Pick a color:
-                </label>
-                <input
-                  type="color"
-                  className="form-control form-control-color mt-2 w-100"
-                  id="colorInput"
-                  value="#ffffff"
-                  title="Choose your color"
-                  onChange={(e) => setColorHex(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn" data-bs-dismiss="modal">
-                Close
-              </button>
-              <button type="submit" className="btn btn-primary" data-bs-dismiss="modal">
-                Add
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <Modal show={show} onHide={handleClose} data-bs-theme="dark" className="text-white" centered>
+      <ModalHeader closeButton>
+        <Modal.Title>{t('scenes.custom.addColor')}</Modal.Title>
+      </ModalHeader>
+      <Form onSubmit={addNewColorHandler}>
+        <Modal.Body>
+          <Form.Label>{t('scenes.custom.name')}</Form.Label>
+          <Form.Control
+            type="text"
+            maxLength={20}
+            minLength={1}
+            placeholder={t('scenes.custom.namePlaceholder')}
+            required
+            autoFocus
+            value={colorName}
+            onChange={(e) => setColorName(e.target.value)}
+          />
+          <Form.Label className="mt-2">{t('scenes.custom.pickColor')}:</Form.Label>
+          <Form.Control
+            type="color"
+            defaultValue="#ffffff"
+            title={t('scenes.custom.pickColorPlaceholder')}
+            className="w-100"
+            onChange={(e) => setColorHex(e.target.value)}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            {t('close')}
+          </Button>
+          <Button type="submit">{t('scenes.custom.add')}</Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
   );
 }

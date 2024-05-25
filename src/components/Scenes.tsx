@@ -3,9 +3,12 @@ import Dynamic from './Dynamic';
 import Sidebar from './Sidebar';
 import Static from './Static';
 import Custom from './Custom';
+import { Container, Nav, NavItem, NavLink } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 export default function Scenes() {
   const [activeTab, setActiveTab] = useState('static');
+  const { t } = useTranslation();
 
   const renderTab = () => {
     switch (activeTab) {
@@ -23,43 +26,31 @@ export default function Scenes() {
   return (
     <main className="d-flex flex-nowrap bg-main vh-100">
       <Sidebar />
-      <div className="container-fluid overflow-y-scroll">
+      <Container fluid className="overflow-y-scroll">
         <header className="d-flex flex-wrap flex-column align-items-center justify-content-center py-4">
-          <div className="pb-4">
-            <span className="text-white display-6 fw-bold">Scenes</span>
-          </div>
-          <ul className="nav nav-pills fs-5">
-            <li
-              className="nav-item"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveTab('static')}
-            >
-              <a className={`nav-link rounded-5 ${activeTab == 'static' ? 'active' : ''}`}>
-                Static
-              </a>
-            </li>
-            <li
-              className="nav-item"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveTab('dynamic')}
-            >
-              <a className={`nav-link rounded-5 ${activeTab == 'dynamic' ? 'active' : ''}`}>
-                Dynamic
-              </a>
-            </li>
-            <li
-              className="nav-item"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveTab('custom')}
-            >
-              <a className={`nav-link rounded-5 ${activeTab == 'custom' ? 'active' : ''}`}>
-                Custom
-              </a>
-            </li>
-          </ul>
+          <h1 className="pb-4">
+            <span className="text-white display-6 fw-bold">{t('Scenes')}</span>
+          </h1>
+          <Nav variant="pills" className="fs-5">
+            <NavItem style={{ cursor: 'pointer' }} onClick={() => setActiveTab('static')}>
+              <NavLink className={`rounded-5 ${activeTab == 'static' ? 'active' : ''}`}>
+                {t('scenes.static.title')}
+              </NavLink>
+            </NavItem>
+            <NavItem style={{ cursor: 'pointer' }} onClick={() => setActiveTab('dynamic')}>
+              <NavLink className={`rounded-5 ${activeTab == 'dynamic' ? 'active' : ''}`}>
+                {t('scenes.dynamic.title')}
+              </NavLink>
+            </NavItem>
+            <NavItem style={{ cursor: 'pointer' }} onClick={() => setActiveTab('custom')}>
+              <NavLink className={`rounded-5 ${activeTab == 'custom' ? 'active' : ''}`}>
+                {t('scenes.custom.title')}
+              </NavLink>
+            </NavItem>
+          </Nav>
         </header>
         {renderTab()}
-      </div>
+      </Container>
     </main>
   );
 }
