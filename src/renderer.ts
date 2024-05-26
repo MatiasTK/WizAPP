@@ -26,6 +26,6 @@
  * ```
  */
 
-import './index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './components/App.tsx';
+import './index.css';

@@ -56,6 +56,7 @@ const config: ForgeConfig = {
           owner: 'MatiasTK',
           name: 'WizAPP',
         },
+        authToken: process.env.GITHUB_TOKEN,
         prerelease: false,
         draft: true,
       },

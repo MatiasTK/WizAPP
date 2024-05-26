@@ -1,7 +1,7 @@
 {
   "name": "wiz_app",
   "productName": "WiZApp",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "icon": "src/assets/icon.ico",
   "description": "💡 Simple ElectronJS APP to connect and control WiZ Bulbs",
   "main": ".webpack/main",

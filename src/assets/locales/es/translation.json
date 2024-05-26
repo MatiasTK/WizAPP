@@ -1,7 +1,7 @@
 {
-  "lightTitle": "Luces",
+  "lightTitle": "Focos",
   "searchingBulb": {
-    "search": "Buscando Lampara...",
+    "search": "Buscando Foco...",
     "notFound": "No se encuentra?",
     "manual": "Añadir manualmente"
   },
@@ -11,9 +11,9 @@
   "Scenes": "Escenas",
   "Devices": "Información",
   "ip": {
-    "add": "Agregar una lampara",
-    "placeholder": "Escribe una ip",
-    "invalid": "Escribe una ip valida",
+    "add": "Agregar un foco",
+    "placeholder": "Escribe una IP",
+    "invalid": "Escribe una IP valida",
     "valid": "Se ve bien!"
   },
   "close": "Cerrar",
@@ -89,9 +89,9 @@
     "roomId": "ID de la Habitación"
   },
   "tray": {
-    "show": "Mostrar App",
+    "show": "Mostrar",
     "quit": "Salir",
-    "toggle": "Alternar Luz"
+    "toggle": "Encender/Apagar"
   },
   "updateDialog": {
     "title": "Actualización de WiZ App Available",
