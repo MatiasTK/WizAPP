@@ -97,8 +97,7 @@ const createWindow = (): void => {
     bulbHelper.endConnection();
   });
 
-  mainWindow.on('minimize', (event: Event) => {
-    event.preventDefault();
+  mainWindow.on('minimize', () => {
     mainWindow.hide();
   });
 };
