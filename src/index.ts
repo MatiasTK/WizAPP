@@ -22,6 +22,10 @@ log.transports.console.format = '{y}-{m}-{d} {h}:{i}:{s},{ms} [{level}] {text}';
 log.transports.file.format = '{y}-{m}-{d} {h}:{i}:{s},{ms} [{level}] {text}';
 log.transports.file.fileName = 'wiz-app.log';
 
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught exception:', error);
+});
+
 const createWindow = (): void => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -45,14 +49,8 @@ const createWindow = (): void => {
   i18n.changeLanguage(userLanguage);
   checkForUpdates(app);
 
-  const bulbHelper = new BulbHelper();
+  const bulbHelper = new BulbHelper(mainWindow);
   createTray(mainWindow, app, bulbHelper);
-
-  ipcMain.on('bulb-state-request', (event) => {
-    bulbHelper.getBulbState().then((res) => {
-      event.reply('bulb-state-response', res);
-    });
-  });
 
   ipcMain.on('toggle-bulb-state', async () => {
     await bulbHelper.toggleBulb();

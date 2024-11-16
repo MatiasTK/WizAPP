@@ -1,6 +1,5 @@
 export interface IElectronAPI {
-  bulbStateRequest: () => void;
-  bulbStateResponse: (callback: (bulb: BulbState) => void) => void;
+  onUpdateBulb: (callback: (bulb: BulbState) => void) => void;
   toggleBulb: () => void;
   setBrightness: (brightness: number) => void;
   setBulbName: (name: string) => void;
