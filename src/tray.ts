@@ -2,6 +2,7 @@ import { BrowserWindow, Menu, Tray } from 'electron';
 import { ICON } from './constants';
 import BulbHelper from './bulbHelper';
 import i18n from './i18n';
+import log from 'electron-log';
 
 const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: BulbHelper) => {
   const tray = new Tray(ICON);
@@ -9,13 +10,16 @@ const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: Bu
     {
       label: i18n.t('tray.show'),
       click: () => {
+        log.info('Tray show option clicked, restoring window...');
         mainWindow.show();
+        log.debug('Window size is:', mainWindow.getSize());
       },
     },
     { type: 'separator' },
     {
       label: i18n.t('tray.toggle'),
       click: () => {
+        log.debug('Toggling bulb from tray...');
         bulbHelper.toggleBulb();
       },
     },
@@ -23,6 +27,7 @@ const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: Bu
     {
       label: i18n.t('tray.quit'),
       click: () => {
+        log.info('Quitting app from tray...');
         app.quit();
       },
     },
@@ -31,6 +36,7 @@ const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: Bu
   tray.setToolTip('WiZ App');
   tray.setContextMenu(contextMenu);
   tray.on('click', () => {
+    log.info('Tray icon clicked, restoring window...');
     mainWindow.show();
   });
 };

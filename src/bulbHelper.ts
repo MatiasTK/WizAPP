@@ -2,6 +2,7 @@ import fs from 'fs';
 import { CONFIG } from './constants';
 import { AppData, BulbState } from './types';
 import { discover, Bulb } from './lib/wikari/src/mod';
+import log from 'electron-log';
 
 type systemConfig = {
   method: string;
@@ -39,40 +40,47 @@ class BulbHelper {
     let data: AppData;
     try {
       data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'));
-      console.log('CONFIG DATA FOUND:', data);
+      log.info('Config data found with bulb IP:', data.bulbIp);
     } catch (e) {
       data = {
         bulbIp: undefined,
         bulbName: undefined,
         customColors: [],
       };
-      console.warn('CONFIG DATA NOT FOUND');
+      log.warn('Config data not found, creating new config file...');
     }
 
     let bulb: Bulb;
     let bulbFound = false;
 
     while (!bulbFound) {
+      log.info('Looking for bulb...');
       if (data && data.bulbIp) {
+        log.info('Using IP from config:', data.bulbIp);
         const res = await discover({ addr: data.bulbIp, waitMs: 2500 });
         if (res && res.length > 0) {
-          console.log('BULB FOUND:', res[0].address);
+          log.info('BULB FOUND:', res[0].address);
           bulb = res[0];
           data.bulbIp = res[0].address;
           bulbFound = true;
+        } else {
+          log.warn('Could not find bulb at IP:', data.bulbIp);
         }
       } else {
+        log.info('Searching for bulb on network...');
         const res = await discover({});
         if (res && res.length > 0) {
-          console.log('BULB FOUND:', res[0].address);
+          log.info('BULB FOUND:', res[0].address);
           bulb = res[0];
           data.bulbIp = res[0].address;
           bulbFound = true;
+        } else {
+          log.warn('Could not find bulb on network');
         }
       }
 
-      console.warn('NO BULB FOUND, RETRYING...');
       if (!bulbFound && data) {
+        log.warn('Retrying to find bulb');
         data.bulbIp = undefined;
       }
     }
@@ -183,6 +191,7 @@ class BulbHelper {
   public endConnection() {
     if (this.bulb) {
       this.bulb.closeConnection();
+      log.info('Connection with bulb closed');
     }
   }
 }
