@@ -131,6 +131,8 @@ class BulbHelper {
       await this.bulbStateReady;
       await this.bulb.toggle();
       this.bulbState.state = !this.bulbState.state;
+      log.info('Bulb toggled');
+      this.currentWindow.webContents.send('on-update-bulb', this.bulbState);
     } catch {
       log.error('Failed to toggle bulb, connection lost');
       await this.reconnectBulb();
