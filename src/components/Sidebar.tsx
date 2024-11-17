@@ -18,11 +18,12 @@ function Sidebar() {
   });
 
   useEffect(() => {
-    window.electronAPI.getVersion().then((version) => {
-      sessionStorage.setItem('version', version);
-      setVersion(version);
-    });
-    console.log('Version loaded:', version);
+    if (!version) {
+      window.electronAPI.getVersion().then((version) => {
+        sessionStorage.setItem('version', version);
+        setVersion(version);
+      });
+    }
   }, []);
 
   const renderItem = (label: string, faIcon: ReactNode, ref: string) => (
