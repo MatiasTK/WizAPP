@@ -93,6 +93,14 @@ const createWindow = (): void => {
     await bulbHelper.removeCustomColor(colorId);
   });
 
+  ipcMain.handle('get-bulb', () => {
+    return bulbHelper.getBulbState();
+  });
+
+  ipcMain.handle('get-version', () => {
+    return app.getVersion();
+  });
+
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 

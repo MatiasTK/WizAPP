@@ -17,7 +17,14 @@ export const BulbProvider: React.FC<BulbProviderProps> = ({ children }) => {
   const [bulb, setBulb] = useState<BulbState>();
 
   useEffect(() => {
-    log.debug('Setting up bulb context...');
+    log.debug('Context loaded');
+    window.electronAPI.getBulbWhenReady().then((bulb) => {
+      log.debug('Bulb loaded:', bulb);
+      setBulb(bulb);
+    });
+  }, []);
+
+  useEffect(() => {
     window.electronAPI.onUpdateBulb((bulb) => {
       log.debug('Bulb updated:', bulb);
       setBulb(bulb);

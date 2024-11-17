@@ -7,6 +7,7 @@ import { BulbState } from './types';
 contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateBulb: (callback: (bulb: BulbState) => void) =>
     ipcRenderer.on('on-update-bulb', (_, bulb: BulbState) => callback(bulb)),
+  getBulbWhenReady: () => ipcRenderer.invoke('get-bulb'),
   toggleBulb: () => ipcRenderer.send('toggle-bulb-state'),
   setBrightness: (brightness: number) => ipcRenderer.send('set-brightness', brightness),
   setBulbName: (name: string) => ipcRenderer.send('set-bulb-name', name),
@@ -19,4 +20,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   editCustomColor: (colorId: number, colorName: string, colorHex: string) =>
     ipcRenderer.send('edit-color', colorId, colorName, colorHex),
   removeCustomColor: (colorId: number) => ipcRenderer.send('remove-color', colorId),
+  getVersion: () => ipcRenderer.invoke('get-version'),
 });
