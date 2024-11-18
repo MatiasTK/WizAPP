@@ -2,6 +2,8 @@ import fs from 'fs';
 import { CONFIG } from './constants';
 import { AppData, BulbState } from './types';
 import { discover, Bulb } from './lib/wikari/src/mod';
+import log from 'electron-log';
+import { BrowserWindow } from 'electron';
 
 type systemConfig = {
   method: string;
@@ -23,8 +25,10 @@ class BulbHelper {
   private bulbStateReady: Promise<void>;
   private appData: AppData;
   private resolveBulbStateReady: () => void;
+  private currentWindow: BrowserWindow;
 
-  constructor() {
+  constructor(window: BrowserWindow) {
+    this.currentWindow = window;
     this.bulbStateReady = new Promise((resolve) => {
       this.resolveBulbStateReady = resolve;
     });
@@ -39,44 +43,53 @@ class BulbHelper {
     let data: AppData;
     try {
       data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'));
-      console.log('CONFIG DATA FOUND:', data);
+      log.info('Config data found with bulb IP:', data.bulbIp);
     } catch (e) {
       data = {
         bulbIp: undefined,
         bulbName: undefined,
         customColors: [],
       };
-      console.warn('CONFIG DATA NOT FOUND');
+      log.warn('Config data not found, creating new config file...');
     }
 
     let bulb: Bulb;
     let bulbFound = false;
 
     while (!bulbFound) {
+      log.info('Looking for bulb...');
       if (data && data.bulbIp) {
+        log.info('Using IP from config:', data.bulbIp);
         const res = await discover({ addr: data.bulbIp, waitMs: 2500 });
         if (res && res.length > 0) {
-          console.log('BULB FOUND:', res[0].address);
+          log.info('BULB FOUND:', res[0].address);
           bulb = res[0];
           data.bulbIp = res[0].address;
           bulbFound = true;
+        } else {
+          log.warn('Could not find bulb at IP:', data.bulbIp);
         }
       } else {
+        log.info('Searching for bulb on network...');
         const res = await discover({});
         if (res && res.length > 0) {
-          console.log('BULB FOUND:', res[0].address);
+          log.info('BULB FOUND:', res[0].address);
           bulb = res[0];
           data.bulbIp = res[0].address;
           bulbFound = true;
+        } else {
+          log.warn('Could not find bulb on network');
         }
       }
 
-      console.warn('NO BULB FOUND, RETRYING...');
       if (!bulbFound && data) {
+        log.warn('Retrying to find bulb in 5 seconds...');
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         data.bulbIp = undefined;
       }
     }
 
+    log.debug('Getting bulb state...');
     const pilot = (await bulb.getPilot()).result;
     const config = (await bulb.sendRaw({
       method: 'getSystemConfig',
@@ -96,12 +109,34 @@ class BulbHelper {
     this.bulb = bulb;
     this.appData = data;
     this.resolveBulbStateReady();
+
+    log.debug(this.currentWindow ? 'Current window is OK' : 'Current windows is NOT DEFINED');
+    log.debug(this.bulbState ? 'Bulb state is OK' : 'Bulb state is NOT DEFINED');
+
+    this.currentWindow.webContents.send('on-update-bulb', this.bulbState);
+    log.info('Sending bulb data to renderer process...');
+  }
+
+  private async reconnectBulb() {
+    // this.bulb.closeConnection();
+    this.bulbState = undefined;
+    this.bulb = undefined;
+    this.currentWindow.webContents.send('on-update-bulb', this.bulbState);
+    log.info('Reconnecting to bulb...');
+    await this.setUpBulb();
   }
 
   public async toggleBulb() {
-    await this.bulbStateReady;
-    this.bulbState.state = !this.bulbState.state;
-    await this.bulb.toggle();
+    try {
+      await this.bulbStateReady;
+      await this.bulb.toggle();
+      this.bulbState.state = !this.bulbState.state;
+      log.info('Bulb toggled');
+      this.currentWindow.webContents.send('on-update-bulb', this.bulbState);
+    } catch {
+      log.error('Failed to toggle bulb, connection lost');
+      await this.reconnectBulb();
+    }
   }
 
   public async getBulbState() {
@@ -110,9 +145,14 @@ class BulbHelper {
   }
 
   public async setBrightness(brightness: number) {
-    await this.bulbStateReady;
-    this.bulbState.dimming = brightness;
-    await this.bulb.brightness(brightness);
+    try {
+      await this.bulbStateReady;
+      await this.bulb.brightness(brightness);
+      this.bulbState.dimming = brightness;
+    } catch {
+      log.error('Failed to set brightness, connection lost');
+      await this.reconnectBulb();
+    }
   }
 
   private saveConfig() {
@@ -133,10 +173,15 @@ class BulbHelper {
   }
 
   public async setScene(sceneId: number) {
-    await this.bulbStateReady;
-    this.bulbState.state = true;
-    this.bulbState.sceneId = sceneId;
-    await this.bulb.scene(sceneId);
+    try {
+      await this.bulbStateReady;
+      this.bulbState.state = true;
+      await this.bulb.scene(sceneId);
+      this.bulbState.sceneId = sceneId;
+    } catch {
+      log.error('Failed to set scene, connection lost');
+      await this.reconnectBulb();
+    }
   }
 
   private getCustomColorNewId() {
@@ -155,12 +200,17 @@ class BulbHelper {
   }
 
   public async setCustomColor(colorId: number) {
-    await this.bulbStateReady;
-    const color = this.bulbState.customColors.find((c) => c.id === colorId);
-    if (!color) return;
-    this.bulbState.state = true;
-    this.bulbState.sceneId = colorId;
-    await this.bulb.color(color.hex as `#${string}`);
+    try {
+      await this.bulbStateReady;
+      const color = this.bulbState.customColors.find((c) => c.id === colorId);
+      if (!color) return;
+      this.bulbState.state = true;
+      this.bulbState.sceneId = colorId;
+      await this.bulb.color(color.hex as `#${string}`);
+    } catch {
+      log.error('Failed to set custom color, connection lost');
+      await this.reconnectBulb();
+    }
   }
 
   public async editCustomColor(colorId: number, colorName: string, colorHex: string) {
@@ -183,6 +233,7 @@ class BulbHelper {
   public endConnection() {
     if (this.bulb) {
       this.bulb.closeConnection();
+      log.info('Connection with bulb closed');
     }
   }
 }

@@ -1,6 +1,8 @@
+import { BulbState } from './types';
+
 export interface IElectronAPI {
-  bulbStateRequest: () => void;
-  bulbStateResponse: (callback: (bulb: BulbState) => void) => void;
+  onUpdateBulb: (callback: (bulb: BulbState) => void) => void;
+  getBulbWhenReady: () => Promise<BulbState>;
   toggleBulb: () => void;
   setBrightness: (brightness: number) => void;
   setBulbName: (name: string) => void;
@@ -11,6 +13,7 @@ export interface IElectronAPI {
   setCustomColor: (colorId: number) => void;
   editCustomColor: (colorId: number, colorName: string, colorHex: string) => void;
   removeCustomColor: (colorId: number) => void;
+  getVersion: () => Promise<string>;
 }
 
 declare global {

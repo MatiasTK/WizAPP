@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { BulbState } from '../types';
+import log from 'electron-log/renderer';
 
 interface BulbContextProps {
   bulb: BulbState;
@@ -16,8 +17,16 @@ export const BulbProvider: React.FC<BulbProviderProps> = ({ children }) => {
   const [bulb, setBulb] = useState<BulbState>();
 
   useEffect(() => {
-    window.electronAPI.bulbStateRequest();
-    window.electronAPI.bulbStateResponse((bulb) => {
+    log.debug('Context loaded');
+    window.electronAPI.getBulbWhenReady().then((bulb) => {
+      log.debug('Bulb loaded:', bulb);
+      setBulb(bulb);
+    });
+  }, []);
+
+  useEffect(() => {
+    window.electronAPI.onUpdateBulb((bulb) => {
+      log.debug('Bulb updated:', bulb);
       setBulb(bulb);
     });
   }, []);

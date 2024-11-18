@@ -1,6 +1,7 @@
 import { dialog, net, shell } from 'electron';
 import { RELEASE_URL } from './constants';
 import i18n from './i18n';
+import log from 'electron-log';
 
 function isVersionLessThan(a: string, b: string): boolean {
   const partsA = a.split('.').map(Number);
@@ -18,17 +19,17 @@ function isVersionLessThan(a: string, b: string): boolean {
 }
 
 const checkForUpdates = (app: Electron.App): void => {
-  console.log('Checking for updates...');
-  console.log('CURRENT VERSION:', app.getVersion());
+  log.info('Checking for updates...');
+  log.info('CURRENT VERSION:', app.getVersion());
   const request = net.request(RELEASE_URL);
   request.on('response', (response) => {
     response.on('data', (data) => {
       const release = JSON.parse(data.toString());
       const latestVersion = release.tag_name.replace('v', '');
-      console.log('LATEST VERSION:', latestVersion);
+      log.info('LATEST RELEASE:', release.tag_name);
 
       if (isVersionLessThan(app.getVersion(), latestVersion)) {
-        console.log('UPDATE AVAILABLE!');
+        log.info('UPDATE AVAILABLE!');
         dialog
           .showMessageBox({
             title: i18n.t('updateDialog.title'),

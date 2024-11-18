@@ -1,5 +1,5 @@
 import logo from '../assets/logo_sidebar.png';
-import { ReactNode, memo, useState } from 'react';
+import { ReactNode, memo, useState, useEffect } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import { useBulb } from './BulbContext';
 import { FaCircleQuestion, FaImage, FaLightbulb } from 'react-icons/fa6';
@@ -13,6 +13,18 @@ function Sidebar() {
   const [isDragging, setIsDragging] = useState(false);
   const [brightness, setBrightness] = useState(100);
   const { t } = useTranslation();
+  const [version, setVersion] = useState<string>(() => {
+    return sessionStorage.getItem('version') || '';
+  });
+
+  useEffect(() => {
+    if (!version) {
+      window.electronAPI.getVersion().then((version) => {
+        sessionStorage.setItem('version', version);
+        setVersion(version);
+      });
+    }
+  }, []);
 
   const renderItem = (label: string, faIcon: ReactNode, ref: string) => (
     <li className="nav-item">
@@ -79,7 +91,7 @@ function Sidebar() {
 
   const visitAuthorHandler = () => window.electronAPI.visitAuthor();
   return (
-    <div className="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w">
+    <div className="d-flex flex-column flex-shrink-0 p-3 text-bg-dark sidebar-w pb-1">
       <a
         href="#"
         className="d-flex align-items-center justify-content-center mb-3 mb-md-0 fw-bold text-decoration-none"
@@ -100,12 +112,15 @@ function Sidebar() {
       </ul>
       {bulb ? renderShortcut() : null}
       <hr />
-      <span className="text-center">
+      <div className="text-center">
         {t('MadeBy')}
         <a className="redirect" style={{ cursor: 'pointer' }} onClick={visitAuthorHandler}>
           MatiasTK
         </a>
-      </span>
+        <p className="small">
+          Version: <span className="fw-bold">{version}</span>
+        </p>
+      </div>
     </div>
   );
 }
