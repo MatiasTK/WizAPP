@@ -1,8 +1,8 @@
-import { BulbState } from './types';
+import BulbType from '@dtypes/index.d.ts';
 
 export interface IElectronAPI {
-  onUpdateBulb: (callback: (bulb: BulbState) => void) => void;
-  getBulbWhenReady: () => Promise<BulbState>;
+  onUpdateBulb: (callback: (bulb: BulbType) => void) => void;
+  getBulbWhenReady: () => Promise<BulbType>;
   toggleBulb: () => void;
   setBrightness: (brightness: number) => void;
   setBulbName: (name: string) => void;

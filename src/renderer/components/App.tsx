@@ -1,10 +1,10 @@
 import { createRoot } from 'react-dom/client';
-import Home from './Home';
+import Home from '@components/Home';
 import { RouterProvider, createHashRouter } from 'react-router-dom';
-import Scenes from './Scenes';
-import { BulbProvider } from './BulbContext';
-import Devices from './Devices';
-import '../i18n';
+import Scenes from '@components/Scenes';
+import BulbProvider from '@context/BulbContext';
+import Devices from '@components/Devices';
+import '@i18n/index';
 
 const router = createHashRouter([
   {

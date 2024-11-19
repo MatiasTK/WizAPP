@@ -5,6 +5,8 @@
     "module": "commonjs",
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "noImplicitAny": true,
     "sourceMap": true,
     "baseUrl": ".",
@@ -13,7 +15,13 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "paths": {
-      "*": ["node_modules/*"]
+      "*": ["node_modules/*"],
+      "@dtypes/*": ["src/types/*"],
+      "@renderer/*": ["src/renderer/*"],
+      "@components/*": ["src/renderer/components/*"],
+      "@context/*": ["src/renderer/context/*"],
+      "@i18n/*": ["src/i18n/*"],
+      "@assets/*": ["src/assets/*"]
     }
   },
   "include": ["src/**/*", "pages"]

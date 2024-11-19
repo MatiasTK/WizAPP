@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import Dynamic from './Dynamic';
-import Sidebar from './Sidebar';
-import Static from './Static';
-import Custom from './Custom';
+import Dynamic from '@components/Dynamic';
+import Sidebar from '@components/Sidebar';
+import Static from '@components/Static';
+import Custom from '@components/Custom';
 import { Container, Nav, NavItem, NavLink } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 

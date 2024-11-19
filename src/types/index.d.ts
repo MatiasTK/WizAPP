@@ -30,3 +30,17 @@ export type BulbState = {
   name: string;
   customColors: Array<{ id: number; name: string; hex: string }>;
 };
+
+export type systemConfig = {
+  method: string;
+  params: Record<string, unknown>;
+  result: {
+    homeId: number;
+    roomId: number;
+    rgn: string;
+    moduleName: string;
+    fwVersion: string;
+    groupId: number;
+    ping: number;
+  };
+};

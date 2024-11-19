@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useBulb } from './BulbContext';
+import { useBulb } from '@context/BulbContext';
 import {
   FaCouch,
   FaGlasses,

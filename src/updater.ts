@@ -37,8 +37,8 @@ const checkForUpdates = (app: Electron.App): void => {
             message: `${i18n.t('updateDialog.message')} ${latestVersion}?`,
             buttons: ['Yes', 'No'],
           })
-          .then((response) => {
-            if (response.response === 0) {
+          .then((res) => {
+            if (res.response === 0) {
               shell.openExternal(release.html_url);
             }
           });

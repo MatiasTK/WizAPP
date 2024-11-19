@@ -1,10 +1,10 @@
 import { BrowserWindow, Menu, Tray } from 'electron';
 import { ICON } from './constants';
-import BulbHelper from './bulbHelper';
+import BulbManager from './BulbManager';
 import i18n from './i18n';
 import log from 'electron-log';
 
-const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: BulbHelper) => {
+const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: BulbManager) => {
   const tray = new Tray(ICON);
   const contextMenu = Menu.buildFromTemplate([
     {
