@@ -13,7 +13,7 @@ interface BulbProviderProps {
 
 export const BulbContext = createContext<BulbContextProps>(undefined);
 
-const BulbProvider: React.FC<BulbProviderProps> = ({ children }) => {
+const BulbProvider: React.FC<BulbProviderProps> = ({ children }: BulbProviderProps) => {
   const [bulb, setBulb] = useState<BulbState>();
 
   useEffect(() => {
