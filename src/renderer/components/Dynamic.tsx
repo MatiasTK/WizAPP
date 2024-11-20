@@ -1,4 +1,4 @@
-import { useBulb } from './BulbContext';
+import { useBulb } from '@context/BulbContext';
 import { GiCandleHolder, GiHighGrass, GiPalmTree, GiSteampunkGoggles } from 'react-icons/gi';
 import { BsFillSunsetFill, BsSunriseFill } from 'react-icons/bs';
 import { TbCampfireFilled } from 'react-icons/tb';

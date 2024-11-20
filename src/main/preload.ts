@@ -2,7 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from 'electron';
-import { BulbState } from './types';
+import { BulbState } from '@dtypes/index';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateBulb: (callback: (bulb: BulbState) => void) =>

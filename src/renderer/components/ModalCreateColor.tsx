@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBulb } from './BulbContext';
+import { useBulb } from '@context/BulbContext';
 import { Button, Form, Modal, ModalHeader } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 

@@ -1,6 +1,6 @@
 import { Col, Container, Row } from 'react-bootstrap';
-import { useBulb } from './BulbContext';
-import Sidebar from './Sidebar';
+import { useBulb } from '@context/BulbContext';
+import Sidebar from '@components/Sidebar';
 import { FaLightbulb } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 

@@ -1,7 +1,7 @@
-import logo from '../assets/logo_sidebar.png';
+import logo from '@assets/logo_sidebar.png';
 import { ReactNode, memo, useState, useEffect } from 'react';
 import { Link, useMatch } from 'react-router-dom';
-import { useBulb } from './BulbContext';
+import { useBulb } from '@context/BulbContext';
 import { FaCircleQuestion, FaImage, FaLightbulb } from 'react-icons/fa6';
 
 import { Form, FormCheck } from 'react-bootstrap';
