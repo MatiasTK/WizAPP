@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import IpModal from './IpModal';
-import Sidebar from './Sidebar';
-import { useBulb } from '../context/BulbContext';
+import IpModal from '@components/IpModal';
+import Sidebar from '@components/Sidebar';
+import { useBulb } from '@context/BulbContext';
 import { Button, Col, Container, FormCheck, FormControl, Row, Spinner } from 'react-bootstrap';
 import { FaFloppyDisk, FaLightbulb } from 'react-icons/fa6';
 import { FaEdit } from 'react-icons/fa';

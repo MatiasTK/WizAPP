@@ -27,5 +27,5 @@
  */
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './components/App';
+import '@components/App';
 import './index.css';

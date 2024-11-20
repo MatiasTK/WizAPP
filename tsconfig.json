@@ -18,10 +18,13 @@
       "*": ["node_modules/*"],
       "@dtypes/*": ["src/types/*"],
       "@renderer/*": ["src/renderer/*"],
+      "@main/*": ["src/main/*"],
       "@components/*": ["src/renderer/components/*"],
       "@context/*": ["src/renderer/context/*"],
       "@i18n/*": ["src/i18n/*"],
-      "@assets/*": ["src/assets/*"]
+      "@assets/*": ["src/assets/*"],
+      "@constants/*": ["src/constants/*"],
+      "@lib/*": ["src/lib/*"]
     }
   },
   "include": ["src/**/*", "pages"]

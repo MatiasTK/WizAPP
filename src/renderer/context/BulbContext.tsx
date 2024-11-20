@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { BulbState } from '../../types';
+import { BulbState } from '@dtypes/index';
 import log from 'electron-log/renderer';
 
 interface BulbContextProps {

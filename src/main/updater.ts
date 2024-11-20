@@ -1,6 +1,6 @@
 import { dialog, net, shell } from 'electron';
-import { RELEASE_URL } from './constants';
-import i18n from './i18n';
+import { RELEASE_URL } from '@constants/index';
+import i18n from '@i18n/index';
 import log from 'electron-log';
 
 function isVersionLessThan(a: string, b: string): boolean {

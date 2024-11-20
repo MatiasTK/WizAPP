@@ -1,5 +1,5 @@
 import { useBulb } from '@context/BulbContext';
-import { BulbState } from '../../types';
+import { BulbState } from '@dtypes/index';
 import { useEffect, useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import { FaFloppyDisk, FaTrash } from 'react-icons/fa6';

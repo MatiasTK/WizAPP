@@ -1,13 +1,18 @@
 import fs from 'fs';
-import { CONFIG, DEFINED_DISCOVER_TIMEOUT, DISCOVER_DELAY, MAX_DEFAULT_COLORS } from './constants';
-import { AppData, BulbState, systemConfig } from './types';
-import { discover, Bulb } from './lib/wikari/src/mod';
+import {
+  CONFIG,
+  DEFINED_DISCOVER_TIMEOUT,
+  DISCOVER_DELAY,
+  MAX_DEFAULT_COLORS,
+} from '@constants/index';
+import { AppData, BulbState, systemConfig } from '@dtypes/index';
+import { discover, Bulb } from '@lib/wikari/src/mod';
 import log from 'electron-log';
 import { BrowserWindow } from 'electron';
 
 /**
     Decorator that updates the view after the method is executed.
-    Also handles reconnection to the bulb if the connection is lost.
+    Also catches if the connection is lost.
 */
 function needsViewUpdate(actionName: string) {
   return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
