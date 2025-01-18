@@ -42,7 +42,7 @@
     "eslint-plugin-react": "^7.37.2",
     "fork-ts-checker-webpack-plugin": "^7.2.13",
     "node-loader": "^2.0.0",
-    "style-loader": "^3.0.0",
+    "style-loader": "^4.0.0",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
