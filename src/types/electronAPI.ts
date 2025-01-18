@@ -1,4 +1,4 @@
-import { BulbState } from './types';
+import { BulbState } from './bulbState';
 
 export interface IElectronAPI {
   onUpdateBulb: (callback: (bulb: BulbState) => void) => void;
@@ -14,10 +14,4 @@ export interface IElectronAPI {
   editCustomColor: (colorId: number, colorName: string, colorHex: string) => void;
   removeCustomColor: (colorId: number) => void;
   getVersion: () => Promise<string>;
-}
-
-declare global {
-  interface Window {
-    electronAPI: IElectronAPI;
-  }
 }

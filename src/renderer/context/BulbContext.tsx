@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { BulbState } from '../types';
+import { BulbState } from '@dtypes/index';
 import log from 'electron-log/renderer';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 interface BulbContextProps {
   bulb: BulbState;
@@ -13,20 +13,20 @@ interface BulbProviderProps {
 
 export const BulbContext = createContext<BulbContextProps>(undefined);
 
-export const BulbProvider: React.FC<BulbProviderProps> = ({ children }) => {
+const BulbProvider: React.FC<BulbProviderProps> = ({ children }: BulbProviderProps) => {
   const [bulb, setBulb] = useState<BulbState>();
 
   useEffect(() => {
-    log.debug('Context loaded');
-    window.electronAPI.getBulbWhenReady().then((bulb) => {
-      log.debug('Bulb loaded:', bulb);
+    log.debug('[RENDERER] Context loaded');
+    window.electronAPI.getBulbWhenReady().then((bulb: BulbState) => {
+      log.debug('[RENDERER] Bulb loaded');
       setBulb(bulb);
     });
   }, []);
 
   useEffect(() => {
-    window.electronAPI.onUpdateBulb((bulb) => {
-      log.debug('Bulb updated:', bulb);
+    window.electronAPI.onUpdateBulb((bulb: BulbState) => {
+      log.debug('[RENDERER] Bulb updated');
       setBulb(bulb);
     });
   }, []);
@@ -41,3 +41,5 @@ export const useBulb = (): BulbContextProps => {
   }
   return context;
 };
+
+export default BulbProvider;

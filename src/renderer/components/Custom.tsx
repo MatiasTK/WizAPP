@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { BulbState } from '../types';
-import { useBulb } from './BulbContext';
-import ModalCreateColor from './ModalCreateColor';
-import ModalEditColor from './ModalEditColor';
+import { BulbState } from '@dtypes/index';
+import { useBulb } from '@context/BulbContext';
+import ModalCreateColor from '@components/ModalCreateColor';
+import ModalEditColor from '@components/ModalEditColor';
 import { MdAddCircle, MdModeEditOutline } from 'react-icons/md';
 import { Button, Col, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';

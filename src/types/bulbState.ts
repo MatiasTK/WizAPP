@@ -1,10 +1,6 @@
-export type AppData = {
-  bulbName: string;
-  bulbIp: string;
-  customColors: Array<{ id: number; name: string; hex: string }>;
-};
+import { CustomColor } from './customColor';
 
-export type BulbState = {
+export interface BulbState {
   mac: string;
   rssi: number;
   src?: string;
@@ -28,5 +24,5 @@ export type BulbState = {
   ip: string;
   port: number;
   name: string;
-  customColors: Array<{ id: number; name: string; hex: string }>;
-};
+  customColors: CustomColor[];
+}
