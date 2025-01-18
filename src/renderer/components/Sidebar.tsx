@@ -1,12 +1,12 @@
 import logo from '@assets/logo_sidebar.png';
-import { ReactNode, memo, useState, useEffect } from 'react';
-import { Link, useMatch } from 'react-router-dom';
 import { useBulb } from '@context/BulbContext';
+import { ReactNode, memo, useEffect, useState } from 'react';
 import { FaCircleQuestion, FaImage, FaLightbulb } from 'react-icons/fa6';
+import { Link, useMatch } from 'react-router-dom';
 
 import { Form, FormCheck } from 'react-bootstrap';
-import { MdBrightness5, MdBrightness7 } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
+import { MdBrightness5, MdBrightness7 } from 'react-icons/md';
 
 function Sidebar() {
   const { bulb, setBulb } = useBulb();
@@ -19,7 +19,7 @@ function Sidebar() {
 
   useEffect(() => {
     if (!version) {
-      window.electronAPI.getVersion().then((version) => {
+      window.electronAPI.getVersion().then((version: string) => {
         sessionStorage.setItem('version', version);
         setVersion(version);
       });

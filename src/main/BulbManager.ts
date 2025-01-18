@@ -1,14 +1,9 @@
-import fs from 'fs';
-import {
-  CONFIG,
-  DEFINED_DISCOVER_TIMEOUT,
-  DISCOVER_DELAY,
-  MAX_DEFAULT_COLORS,
-} from '@constants/index';
-import { AppData, BulbState, systemConfig } from '@dtypes/index';
-import { discover, Bulb } from '@lib/wikari/src/mod';
-import log from 'electron-log';
+import { CONFIG, DISCOVER_TIMEOUT, MAX_DEFAULT_COLORS } from '@constants/index';
+import { BulbConfig, BulbState, systemConfig } from '@dtypes/index';
+import { Bulb, discover } from '@lib/wikari/src/mod';
 import { BrowserWindow } from 'electron';
+import log from 'electron-log';
+import fs from 'fs';
 
 /**
     Decorator that updates the view after the method is executed.
@@ -35,8 +30,9 @@ class BulbManager {
   private bulb: Bulb;
   // Bulb state is the state of the bulb that is sent to the renderer process, it works as a cache to avoid sending requests to the bulb
   private bulbState: BulbState;
-  private appData: AppData;
+  private appData: BulbConfig;
   private window: BrowserWindow;
+  private bulbIP: string;
 
   constructor(window: BrowserWindow) {
     this.window = window;
@@ -47,8 +43,8 @@ class BulbManager {
     await this.setUpBulb();
   }
 
-  private getConfigData(): AppData {
-    let data: AppData;
+  private getConfigData(): BulbConfig {
+    let data: BulbConfig;
     try {
       data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'));
       log.info('Config data found with bulb IP: ', data.bulbIp);
@@ -63,47 +59,36 @@ class BulbManager {
     return data;
   }
 
-  private async searchBulb(configData: AppData): Promise<Bulb> {
+  private async searchBulb(): Promise<Bulb> {
     let isBulbFound = false;
     let bulb: Bulb = null;
 
     while (!isBulbFound) {
-      log.info('Looking for bulb...');
-      if (configData && configData.bulbIp) {
-        log.info('Using IP from config: ', configData.bulbIp);
+      log.info('Looking for bulb');
+      if (this.bulbIP) {
+        log.info('Trying to connect to bulb with IP: ', this.bulbIP);
+        const res = await discover({ addr: this.bulbIP, waitMs: DISCOVER_TIMEOUT });
 
-        // Without waitMs sometimes the bulb is not found
-        const res = await discover({ addr: configData.bulbIp, waitMs: DEFINED_DISCOVER_TIMEOUT });
-        if (res && res.length > 0) {
-          log.info('BULB FOUND:', res[0].address);
+        if (res.length > 0) {
           bulb = res[0];
-          configData.bulbIp = res[0].address;
           isBulbFound = true;
         } else {
-          log.warn('Could not find bulb at IP:', configData.bulbIp);
-        }
-      } else {
-        log.info('Searching for bulb on network...');
-        const res = await discover({});
-        if (res && res.length > 0) {
-          log.info('BULB FOUND:', res[0].address);
-          bulb = res[0];
-          configData.bulbIp = res[0].address;
-          isBulbFound = true;
-        } else {
-          log.warn('Could not find bulb on network');
+          log.error('Bulb not found with IP: ', this.bulbIP);
+          this.bulbIP = null;
         }
       }
 
-      if (!isBulbFound && configData) {
-        log.warn('Retrying to find bulb in 5 seconds...');
-
-        // Sleep for 5 seconds
-        await new Promise((resolve) => setTimeout(resolve, DISCOVER_DELAY));
-
-        // Reset bulb IP to avoid searching for the same bulb
-        configData.bulbIp = null;
+      if (!isBulbFound) {
+        const res = await discover({ waitMs: DISCOVER_TIMEOUT });
+        if (res.length > 0) {
+          bulb = res[0];
+          isBulbFound = true;
+        } else {
+          log.error('Bulb not found');
+        }
       }
+
+      log.info('Retrying to find bulb');
     }
 
     return bulb;
@@ -111,17 +96,18 @@ class BulbManager {
 
   private async setUpBulb() {
     const configData = this.getConfigData();
-    this.bulb = await this.searchBulb(configData);
+    this.bulbIP = configData.bulbIp;
+    this.bulb = await this.searchBulb();
 
     log.debug('Getting bulb state...');
     const pilot = (await this.bulb.getPilot()).result;
-    const config = (await this.bulb.sendRaw({
+    const bulbConfig = (await this.bulb.sendRaw({
       method: 'getSystemConfig',
       env: '',
       params: { mac: '', rssi: 0 },
     })) as systemConfig;
 
-    const configResult = config.result;
+    const configResult = bulbConfig.result;
     this.bulbState = {
       ...pilot,
       ...configResult,
@@ -131,7 +117,12 @@ class BulbManager {
       customColors: configData && configData.customColors ? configData.customColors : [],
     };
 
-    this.appData = configData;
+    this.appData = {
+      bulbIp: this.bulbState.ip,
+      bulbName: this.bulbState.name,
+      customColors: this.bulbState.customColors,
+    };
+    this.saveConfig();
 
     log.debug(this.window ? 'Current window is OK' : 'Current windows is NOT DEFINED');
     log.debug(this.bulbState ? 'Bulb state is OK' : 'Bulb state is NOT DEFINED');
@@ -175,9 +166,7 @@ class BulbManager {
   }
 
   public setIp(ip: string) {
-    this.appData.bulbIp = ip;
-    this.saveConfig();
-    this.setUpBulb();
+    this.bulbIP = ip;
   }
 
   @needsViewUpdate('set scene')

@@ -1,8 +1,8 @@
-import BulbType from '@dtypes/index.d.ts';
+import { BulbState } from './bulbState';
 
 export interface IElectronAPI {
-  onUpdateBulb: (callback: (bulb: BulbType) => void) => void;
-  getBulbWhenReady: () => Promise<BulbType>;
+  onUpdateBulb: (callback: (bulb: BulbState) => void) => void;
+  getBulbWhenReady: () => Promise<BulbState>;
   toggleBulb: () => void;
   setBrightness: (brightness: number) => void;
   setBulbName: (name: string) => void;
@@ -14,10 +14,4 @@ export interface IElectronAPI {
   editCustomColor: (colorId: number, colorName: string, colorHex: string) => void;
   removeCustomColor: (colorId: number) => void;
   getVersion: () => Promise<string>;
-}
-
-declare global {
-  interface Window {
-    electronAPI: IElectronAPI;
-  }
 }

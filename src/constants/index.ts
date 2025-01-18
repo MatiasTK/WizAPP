@@ -1,6 +1,6 @@
-import path from 'node:path';
-import { app, nativeImage } from 'electron';
 import icon from '@assets/icon.ico';
+import { app, nativeImage } from 'electron';
+import path from 'node:path';
 
 const ICON = nativeImage.createFromPath(path.join(__dirname, icon));
 const CONFIG = path.join(app.getPath('userData'), 'config.json');
@@ -11,17 +11,17 @@ const HIDE_MENU = true;
 const RELEASE_URL = 'https://api.github.com/repos/MatiasTK/WizAPP/releases/latest';
 const MAX_DEFAULT_COLORS = 33;
 const DISCOVER_DELAY = 5000;
-const DEFINED_DISCOVER_TIMEOUT = 2500;
+const DISCOVER_TIMEOUT = 5000;
 
 export {
-  ICON,
-  CONFIG,
-  MIN_WIDTH,
-  MIN_HEIGHT,
-  HIDE_MENU,
   AUTHOR_URL,
-  RELEASE_URL,
-  MAX_DEFAULT_COLORS,
+  CONFIG,
   DISCOVER_DELAY,
-  DEFINED_DISCOVER_TIMEOUT,
+  DISCOVER_TIMEOUT,
+  HIDE_MENU,
+  ICON,
+  MAX_DEFAULT_COLORS,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+  RELEASE_URL,
 };
