@@ -18,8 +18,8 @@
         <a href="#download-">Download</a> •
         <a href="#building-">Building</a> •
         <a href="#troubleshooting-">Troubleshooting</a> •
-        <a href="#stack-%EF%B8%8F">Stack</a> •
-        <a href="#responsibilities-">Responsibilities</a>
+        <a href="#roadmap-">Roadmap</a> •
+        <a href="#stack-%EF%B8%8F">Stack</a>
     </p>
 </div>
 
@@ -51,7 +51,18 @@ If you want to build the app yourself, you can do it by following these steps:
 
 ## Troubleshooting 🔨
 
-If the app have trouble discovering your bulbs, you can enter the IP manually. You can find the IP of your bulbs in the WiZ Android app.
+- The app can't discover the bulb automatically.
+  - Set the bulb ip manually. You can find the bulb ip in the [WiZ Mobile APP](https://play.google.com/store/apps/details?id=com.wizconnected.wiz2&pcampaignid=web_share),go to settings > Lights > Your bulb > Device Info > Detailed information.
+
+## Roadmap 🚀
+
+- [x] Refactor main process
+- [ ] Add support for more bulb models
+- [ ] Remade the UI using tailwindcss
+  - [ ] Light/Dark mode
+- [ ] Switch to electron builder
+  - [ ] Use inbuilt auto updater
+- [ ] Custom bulb temperature scene
 
 ## Stack 🛠️
 
