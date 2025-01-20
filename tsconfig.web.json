@@ -20,7 +20,7 @@
       "@i18n/*": ["src/i18n/*"],
       "@assets/*": ["src/renderer/src/assets/*"],
       "@constants/*": ["src/renderer/src/constants/*"],
-      "@lib/*": ["src/renderer/src/lib/*"],
+      "@resources/*": ["resources/*"],
       "@/types/*": ["src/types/*"],
       "@pages/*": ["src/renderer/src/pages/*"],
     }
