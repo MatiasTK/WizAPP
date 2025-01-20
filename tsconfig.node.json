@@ -1,0 +1,18 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*", "src/types/**/*", "src/lib/**/*", "src/i18n/**/*"],
+  "compilerOptions": {
+    "composite": true,
+    "experimentalDecorators": true,
+    "types": ["electron-vite/node"],
+    "baseUrl": ".",
+    "paths": {
+      "@resources/*": ["resources/*"],
+      "@lib/*": ["src/lib/*"],
+      "@/types/*": ["src/types/*"],
+      "@constants": ["src/main/constants/index"],
+      "@main/*" : ["src/main/*"],
+      "@i18n": ["src/i18n/index"],
+    }
+  }
+}

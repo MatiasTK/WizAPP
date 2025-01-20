@@ -1,0 +1,100 @@
+{
+  "lightTitle": "Lights",
+  "searchingBulb": {
+    "search": "Searching bulb...",
+    "notFound": "Can't find bulb?",
+    "manual": "Add it manually"
+  },
+  "ChangeBulbName": "Change Name",
+  "SaveChanges": "Save Changes",
+  "MadeBy": "Made by ",
+  "Scenes": "Scenes",
+  "Devices": "Devices",
+  "ip": {
+    "add": "Add a bulb",
+    "placeholder": "Enter IP",
+    "invalid": "Please provide a valid IP.",
+    "valid": "Looks good!"
+  },
+  "close": "Close",
+  "scenes": {
+    "static": {
+      "title": "Static",
+      "whites": "Whites",
+      "warmWhite": "Warm White",
+      "dayLight": "Day Light",
+      "coldWhite": "Cool White",
+      "functional": "Functional",
+      "nightLight": "Night Light",
+      "cozy": "Cozy",
+      "trueColors": "True Colors",
+      "relax": "Relax",
+      "focus": "Focus",
+      "tvTime": "TV Time",
+      "plantGrowth": "Plant Growth"
+    },
+    "dynamic": {
+      "title": "Dynamic",
+      "whites": "Whites",
+      "candleLight": "Candle Light",
+      "pulse": "Pulse",
+      "goldenWhite": "Golden White",
+      "steampunk": "Steampunk",
+      "color": "Color",
+      "fireplace": "Fireplace",
+      "fall": "Fall",
+      "club": "Club",
+      "sunset": "Sunset",
+      "romance": "Romance",
+      "party": "Party",
+      "pastelColors": "Pastel Colors",
+      "spring": "Spring",
+      "summer": "Summer",
+      "forest": "Forest",
+      "jungle": "Jungle",
+      "mojito": "Mojito",
+      "ocean": "Ocean",
+      "deepDive": "Deep Dive",
+      "christmas": "Christmas",
+      "halloween": "Halloween",
+      "progressive": "Progressive",
+      "bedtime": "Bedtime",
+      "wakeUp": "Wake Up"
+    },
+    "custom": {
+      "title": "Custom",
+      "customColors": "Custom Colors",
+      "new": "New",
+      "addColor": "Add a new custom color",
+      "name": "Name",
+      "namePlaceholder": "e.g Red",
+      "pickColor": "Pick a color",
+      "pickColorPlaceholder": "Choose your color",
+      "add": "Add",
+      "editColor": "Edit Color"
+    }
+  },
+  "remove": "Remove",
+  "device": {
+    "title": "Device Info",
+    "moduleName": "Module Name",
+    "ipAddress": "IP Address",
+    "port": "Port",
+    "macAddress": "MAC Address",
+    "status": "Status",
+    "sceneId": "Scene ID",
+    "brightness": "Brightness",
+    "firmwareVersion": "Firmware Version",
+    "homeId": "Home ID",
+    "roomId": "Room ID"
+  },
+  "tray": {
+    "show": "Show app",
+    "quit": "Quit",
+    "toggle": "Toggle Bulb"
+  },
+  "updateDialog": {
+    "title": "Update of WiZ App Available",
+    "message": "There is a new version available. Do you want to download"
+  }
+}

@@ -1,5 +1,5 @@
 export interface CustomColor {
-  id: number;
-  name: string;
-  hex: string;
+  id: number
+  name: string
+  hex: string
 }

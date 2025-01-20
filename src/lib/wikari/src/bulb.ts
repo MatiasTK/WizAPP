@@ -8,16 +8,16 @@ import {
 } from "./constants";
 import { checkType } from "./type-checker";
 import {
-	getPilotResponseTemplate,
+	GenericResponse,
 	GetPilotResponse,
+	getPilotResponseTemplate,
+	GetSceneArgs,
 	Message,
 	Pilot,
-	GetSceneArgs,
-	GenericResponse,
-	syncPilotResponseTemplate,
-	SyncPilotAckMsg,
 	setPilotResponseTemplate,
+	SyncPilotAckMsg,
 	SyncPilotResponse,
+	syncPilotResponseTemplate,
 } from "./types";
 import { getRandomMac, hexToRgb, ipAddress } from "./utils";
 import { WikariError, WikariErrorCode } from "./wikari-error";
@@ -386,6 +386,8 @@ export class Bulb {
 			if (Bulb.state == WikariState.AWAITING_RESPONSE && waitForResponse)
 				return getError("Already waiting on a response");
 		}
+
+		return undefined;
 	}
 
 	private sendWithWait(message: Message): Promise<GenericResponse> {

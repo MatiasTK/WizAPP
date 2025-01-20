@@ -1,7 +1,7 @@
-import { CustomColor } from './customColor';
+import { CustomColor } from './customColor'
 
 export interface BulbConfig {
-  bulbName: string;
-  bulbIp: string;
-  customColors: CustomColor[];
+  bulbName: string
+  bulbIp: string
+  customColors: CustomColor[]
 }

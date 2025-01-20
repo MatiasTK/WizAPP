@@ -57,16 +57,16 @@ type RequiredProperties<T extends TypeTemplate> = {
 	[K in keyof T as GetKey<T, K, true>]: T[K] extends TypeTemplate
 		? Expand<RequiredProperties<T[K]>>
 		: T[K][0] extends valueType
-		? valueTypeMap[T[K][0]]
-		: never;
+			? valueTypeMap[T[K][0]]
+			: never;
 };
 
 type OptionalProperties<T extends TypeTemplate> = {
 	[K in keyof T as GetKey<T, K, false>]?: T[K] extends TypeTemplate
 		? Expand<OptionalProperties<T[K]>>
 		: T[K][0] extends valueType
-		? valueTypeMap[T[K][0]]
-		: never;
+			? valueTypeMap[T[K][0]]
+			: never;
 };
 
 type NestedProperties<T extends TypeTemplate> = {

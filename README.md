@@ -60,9 +60,10 @@ If you want to build the app yourself, you can do it by following these steps:
 - [ ] Add support for more bulb models
 - [ ] Remade the UI using tailwindcss
   - [ ] Light/Dark mode
-- [ ] Switch to electron builder
-  - [ ] Use inbuilt auto updater
+- [x] Switch to electron builder
+  - [x] Use inbuilt auto updater
 - [ ] Custom bulb temperature scene
+- [ ] Reduce bundle size
 
 ## Stack 🛠️
 

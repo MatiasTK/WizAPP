@@ -1,9 +1,9 @@
-import { CONFIG, DISCOVER_TIMEOUT, MAX_DEFAULT_COLORS } from '@constants/index';
-import { BulbConfig, BulbState, systemConfig } from '@dtypes/index';
-import { Bulb, discover } from '@lib/wikari/src/mod';
-import { BrowserWindow } from 'electron';
-import log from 'electron-log';
-import fs from 'fs';
+import { BulbConfig, BulbState, systemConfig } from '@/types/index'
+import { CONFIG, DISCOVER_TIMEOUT, MAX_DEFAULT_COLORS } from '@constants'
+import { Bulb, discover } from '@lib/wikari/src/mod'
+import { BrowserWindow } from 'electron'
+import log from 'electron-log'
+import fs from 'fs'
 
 /**
     Decorator that updates the view after the method is executed.
@@ -11,215 +11,239 @@ import fs from 'fs';
 */
 function needsViewUpdate(actionName: string) {
   return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
-    const originalMethod = descriptor.value;
+    const originalMethod = descriptor.value
 
     descriptor.value = async function (...args: never[]) {
+      const instance = this as BulbManager
       try {
-        log.info('Bulb toggled');
-        await originalMethod.apply(this, args);
-        this.window.webContents.send('on-update-bulb', this.bulbState);
+        log.info('Bulb toggled')
+        await originalMethod.apply(this, args)
+        instance.window.webContents.send('on-update-bulb', instance.bulbState)
       } catch {
-        log.error(`Failed to ${actionName}, connection lost`);
-        await this.reconnectBulb();
+        log.error(`Failed to ${actionName}, connection lost`)
+        await instance.reconnectBulb()
       }
-    };
-  };
+    }
+  }
 }
 
 class BulbManager {
-  private bulb: Bulb;
+  private bulb: Bulb | null
   // Bulb state is the state of the bulb that is sent to the renderer process, it works as a cache to avoid sending requests to the bulb
-  private bulbState: BulbState;
-  private appData: BulbConfig;
-  private window: BrowserWindow;
-  private bulbIP: string;
+  public bulbState: BulbState | null
+  private appData: BulbConfig | null
+  public window: BrowserWindow
+  private bulbIP: string | null
 
   constructor(window: BrowserWindow) {
-    this.window = window;
-    this.init();
+    this.bulb = null
+    this.bulbState = null
+    this.appData = null
+    this.bulbIP = null
+
+    this.window = window
+    this.init()
   }
 
   private async init() {
-    await this.setUpBulb();
+    await this.setUpBulb()
   }
 
   private getConfigData(): BulbConfig {
-    let data: BulbConfig;
+    let data: BulbConfig
     try {
-      data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'));
-      log.info('Config data found with bulb IP: ', data.bulbIp);
+      data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'))
+      log.info('Config data found with bulb IP: ', data.bulbIp)
     } catch {
       data = {
-        bulbIp: null,
-        bulbName: null,
-        customColors: [],
-      };
-      log.warn('Config data not found, creating new config file...');
+        bulbIp: '',
+        bulbName: '',
+        customColors: []
+      }
+      log.warn('Config data not found, creating new config file...')
     }
-    return data;
+    return data
   }
 
   private async searchBulb(): Promise<Bulb> {
-    let isBulbFound = false;
-    let bulb: Bulb = null;
+    let isBulbFound = false
+    let bulb: Bulb | null = null
 
     while (!isBulbFound) {
-      log.info('Looking for bulb');
+      log.info('Looking for bulb')
       if (this.bulbIP) {
-        log.info('Trying to connect to bulb with IP: ', this.bulbIP);
-        const res = await discover({ addr: this.bulbIP, waitMs: DISCOVER_TIMEOUT });
+        log.info('Trying to connect to bulb with IP: ', this.bulbIP)
+        const res = await discover({ addr: this.bulbIP, waitMs: DISCOVER_TIMEOUT })
 
         if (res.length > 0) {
-          bulb = res[0];
-          isBulbFound = true;
+          bulb = res[0]
+          isBulbFound = true
         } else {
-          log.error('Bulb not found with IP: ', this.bulbIP);
-          this.bulbIP = null;
+          log.error('Bulb not found with IP: ', this.bulbIP)
+          this.bulbIP = null
         }
       }
 
       if (!isBulbFound) {
-        const res = await discover({ waitMs: DISCOVER_TIMEOUT });
+        const res = await discover({ waitMs: DISCOVER_TIMEOUT })
         if (res.length > 0) {
-          bulb = res[0];
-          isBulbFound = true;
+          bulb = res[0]
+          isBulbFound = true
         } else {
-          log.error('Bulb not found');
+          log.error('Bulb not found')
         }
       }
 
-      log.info('Retrying to find bulb');
+      log.info('Retrying to find bulb')
     }
 
-    return bulb;
+    return bulb as Bulb
   }
 
   private async setUpBulb() {
-    const configData = this.getConfigData();
-    this.bulbIP = configData.bulbIp;
-    this.bulb = await this.searchBulb();
+    const configData = this.getConfigData()
+    this.bulbIP = configData.bulbIp
+    this.bulb = await this.searchBulb()
 
-    log.debug('Getting bulb state...');
-    const pilot = (await this.bulb.getPilot()).result;
+    log.debug('Getting bulb state...')
+    const pilot = (await this.bulb.getPilot()).result
     const bulbConfig = (await this.bulb.sendRaw({
       method: 'getSystemConfig',
       env: '',
-      params: { mac: '', rssi: 0 },
-    })) as systemConfig;
+      params: { mac: '', rssi: 0 }
+    })) as systemConfig
 
-    const configResult = bulbConfig.result;
+    const configResult = bulbConfig.result
     this.bulbState = {
       ...pilot,
       ...configResult,
       ip: this.bulb.address,
       port: this.bulb.bulbPort,
       name: configData && configData.bulbName ? configData.bulbName : configResult.moduleName,
-      customColors: configData && configData.customColors ? configData.customColors : [],
-    };
+      customColors: configData && configData.customColors ? configData.customColors : []
+    }
 
     this.appData = {
       bulbIp: this.bulbState.ip,
       bulbName: this.bulbState.name,
-      customColors: this.bulbState.customColors,
-    };
-    this.saveConfig();
+      customColors: this.bulbState.customColors
+    }
+    this.saveConfig()
 
-    log.debug(this.window ? 'Current window is OK' : 'Current windows is NOT DEFINED');
-    log.debug(this.bulbState ? 'Bulb state is OK' : 'Bulb state is NOT DEFINED');
+    log.debug(this.window ? 'Current window is OK' : 'Current windows is NOT DEFINED')
+    log.debug(this.bulbState ? 'Bulb state is OK' : 'Bulb state is NOT DEFINED')
 
-    this.window.webContents.send('on-update-bulb', this.bulbState);
-    log.info('Sending bulb data to renderer process...');
+    this.window.webContents.send('on-update-bulb', this.bulbState)
+    log.info('Sending bulb data to renderer process...')
   }
 
   public async getBulbState() {
-    return this.bulbState;
+    return this.bulbState
   }
 
   private saveConfig() {
-    fs.writeFileSync(CONFIG, JSON.stringify(this.appData));
+    fs.writeFileSync(CONFIG, JSON.stringify(this.appData))
   }
 
-  private async reconnectBulb() {
-    this.bulbState = null;
-    this.bulb = null;
-    this.window.webContents.send('on-update-bulb', this.bulbState);
-    log.info('Reconnecting to bulb...');
-    await this.setUpBulb();
+  public async reconnectBulb() {
+    this.bulbState = null
+    this.bulb = null
+    this.window.webContents.send('on-update-bulb', this.bulbState)
+    log.info('Reconnecting to bulb...')
+    await this.setUpBulb()
   }
 
   @needsViewUpdate('toggle bulb')
   public async toggleBulb() {
-    await this.bulb.toggle();
-    this.bulbState.state = !this.bulbState.state;
+    if (!this.bulbState || !this.bulb) return
+
+    await this.bulb.toggle()
+    this.bulbState.state = !this.bulbState.state
   }
 
   @needsViewUpdate('set brightness')
   public async setBrightness(brightness: number) {
-    await this.bulb.brightness(brightness);
-    this.bulbState.dimming = brightness;
+    if (!this.bulbState || !this.bulb) return
+
+    await this.bulb.brightness(brightness)
+    this.bulbState.dimming = brightness
   }
 
   public setBulbName(name: string) {
-    this.bulbState.name = name;
-    this.appData.bulbName = name;
-    this.saveConfig();
+    if (!this.bulbState || !this.appData) return
+
+    this.bulbState.name = name
+    this.appData.bulbName = name
+    this.saveConfig()
   }
 
   public setIp(ip: string) {
-    this.bulbIP = ip;
+    this.bulbIP = ip
   }
 
   @needsViewUpdate('set scene')
   public async setScene(sceneId: number) {
-    this.bulbState.state = true;
-    await this.bulb.scene(sceneId);
-    this.bulbState.sceneId = sceneId;
+    if (!this.bulbState || !this.bulb) return
+
+    this.bulbState.state = true
+    await this.bulb.scene(sceneId)
+    this.bulbState.sceneId = sceneId
   }
 
   private getCustomColorNewId() {
-    if (this.bulbState.customColors.length === 0) return MAX_DEFAULT_COLORS;
+    if (!this.bulbState) return MAX_DEFAULT_COLORS
 
-    const ids = this.bulbState.customColors.map((color) => color.id);
-    return Math.max(...ids) + 1;
+    if (this.bulbState.customColors.length === 0) return MAX_DEFAULT_COLORS
+
+    const ids = this.bulbState.customColors.map((color) => color.id)
+    return Math.max(...ids) + 1
   }
 
   public async addCustomColor(colorName: string, colorHex: string) {
-    const newId = this.getCustomColorNewId();
-    this.bulbState.customColors.push({ id: newId, name: colorName, hex: colorHex });
-    this.appData.customColors = this.bulbState.customColors;
-    this.saveConfig();
+    if (!this.bulbState || !this.appData) return
+
+    const newId = this.getCustomColorNewId()
+    this.bulbState.customColors.push({ id: newId, name: colorName, hex: colorHex })
+    this.appData.customColors = this.bulbState.customColors
+    this.saveConfig()
   }
 
   @needsViewUpdate('set custom color')
   public async setCustomColor(colorId: number) {
-    const color = this.bulbState.customColors.find((c) => c.id === colorId);
-    if (!color) return;
-    this.bulbState.state = true;
-    this.bulbState.sceneId = colorId;
-    await this.bulb.color(color.hex as `#${string}`);
+    if (!this.bulbState || !this.bulb) return
+
+    const color = this.bulbState.customColors.find((c) => c.id === colorId)
+    if (!color) return
+    this.bulbState.state = true
+    this.bulbState.sceneId = colorId
+    await this.bulb.color(color.hex as `#${string}`)
   }
 
   public async editCustomColor(colorId: number, colorName: string, colorHex: string) {
-    const color = this.bulbState.customColors.find((c) => c.id === colorId);
-    if (!color) return;
-    color.name = colorName;
-    color.hex = colorHex;
-    this.appData.customColors = this.bulbState.customColors;
-    this.saveConfig();
+    if (!this.bulbState || !this.appData) return
+
+    const color = this.bulbState.customColors.find((c) => c.id === colorId)
+    if (!color) return
+    color.name = colorName
+    color.hex = colorHex
+    this.appData.customColors = this.bulbState.customColors
+    this.saveConfig()
   }
 
   public async removeCustomColor(colorId: number) {
-    this.bulbState.customColors = this.bulbState.customColors.filter((c) => c.id !== colorId);
-    this.appData.customColors = this.bulbState.customColors;
-    this.saveConfig();
+    if (!this.bulbState || !this.appData) return
+
+    this.bulbState.customColors = this.bulbState.customColors.filter((c) => c.id !== colorId)
+    this.appData.customColors = this.bulbState.customColors
+    this.saveConfig()
   }
 
   public endConnection() {
     if (this.bulb) {
-      this.bulb.closeConnection();
-      log.info('Connection with bulb closed');
+      this.bulb.closeConnection()
+      log.info('Connection with bulb closed')
     }
   }
 }
 
-export default BulbManager;
+export default BulbManager
