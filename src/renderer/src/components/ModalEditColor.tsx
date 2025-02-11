@@ -1,4 +1,4 @@
-import { BulbState } from '@/types/index'
+import { BulbState } from '@/types/bulbState'
 import { useBulb } from '@context/BulbContext'
 import { useEffect, useState } from 'react'
 import { Button, Form, Modal } from 'react-bootstrap'

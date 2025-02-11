@@ -1,4 +1,6 @@
-import { BulbConfig, BulbState, systemConfig } from '@/types/index'
+import { BulbConfig } from '@/types/bulbConfig'
+import { BulbState } from '@/types/bulbState'
+import { systemConfig } from '@/types/systemConfig'
 import { CONFIG, DISCOVER_TIMEOUT, MAX_DEFAULT_COLORS } from '@constants'
 import { Bulb, discover } from '@lib/wikari/src/mod'
 import { BrowserWindow } from 'electron'

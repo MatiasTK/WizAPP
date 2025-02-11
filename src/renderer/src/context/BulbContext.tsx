@@ -1,4 +1,4 @@
-import { BulbState } from '@/types/index'
+import { BulbState } from '@/types/bulbState'
 import log from 'electron-log/renderer'
 import { createContext, useContext, useEffect, useState } from 'react'
 

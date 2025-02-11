@@ -1,4 +1,4 @@
-import { BulbState } from '@/types/index'
+import { BulbState } from '@/types/bulbState'
 import ModalCreateColor from '@components/ModalCreateColor'
 import ModalEditColor from '@components/ModalEditColor'
 import { useBulb } from '@context/BulbContext'

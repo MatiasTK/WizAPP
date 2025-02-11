@@ -1,4 +1,4 @@
-import { BulbState } from '@/types/index'
+import { BulbState } from '@/types/bulbState'
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
 
