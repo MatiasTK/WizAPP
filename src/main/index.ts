@@ -18,6 +18,7 @@ function createWindow() {
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
     icon: ICON,
+    title: 'WiZ APP',
     autoHideMenuBar: HIDE_MENU,
     ...(process.platform === 'linux' ? { icon: ICON } : {}),
     webPreferences: {
@@ -57,7 +58,7 @@ if (!gotTheLock) {
     if (windows.length > 0) {
       const window = windows[0]
       if (window.isMinimized()) {
-        window.restore()
+        window.show()
       }
       window.focus()
     }

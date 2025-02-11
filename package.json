@@ -1,6 +1,6 @@
 {
   "name": "wiz_app",
-  "productName": "WiZApp",
+  "productName": "WiZ APP",
   "version": "3.0.0",
   "description": "💡 Simple desktop app to connect and control WiZ Bulbs",
   "main": "./out/main/index.js",

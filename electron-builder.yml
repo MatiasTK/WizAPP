@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: wiz-app
+appId: com.wiz.app
+productName: WiZ APP
 directories:
   buildResources: build
 files:
