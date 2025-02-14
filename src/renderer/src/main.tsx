@@ -1,4 +1,4 @@
-import 'bootstrap/dist/css/bootstrap.min.css'
+import '@fontsource-variable/inter'
 import './assets/main.css'
 
 import i18n from '@i18n/index'

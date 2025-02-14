@@ -1,137 +1,100 @@
-import IpModal from '@components/IpModal'
 import Sidebar from '@components/Sidebar'
-import { useBulb } from '@context/BulbContext'
+import AddDeviceModal from '@renderer/components/modals/AddDeviceModal'
+import DeleteDialog from '@renderer/components/modals/DeleteDialog'
+import EditNameModal from '@renderer/components/modals/EditNameModal'
+import KebabMenu from '@renderer/components/ui/KebabMenu'
+import PowerButton from '@renderer/components/ui/PowerButton'
+import { useBulbStore } from '@renderer/context/BulbStore'
 import { useState } from 'react'
-import { Button, Col, Container, FormCheck, FormControl, Row, Spinner } from 'react-bootstrap'
-import { useTranslation } from 'react-i18next'
-import { FaEdit } from 'react-icons/fa'
-import { FaFloppyDisk, FaLightbulb } from 'react-icons/fa6'
+import { LuCirclePlus, LuLoaderCircle, LuSquarePen, LuToggleLeft, LuTrash } from 'react-icons/lu'
 
 export default function Home() {
-  const { bulb, setBulb } = useBulb()
-  const [isEditActive, setIsEditActive] = useState(false)
-  const [showIpModal, setShowIpModal] = useState(false)
-  const [nameInput, setNameInput] = useState('')
-  const { t } = useTranslation()
+  const bulb = useBulbStore((state) => state.bulb)
+  const toggleBulb = useBulbStore((state) => state.toggleBulb)
 
-  const lightSwitchHandler = () => {
-    window.api.toggleBulb()
-    setBulb((prev) => {
-      return { ...prev, state: !prev.state }
-    })
+  const [isEditModalOpened, setIsEditModalOpened] = useState(false)
+  const [isDeleteDialogOpened, setIsDeleteDialogOpened] = useState(false)
+  const [isIpModalOpened, setIsIpModalOpened] = useState(false)
+
+  const handleToggleEditModal = () => {
+    setIsEditModalOpened((prev) => !prev)
   }
 
-  const handleCloseIpModal = () => {
-    setShowIpModal(false)
+  const handleToggleDeleteDialog = () => {
+    setIsDeleteDialogOpened((prev) => !prev)
   }
 
-  const handleChangeName = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if ((event.target as HTMLInputElement).value === '') return
-
-    if (event.key === 'Enter') {
-      setBulb((prev) => {
-        return { ...prev, name: (event.target as HTMLInputElement).value }
-      })
-
-      window.api.setBulbName((event.target as HTMLInputElement).value)
-      setIsEditActive(false)
-    }
+  const handleToggleIpModal = () => {
+    setIsIpModalOpened((prev) => !prev)
   }
 
-  const bulbElement = () => (
-    <Row>
-      <Col sm={6} style={{ maxWidth: '20rem' }}>
-        <div className="d-flex p-3 justify-content-between gap-3 align-items-center text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold fs-6">
-          <FaLightbulb size={35} />
-          {isEditActive ? (
-            <FormControl
-              type="text"
-              maxLength={15}
-              defaultValue={bulb.name}
-              onKeyUp={handleChangeName}
-              autoFocus
-              onChange={(e) => setNameInput(e.target.value)}
-              data-bs-theme="dark"
-            />
-          ) : (
-            <div className="d-flex justify-content-between flex-fill bulb gap-4">
-              <span>{bulb.name || bulb.moduleName}</span>
-              <FormCheck
-                id="lightSwitch"
-                type="switch"
-                checked={bulb.state}
-                onChange={lightSwitchHandler}
-              />
-            </div>
-          )}
+  const handleToggleBulb = () => {
+    toggleBulb()
+  }
+
+  const bulbCard = () => (
+    <div
+      className={`${bulb.state ? 'bg-primary' : 'bg-secondary'} rounded-lg py-3 px-4 w-48  transition-colors ease-in-out duration-300`}
+    >
+      <div className="animate-fade-in animate-steps-modern">
+        <p className="text-lg">{bulb.name}</p>
+        <span className="text-neutral-300">{bulb.state ? 'on' : 'off'}</span>
+
+        <div className="mt-4 flex justify-between items-center">
+          <PowerButton />
+          <KebabMenu items={menuItems} />
         </div>
-      </Col>
-    </Row>
+      </div>
+    </div>
   )
 
-  const editBtnHandler = () => {
-    setIsEditActive((prev) => !prev)
-    if (!isEditActive || nameInput === '') {
-      return
-    }
-
-    setBulb((prev) => {
-      return { ...prev, name: nameInput }
-    })
-
-    window.api.setBulbName(nameInput)
-  }
-
-  const searchingForBulbElement = () => (
-    <Row>
-      <Col sm={6} style={{ maxWidth: '20rem' }}>
-        <div className="d-flex p-3 justify-content-between align-items-center gap-2 text-white rounded bg-primary bg-opacity-25 border border-2 border-primary fw-bold">
-          <FaLightbulb size={35} />
-          <div className="d-flex justify-content-between flex-fill bulb align-items-center">
-            <span>{t('searchingBulb.search')}</span>
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
-          </div>
-        </div>
-        <div className="text-white fw-bold mt-3 ms-2 text-xs d-flex align-items-center justify-content-around">
-          <span>{t('searchingBulb.notFound')}</span>
-          <Button
-            className="text-decoration-none add p-0 m-0 border-0"
-            variant="link"
-            onClick={() => setShowIpModal(true)}
-          >
-            {t('searchingBulb.manual')}
-          </Button>
-        </div>
-      </Col>
-    </Row>
+  const searchBulbCard = () => (
+    <div className="bg-primary w-48 h-31 rounded-lg py-3 px-4 flex flex-col items-center justify-center transition-all duration-300">
+      <span className="animate-spin-clockwise animate-iteration-count-infinite animate-steps-modern animate-duration-800">
+        <LuLoaderCircle size={32} />
+      </span>
+      <p className="mt-2">Searching bulbs</p>
+    </div>
   )
+
+  const menuItems = [
+    {
+      label: 'Toggle',
+      icon: <LuToggleLeft size={20} />,
+      onClick: handleToggleBulb
+    },
+    {
+      label: 'Change name',
+      icon: <LuSquarePen size={20} />,
+      onClick: handleToggleEditModal
+    },
+    {
+      label: 'Delete',
+      icon: <LuTrash size={20} />,
+      onClick: handleToggleDeleteDialog
+    }
+  ]
 
   return (
-    <main className="d-flex flex-nowrap bg-main vh-100">
+    <main className="bg-[#1e1e1e] flex text-white nonSelectable">
       <Sidebar />
-      <Container fluid>
-        <Row>
-          <Col>
-            <h1 className="my-4 d-flex align-items-center justify-content-center">
-              <span className="text-white display-6 fw-bold me-2">{t('lightTitle')}</span>
-            </h1>
-          </Col>
-        </Row>
-        <Button
-          variant="primary"
-          className={`edit border-0 rounded-5 mb-3 p-2 px-4 ${
-            bulb ? '' : 'visually-hidden'
-          } d-flex align-items-center`}
-          onClick={editBtnHandler}
-        >
-          {isEditActive ? <FaFloppyDisk /> : <FaEdit />}
-          <span className="ms-1">{isEditActive ? t('SaveChanges') : t('ChangeBulbName')}</span>
-        </Button>
-        <div className="lights">{bulb ? bulbElement() : searchingForBulbElement()}</div>
-      </Container>
-      <IpModal show={showIpModal} handleClose={handleCloseIpModal} />
+      <section className="py-8 px-8">
+        <h1 className="font-bold text-4xl">Dashboard</h1>
+        <article className="mt-14 grid grid-cols-3 gap-8">
+          {bulb ? bulbCard() : searchBulbCard()}
+          <button
+            className="bg-secondary-400/50 w-48 rounded-lg py-2 px-4 flex flex-col items-center cursor-pointer justify-center hover:bg-secondary-400/75 transition-all duration-300"
+            onClick={handleToggleIpModal}
+          >
+            <LuCirclePlus size={32} strokeWidth={1} />
+            <p className="mt-2 text-lg">Add device</p>
+          </button>
+        </article>
+      </section>
+
+      {bulb && <EditNameModal isOpen={isEditModalOpened} onClose={handleToggleEditModal} />}
+      {bulb && <DeleteDialog isOpen={isDeleteDialogOpened} onClose={handleToggleDeleteDialog} />}
+      {bulb && <AddDeviceModal isOpen={isIpModalOpened} onClose={handleToggleIpModal} />}
     </main>
   )
 }
