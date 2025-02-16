@@ -1,4 +1,3 @@
-import Sidebar from '@components/Sidebar'
 import AddDeviceModal from '@renderer/components/modals/AddDeviceModal'
 import DeleteDialog from '@renderer/components/modals/DeleteDialog'
 import EditNameModal from '@renderer/components/modals/EditNameModal'
@@ -76,25 +75,21 @@ export default function Home() {
   ]
 
   return (
-    <main className="bg-[#1e1e1e] flex text-white nonSelectable">
-      <Sidebar />
-      <section className="py-8 px-8">
-        <h1 className="font-bold text-4xl">Dashboard</h1>
-        <article className="mt-14 grid grid-cols-3 gap-8">
-          {bulb ? bulbCard() : searchBulbCard()}
-          <button
-            className="bg-secondary-400/50 w-48 rounded-lg py-2 px-4 flex flex-col items-center cursor-pointer justify-center hover:bg-secondary-400/75 transition-all duration-300"
-            onClick={handleToggleIpModal}
-          >
-            <LuCirclePlus size={32} strokeWidth={1} />
-            <p className="mt-2 text-lg">Add device</p>
-          </button>
-        </article>
-      </section>
-
+    <section className="py-8 px-8">
+      <h1 className="font-bold text-4xl">Dashboard</h1>
+      <article className="mt-14 grid grid-cols-3 gap-8">
+        {bulb ? bulbCard() : searchBulbCard()}
+        <button
+          className="bg-secondary-400/50 w-48 rounded-lg py-2 px-4 flex flex-col items-center cursor-pointer justify-center hover:bg-secondary-400/75 transition-all duration-300"
+          onClick={handleToggleIpModal}
+        >
+          <LuCirclePlus size={32} strokeWidth={1} />
+          <p className="mt-2 text-lg">Add device</p>
+        </button>
+      </article>
       {bulb && <EditNameModal isOpen={isEditModalOpened} onClose={handleToggleEditModal} />}
       {bulb && <DeleteDialog isOpen={isDeleteDialogOpened} onClose={handleToggleDeleteDialog} />}
       {bulb && <AddDeviceModal isOpen={isIpModalOpened} onClose={handleToggleIpModal} />}
-    </main>
+    </section>
   )
 }

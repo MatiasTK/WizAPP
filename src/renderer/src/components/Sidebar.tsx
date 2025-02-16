@@ -26,7 +26,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="h-screen bg-sidebar-bg p-4 w-56 flex flex-col">
+    <aside className="bg-sidebar-bg p-4 w-56 flex flex-col min-h-screen max-h-screen fixed">
       <img src={logo} alt="Wiz logo banner" width={100} className="mx-auto" />
       <Separator />
 

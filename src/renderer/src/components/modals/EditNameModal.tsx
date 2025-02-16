@@ -9,7 +9,7 @@ type EditNameModalProps = {
 
 export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
   const bulb = useBulbStore((state) => state.bulb)
-  const setBulb = useBulbStore((state) => state.setBulb)
+  const setBulbName = useBulbStore((state) => state.setBulbName)
 
   const [error, setError] = useState<string | null>(null)
 
@@ -41,7 +41,7 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
       return
     }
 
-    setBulb({ ...bulb, name })
+    setBulbName(name)
 
     window.api.setBulbName(name)
 
