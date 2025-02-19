@@ -25,4 +25,5 @@ export interface BulbState {
   port: number
   name: string
   customColors: CustomColor[]
+  favoriteColors: Array<number>
 }

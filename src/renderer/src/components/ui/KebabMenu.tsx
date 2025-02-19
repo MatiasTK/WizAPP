@@ -24,11 +24,22 @@ export default function KebabMenu({ items }: KebabMenuProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const handleToggle = (e) => {
+    e.stopPropagation()
+    setIsOpen((prev) => !prev)
+  }
+
+  const handleClickItem = (e, item) => {
+    e.stopPropagation()
+    item.onClick()
+    setIsOpen(false)
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button
         className="cursor-pointer text-neutral-300 hover:text-white transition-all duration-300 rounded-xl p-1"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
       >
         <LuEllipsisVertical size={20} strokeWidth={2.5} />
       </button>
@@ -38,10 +49,7 @@ export default function KebabMenu({ items }: KebabMenuProps) {
           {items.map((item, index) => (
             <button
               key={index}
-              onClick={() => {
-                item.onClick()
-                setIsOpen(false)
-              }}
+              onClick={(e) => handleClickItem(e, item)}
               className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-secondary-600 cursor-pointer"
             >
               {item.icon ? (

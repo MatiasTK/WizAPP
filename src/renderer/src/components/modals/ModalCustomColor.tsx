@@ -1,18 +1,27 @@
+import { CustomColor } from '@/types/customColor'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Modal from '../ui/Modal'
 
 type ModalCustomColorProps = {
   isOpen: boolean
   onClose: () => void
+  editingColor?: CustomColor
 }
 
-export default function ModalCustomColor({ isOpen, onClose }: ModalCustomColorProps) {
+export default function ModalCustomColor({ isOpen, onClose, editingColor }: ModalCustomColorProps) {
   const addCustomColor = useBulbStore((state) => state.addCustomColor)
+  const editCustomColor = useBulbStore((state) => state.editCustomColor)
+
   const [error, setError] = useState<string | null>(null)
-  const [color, setColor] = useState<string>('#000000')
+  const [color, setColor] = useState<string>(editingColor?.hex || '#000000')
   const colorInputRef = useRef<HTMLInputElement>(null)
   const areErrors = error !== null
+
+  useEffect(() => {
+    setColor(editingColor?.hex || '#000000')
+    setError(null)
+  }, [editingColor])
 
   const resetError = () => {
     if (areErrors) {
@@ -37,7 +46,12 @@ export default function ModalCustomColor({ isOpen, onClose }: ModalCustomColorPr
       return
     }
 
-    addCustomColor(name, color)
+    if (editingColor) {
+      editCustomColor(editingColor.id, name, color)
+    } else {
+      addCustomColor(name, color)
+    }
+
     onClose()
   }
 
@@ -52,6 +66,7 @@ export default function ModalCustomColor({ isOpen, onClose }: ModalCustomColorPr
           id="name"
           name="name"
           placeholder="e.g. Red"
+          defaultValue={editingColor?.name}
           onChange={resetError}
           className={`w-full bg-secondary-700 text-white p-2 rounded-lg border ${areErrors ? 'border-red-500' : 'border-neutral-600'} focus:outline-none focus:border-primary focus:border-2 `}
         />

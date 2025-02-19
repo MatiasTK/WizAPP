@@ -1,3 +1,5 @@
+import CustomScene from '@renderer/components/CustomScene'
+import FavoriteScene from '@renderer/components/FavoriteScene'
 import Scene from '@renderer/components/Scene'
 import useDebounce from '@renderer/hooks/useDebounce'
 import { useState } from 'react'
@@ -47,7 +49,12 @@ export default function Scenes() {
 
   const renderScenes = () => {
     if (selectedTag === 'All') {
-      return <Scene nameFilter={debouncedSearch} onEmpty={(msg) => setNotFoundMessage(msg)} />
+      return (
+        <>
+          <Scene nameFilter={debouncedSearch} onEmpty={(msg) => setNotFoundMessage(msg)} />
+          <CustomScene nameFilter={debouncedSearch} onEmpty={(msg) => setNotFoundMessage(msg)} />
+        </>
+      )
     } else if (selectedTag === 'Static') {
       return (
         <Scene
@@ -66,10 +73,10 @@ export default function Scenes() {
       )
     } else if (selectedTag === 'Custom') {
       return (
-        <Scene
-          type="custom"
+        <CustomScene
           nameFilter={debouncedSearch}
           onEmpty={(msg) => setNotFoundMessage(msg)}
+          showBtnButton
         />
       )
     }
@@ -81,10 +88,7 @@ export default function Scenes() {
     <section className="py-8 px-8 w-full">
       <h1 className="font-bold text-4xl">Scenes</h1>
       <article className="mt-8 w-full">
-        <h2 className="text-2xl font-semibold">Favorites</h2>
-        <p className="my-12 text-center text-neutral-500 font-bold text-sm">
-          You haven't selected any favorite scene yet, try selecting one
-        </p>
+        <FavoriteScene />
       </article>
 
       <article className="mt-8 w-full">
@@ -120,7 +124,7 @@ export default function Scenes() {
         {renderScenes()}
       </article>
       {areScenesEmpty && (
-        <p className="mt-8 text-center text-neutral-500 font-bold text-sm">{notFoundMessage}</p>
+        <p className="mt-12 text-center text-neutral-500 font-bold text-sm">{notFoundMessage}</p>
       )}
     </section>
   )

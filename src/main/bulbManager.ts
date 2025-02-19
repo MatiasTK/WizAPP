@@ -60,7 +60,8 @@ class BulbManager {
       data = {
         bulbIp: '',
         bulbName: '',
-        customColors: []
+        customColors: [],
+        favoriteColors: []
       }
       log.warn('Config data not found, creating new config file...')
     }
@@ -122,13 +123,15 @@ class BulbManager {
       ip: this.bulb.address,
       port: this.bulb.bulbPort,
       name: configData && configData.bulbName ? configData.bulbName : configResult.moduleName,
-      customColors: configData && configData.customColors ? configData.customColors : []
+      customColors: configData && configData.customColors ? configData.customColors : [],
+      favoriteColors: configData && configData.favoriteColors ? configData.favoriteColors : []
     }
 
     this.appData = {
       bulbIp: this.bulbState.ip,
       bulbName: this.bulbState.name,
-      customColors: this.bulbState.customColors
+      customColors: this.bulbState.customColors,
+      favoriteColors: []
     }
     this.saveConfig()
 
@@ -171,6 +174,7 @@ class BulbManager {
     this.bulbState.dimming = brightness
   }
 
+  @needsViewUpdate('set bulb name')
   public setBulbName(name: string) {
     if (!this.bulbState || !this.appData) return
 
@@ -201,6 +205,21 @@ class BulbManager {
     return Math.max(...ids) + 1
   }
 
+  @needsViewUpdate('toggle favorite color')
+  public async toggleFavoriteColor(colorId: number) {
+    if (!this.bulbState || !this.appData) return
+
+    if (this.bulbState.favoriteColors.includes(colorId)) {
+      this.bulbState.favoriteColors = this.bulbState.favoriteColors.filter((id) => id !== colorId)
+    } else {
+      this.bulbState.favoriteColors.push(colorId)
+    }
+
+    this.appData.favoriteColors = this.bulbState.favoriteColors
+    this.saveConfig()
+  }
+
+  @needsViewUpdate('add custom color')
   public async addCustomColor(colorName: string, colorHex: string) {
     if (!this.bulbState || !this.appData) return
 
@@ -221,6 +240,7 @@ class BulbManager {
     await this.bulb.color(color.hex as `#${string}`)
   }
 
+  @needsViewUpdate('edit custom color')
   public async editCustomColor(colorId: number, colorName: string, colorHex: string) {
     if (!this.bulbState || !this.appData) return
 
@@ -232,11 +252,16 @@ class BulbManager {
     this.saveConfig()
   }
 
+  @needsViewUpdate('remove custom color')
   public async removeCustomColor(colorId: number) {
     if (!this.bulbState || !this.appData) return
 
     this.bulbState.customColors = this.bulbState.customColors.filter((c) => c.id !== colorId)
     this.appData.customColors = this.bulbState.customColors
+
+    this.bulbState.favoriteColors = this.bulbState.favoriteColors.filter((id) => id !== colorId)
+    this.appData.favoriteColors = this.bulbState.favoriteColors
+
     this.saveConfig()
   }
 

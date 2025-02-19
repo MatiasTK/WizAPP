@@ -44,6 +44,10 @@ const registerIPCEvents = (BulbManager: BulbManager) => {
     await BulbManager.removeCustomColor(colorId)
   })
 
+  ipcMain.on('toggle-favorite-color', async (_, colorId) => {
+    await BulbManager.toggleFavoriteColor(colorId)
+  })
+
   ipcMain.handle('get-bulb', () => {
     return BulbManager.getBulbState()
   })
