@@ -6,7 +6,7 @@ type EditNameModalProps = {
   onClose: () => void
 }
 
-export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
+export default function AddDeviceModal({ isOpen, onClose }: EditNameModalProps) {
   const [error, setError] = useState<string | null>(null)
   const areErrors = error !== null
 
@@ -49,7 +49,7 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add device">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Device">
       <form onSubmit={handleSubmit}>
         <label htmlFor="ip" className="text-neutral-400 block mb-2">
           IP

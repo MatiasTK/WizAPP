@@ -77,7 +77,7 @@ export default function Home() {
   return (
     <section className="py-8 px-8">
       <h1 className="font-bold text-4xl">Dashboard</h1>
-      <article className="mt-14 grid grid-cols-3 gap-8">
+      <article className="mt-14 grid grid-cols-3 gap-8 w-fit">
         {bulb ? bulbCard() : searchBulbCard()}
         <button
           className="bg-secondary-400/50 w-48 rounded-lg py-2 px-4 flex flex-col items-center cursor-pointer justify-center hover:bg-secondary-400/75 transition-all duration-300"
@@ -88,8 +88,16 @@ export default function Home() {
         </button>
       </article>
       {bulb && <EditNameModal isOpen={isEditModalOpened} onClose={handleToggleEditModal} />}
-      {bulb && <DeleteDialog isOpen={isDeleteDialogOpened} onClose={handleToggleDeleteDialog} />}
-      {bulb && <AddDeviceModal isOpen={isIpModalOpened} onClose={handleToggleIpModal} />}
+      {bulb && (
+        <DeleteDialog
+          isOpen={isDeleteDialogOpened}
+          onClose={handleToggleDeleteDialog}
+          title="Delete Bulb"
+          description="Are you sure you want to delete this bulb?"
+          onConfirm={() => console.log('Delete bulb')}
+        />
+      )}
+      <AddDeviceModal isOpen={isIpModalOpened} onClose={handleToggleIpModal} />
     </section>
   )
 }

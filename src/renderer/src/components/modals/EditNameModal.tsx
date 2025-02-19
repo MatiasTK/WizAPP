@@ -57,7 +57,7 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit bulb name">
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Bulb Name">
       <form onSubmit={handleSubmit}>
         <label htmlFor="name" className="text-neutral-400 block mb-2">
           New name
