@@ -9,7 +9,7 @@ type ModalCustomColorProps = {
   editingColor?: CustomColor
 }
 
-export default function ModalCustomColor({ isOpen, onClose, editingColor }: ModalCustomColorProps) {
+export default function CustomColorModal({ isOpen, onClose, editingColor }: ModalCustomColorProps) {
   const addCustomColor = useBulbStore((state) => state.addCustomColor)
   const editCustomColor = useBulbStore((state) => state.editCustomColor)
 

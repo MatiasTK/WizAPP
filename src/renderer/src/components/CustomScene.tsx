@@ -3,8 +3,8 @@ import { useBulbStore } from '@renderer/context/BulbStore'
 import { useState } from 'react'
 import { LuHeart, LuPlus, LuSquarePen, LuTrash } from 'react-icons/lu'
 import CustomSceneItem from './CustomSceneItem'
+import CustomColorModal from './modals/CustomColorModal'
 import DeleteDialog from './modals/DeleteDialog'
-import ModalCustomColor from './modals/ModalCustomColor'
 
 type CustomSceneProps = {
   showBtnButton?: boolean
@@ -60,8 +60,9 @@ export default function CustomScene({
   const renderAddCustomSceneBtn = () => (
     <button
       className="h-full rounded-2xl px-4 py-6 lg:px-6 border-2 border-dashed border-primary text-primary hover:bg-primary hover:text-white font-medium flex items-center
-  justify-center gap-2 cursor-pointer transition-all duration-200"
+  justify-center gap-2 cursor-pointer transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-primary"
       onClick={handleAddCustomColor}
+      disabled={!bulb}
     >
       <LuPlus size={24} />
       <span>Add custom</span>
@@ -72,14 +73,14 @@ export default function CustomScene({
     setIsCustomColorModalOpen(false)
   }
 
-  if (!bulb.customColors || bulb.customColors.length === 0) {
+  if (!bulb || !bulb.customColors || bulb.customColors.length === 0) {
     onEmpty('No custom colors found, try adding one first')
     if (showBtnButton) {
       return (
         <>
           {renderAddCustomSceneBtn()}
 
-          <ModalCustomColor
+          <CustomColorModal
             isOpen={isCustomColorModalOpen}
             onClose={handleModalClose}
             editingColor={selectedColor}
@@ -137,7 +138,7 @@ export default function CustomScene({
           kebabMenuOptions={getMenuOptions(scene)}
         />
       ))}
-      <ModalCustomColor
+      <CustomColorModal
         isOpen={isCustomColorModalOpen}
         onClose={() => setIsCustomColorModalOpen(false)}
         editingColor={selectedColor}

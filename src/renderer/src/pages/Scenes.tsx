@@ -1,12 +1,14 @@
 import CustomScene from '@renderer/components/CustomScene'
 import FavoriteScene from '@renderer/components/FavoriteScene'
 import Scene from '@renderer/components/Scene'
+import { useBulbStore } from '@renderer/context/BulbStore'
 import useDebounce from '@renderer/hooks/useDebounce'
 import { useState } from 'react'
 import { LuX } from 'react-icons/lu'
 
 export default function Scenes() {
   // TODO: Debounce value
+  const bulb = useBulbStore((state) => state.bulb)
   const [searchValue, setSearchValue] = useState('')
   const [notFoundMessage, setNotFoundMessage] = useState('')
   const debouncedSearch = useDebounce(searchValue, 500)

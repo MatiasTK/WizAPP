@@ -19,7 +19,7 @@ export default function Scene({ type, nameFilter, onEmpty }: Scene) {
     !isFilteringByName || scene.name.toLowerCase().includes(nameFilter!.toLowerCase())
 
   const filteredScenes = scenes.filter(filterByType).filter(filterByName)
-  const customScenes = bulb.customColors
+  const customScenes = bulb ? bulb.customColors : []
 
   const areScenesEmpty = filteredScenes.length === 0 && customScenes.length === 0
 

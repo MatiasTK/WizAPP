@@ -5,15 +5,17 @@ import SceneItem from './SceneItem'
 export default function FavoriteScene() {
   const bulb = useBulbStore((state) => state.bulb)
 
-  const { favoriteColors, customColors } = bulb
-
-  const filteredFavorites = scenes.filter((scene) => favoriteColors.includes(scene.id))
-  const filteredCustomColors = customColors.filter((color) => favoriteColors.includes(color.id))
+  const filteredFavorites = bulb
+    ? scenes.filter((scene) => bulb.favoriteColors.includes(scene.id))
+    : []
+  const filteredCustomColors = bulb
+    ? bulb.customColors.filter((color) => bulb.favoriteColors.includes(color.id))
+    : []
 
   return (
     <>
       <h2 className="text-2xl font-semibold">Favorites</h2>
-      {favoriteColors.length > 0 ? (
+      {bulb && bulb.favoriteColors.length > 0 ? (
         <article className="mt-8 w-full grid grid-cols-3 gap-x-4 gap-y-4 lg:gap-y-6 lg:grid-cols-4 xl:grid-cols-5">
           {filteredFavorites.map((color) => (
             <SceneItem id={color.id} name={color.name} icon={color.icon} key={color.id} />

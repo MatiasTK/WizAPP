@@ -12,7 +12,7 @@ export default function SceneItem({ id, name, icon }: SceneItemProps) {
   const setScene = useBulbStore((state) => state.setScene)
   const toggleFavoriteColor = useBulbStore((state) => state.toggleFavoriteColor)
 
-  const active = bulb.sceneId === id
+  const active = bulb ? bulb.sceneId === id : false
 
   const handleClick = () => {
     setScene(id)
@@ -23,19 +23,21 @@ export default function SceneItem({ id, name, icon }: SceneItemProps) {
     toggleFavoriteColor(id)
   }
 
-  const isFavorite = bulb.favoriteColors.includes(id)
+  const isFavorite = bulb ? bulb.favoriteColors.includes(id) : false
 
   return (
     <button
-      className={`flex items-center justify-between cursor-pointer ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl px-4 py-6 2xl:px-6 text-nowrap transition-colors`}
+      className={`flex items-center justify-between cursor-pointer ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl px-4 py-6 2xl:px-6 text-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
       onClick={handleClick}
+      disabled={!bulb}
     >
       <div className="flex items-center">
         {icon}
         <span className="text-white ms-2 font-medium text-sm lg:text-base">{name}</span>
       </div>
       <button
-        className={` cursor-pointer ms-2 ${isFavorite ? 'text-alert hover:text-neutral-300' : 'text-neutral-300 hover:text-alert'} transition-colors duration-300`}
+        className={` cursor-pointer ms-2 ${isFavorite ? 'text-alert hover:text-neutral-300' : 'text-neutral-300 hover:text-alert'} transition-colors duration-300 disabled:cursor-not-allowed`}
+        disabled={!bulb}
         onClick={handleAddFavorite}
       >
         <LuHeart size={20} fill={isFavorite ? 'currentColor' : 'none'} />

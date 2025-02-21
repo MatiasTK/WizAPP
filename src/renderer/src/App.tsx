@@ -10,6 +10,10 @@ const router = createHashRouter([
       {
         path: '/scenes',
         element: <Scenes />
+      },
+      {
+        path: '/information',
+        element: <Information />
       }
     ]
   }
@@ -18,6 +22,7 @@ const router = createHashRouter([
 import { createHashRouter, RouterProvider } from 'react-router'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import Information from './pages/Information'
 import Scenes from './pages/Scenes'
 
 function App(): JSX.Element {
