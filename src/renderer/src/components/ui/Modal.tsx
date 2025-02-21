@@ -44,11 +44,11 @@ const Modal = ({
 
       {/* Modal */}
       <div
-        className={`relative z-50 ${maxWidth} w-full bg-secondary-800 text-white rounded-lg shadow-xl animate-steps-modern animate-fade-in-down animate-duration-fast`}
+        className={`relative z-50 ${maxWidth} w-full bg-secondary-800 text-white rounded-xl shadow-xl animate-steps-modern animate-fade-in-down animate-duration-fast px-2 py-1`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4">
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-2xl font-semibold">{title}</h2>
           {showCloseButton && (
             <button
               onClick={onClose}

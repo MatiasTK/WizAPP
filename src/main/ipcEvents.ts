@@ -1,15 +1,11 @@
-import { AUTHOR_URL } from '@constants'
 import i18n from '@i18n'
 import BulbManager from '@main/bulbManager'
 import { app, ipcMain, shell } from 'electron'
+import { autoUpdater } from 'electron-updater'
 
 const registerIPCEvents = (BulbManager: BulbManager) => {
   ipcMain.on('toggle-bulb-state', async () => {
     await BulbManager.toggleBulb()
-  })
-
-  ipcMain.on('visit-author', () => {
-    shell.openExternal(AUTHOR_URL)
   })
 
   ipcMain.on('set-brightness', async (_, brightness) => {
@@ -48,8 +44,22 @@ const registerIPCEvents = (BulbManager: BulbManager) => {
     await BulbManager.toggleFavoriteColor(colorId)
   })
 
+  ipcMain.on('open-app-folder', () => {
+    shell.openPath(app.getPath('userData'))
+  })
+
   ipcMain.handle('get-bulb', () => {
     return BulbManager.getBulbState()
+  })
+
+  ipcMain.handle('check-for-updates', async () => {
+    await autoUpdater.checkForUpdatesAndNotify()
+
+    autoUpdater.on('update-available', () => {
+      return true
+    })
+
+    return false
   })
 
   ipcMain.handle('get-language', () => {

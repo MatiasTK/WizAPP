@@ -31,7 +31,7 @@ export default function Sidebar() {
     return (
       <li>
         <button
-          className="flex w-full gap-2 items-center transition duration-200 py-2 px-4 rounded-lg hover:scale-105 hover:bg-secondary"
+          className="flex w-full gap-2 items-center transition duration-200 py-2 px-4 rounded-lg hover:scale-105 hover:bg-secondary cursor-pointer"
           aria-label={label}
           onClick={onClick}
         >

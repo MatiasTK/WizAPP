@@ -13,12 +13,12 @@ export default function Information() {
 
   const renderCardInfo = () => (
     <article className="mt-14 flex bg-secondary-700 rounded-xl px-6 py-5 flex-col w-fit shadow-lg">
-      <div className="flex items-center gap-4">
-        <LuLightbulb size={36} strokeWidth={1} />
-        <h2 className="text-2xl font-semibold">Bedroom</h2>
+      <div className="flex items-center gap-2">
+        <LuLightbulb size={32} strokeWidth={1} />
+        <h2 className="text-2xl lg:text-2xl font-semibold">Bedroom</h2>
       </div>
 
-      <div className="mt-4 text-lg leading-normal">
+      <div className="mt-4 lg:text-lg leading-normal">
         {renderLabel('Module Name', bulb.moduleName)}
         {renderLabel('IP Address', bulb.ip)}
         {renderLabel('Port', bulb.port)}
