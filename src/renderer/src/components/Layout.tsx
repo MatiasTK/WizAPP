@@ -1,4 +1,5 @@
 import Sidebar from '@components/ui/Sidebar'
+import { ToastContainer } from '@components/ui/Toast'
 import { Outlet } from 'react-router'
 
 export default function Layout() {
@@ -9,6 +10,8 @@ export default function Layout() {
       <main className="bg-main-bg text-white nonSelectable grow-1 pl-56 min-h-screen">
         <Outlet />
       </main>
+
+      <ToastContainer />
     </div>
   )
 }

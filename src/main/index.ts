@@ -6,7 +6,7 @@ import registerIPCEvents from '@main/ipcEvents'
 import initializeLanguage from '@main/localization'
 import initializeLogger from '@main/logger'
 import createTray from '@main/tray'
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
 import log from 'electron-log'
 import { join } from 'path'
 
@@ -30,11 +30,8 @@ function createWindow() {
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    // Timeout to avoid blank flash
-    setTimeout(() => {
-      mainWindow.show()
-    }, 500)
+  ipcMain.on('show-window', () => {
+    mainWindow.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -91,10 +88,17 @@ if (!gotTheLock) {
 
     const mainWindow = createWindow()
 
+    // Disable menu completely (prevents showing menu when Alt or Ctrl is pressed)
+    if (HIDE_MENU && process.platform !== 'darwin') {
+      Menu.setApplicationMenu(null)
+    }
+
     const bulbHelper = new BulbManager(mainWindow)
     registerIPCEvents(bulbHelper)
 
-    createTray(mainWindow, app, bulbHelper)
+    mainWindow.once('ready-to-show', () => {
+      createTray(mainWindow, app, bulbHelper)
+    })
 
     mainWindow.on('close', () => {
       log.info('Closing app...')

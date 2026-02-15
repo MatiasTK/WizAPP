@@ -7,9 +7,10 @@ type KebabMenuProps = {
     icon?: ReactNode
     onClick: () => void
   }[]
+  onOpenChange?: (isOpen: boolean) => void
 }
 
-export default function KebabMenu({ items }: KebabMenuProps) {
+export default function KebabMenu({ items, onOpenChange }: KebabMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ right: false, bottom: false })
   const menuRef = useRef<HTMLDivElement>(null)
@@ -26,6 +27,10 @@ export default function KebabMenu({ items }: KebabMenuProps) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    onOpenChange?.(isOpen)
+  }, [isOpen, onOpenChange])
 
   useEffect(() => {
     if (isOpen && buttonRef.current && dropdownRef.current) {

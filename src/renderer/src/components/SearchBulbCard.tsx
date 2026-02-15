@@ -5,7 +5,7 @@ import { LuLoaderCircle } from 'react-icons/lu'
 export default function SearchBulbCard() {
   const { t } = useTranslation()
   return (
-    <Card className="w-48 h-31 flex flex-col items-center justify-center py-3 px-4">
+    <Card className="w-full h-31 flex flex-col items-center justify-center py-3 px-4">
       <span className="animate-spin-clockwise animate-iteration-count-infinite animate-steps-modern animate-duration-800">
         <LuLoaderCircle size={36} />
       </span>

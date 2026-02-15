@@ -1,12 +1,18 @@
-import { BulbConfig } from '@/types/bulbConfig'
+import { AppConfig, BulbConfigEntry } from '@/types/bulbConfig'
 import { systemConfig } from '@/types/systemConfig'
 import { CONFIG, DISCOVER_TIMEOUT } from '@constants'
 import { Bulb, discover, SCENES } from '@lib/wikari/src/mod'
 import { MAX_DEFAULT_COLORS } from '@shared/constants'
 import { BulbState } from '@shared/types/bulbState'
+import { MultiBulbState } from '@shared/types/multiBulbState'
+import { ToastMessage } from '@shared/types/toastMessage'
+import { randomUUID } from 'crypto'
 import { BrowserWindow } from 'electron'
 import log from 'electron-log'
 import fs from 'fs'
+
+const MAX_DISCOVERY_RETRIES = 3
+const DISCOVERY_RETRY_DELAY_MS = 5000
 
 /**
     Decorator that updates the view after the method is executed.
@@ -19,346 +25,555 @@ function needsViewUpdate(actionName: string) {
     descriptor.value = async function (...args: never[]) {
       const instance = this as BulbManager
       try {
-        log.info('Bulb toggled')
+        log.info(`Executing: ${actionName}`)
         await originalMethod.apply(this, args)
-        instance.window.webContents.send('on-update-bulb', instance.bulbState)
-      } catch {
-        log.error(`Failed to ${actionName}, connection lost`)
-        await instance.reconnectBulb()
+        instance.sendStateToRenderer()
+      } catch (error) {
+        log.error(`Failed to ${actionName}:`, error)
+        // Try to reconnect the active bulb
+        const activeBulb = instance.getActiveBulb()
+        if (activeBulb) {
+          await instance.reconnectBulb(activeBulb.ip)
+        }
       }
     }
   }
 }
 
 class BulbManager {
-  private bulb: Bulb | null
-  // Bulb state is the state of the bulb that is sent to the renderer process, it works as a cache to avoid sending requests to the bulb
-  public bulbState: BulbState | null
-  private appData: BulbConfig | null
+  // Map of connected bulbs keyed by IP
+  private bulbs: Map<string, Bulb> = new Map()
+  private bulbStates: Map<string, BulbState> = new Map()
+
+  // App-level config
+  private appData: AppConfig
+
+  // Active bulb
+  private activeBulbIp: string | null = null
+
+  // Discovery state
+  private isDiscovering: boolean = false
+  private discoveryFailed: boolean = false
+
+  // Window reference
   public window: BrowserWindow
-  private bulbIP: string | null
 
   constructor(window: BrowserWindow) {
-    this.bulb = null
-    this.bulbState = null
-    this.appData = null
-    this.bulbIP = null
-
     this.window = window
+    this.appData = this.getConfigData()
     this.init()
   }
 
   private async init() {
-    await this.setUpBulb()
+    await this.discoverBulbs()
   }
 
-  private getConfigData(): BulbConfig {
-    let data: BulbConfig
+  // --- Config ---
+
+  private getConfigData(): AppConfig {
     try {
-      data = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'))
-      log.info('Config data found with bulb IP: ', data.bulbIp)
+      const raw = JSON.parse(fs.readFileSync(CONFIG, 'utf-8'))
+
+      // Validate that the config has the expected shape
+      if (
+        raw &&
+        Array.isArray(raw.bulbs) &&
+        Array.isArray(raw.customColors) &&
+        Array.isArray(raw.favoriteColors)
+      ) {
+        log.info('Valid config found with', raw.bulbs.length, 'bulb entries')
+        return raw as AppConfig
+      }
+
+      log.warn('Config format does not match expected shape, overwriting with fresh config')
     } catch {
-      data = {
-        bulbIp: '',
-        bulbName: '',
-        customColors: [],
-        favoriteColors: [
-          SCENES['Warm White'],
-          SCENES['Daylight'],
-          SCENES['Night Light'],
-          SCENES['Cozy']
-        ]
-      }
-      log.warn('Config data not found, creating new config file...')
-    }
-    return data
-  }
-
-  private async searchBulb(): Promise<Bulb> {
-    let isBulbFound = false
-    let bulb: Bulb | null = null
-    let retryCount = 0
-    const MAX_RETRIES = 20
-    const RETRY_DELAY_MS = 3000
-
-    while (!isBulbFound && retryCount < MAX_RETRIES) {
-      log.info('Looking for bulb')
-      // Try with specific IP first if available
-      if (this.bulbIP) {
-        log.info('Trying to connect to bulb with IP: ', this.bulbIP)
-        try {
-          const res = await discover({ addr: this.bulbIP, waitMs: DISCOVER_TIMEOUT })
-
-          if (res.length > 0) {
-            bulb = res[0]
-            isBulbFound = true
-            log.info('Bulb found with IP: ', this.bulbIP)
-          } else {
-            log.warn('Bulb not found with IP: ', this.bulbIP, ' - Will try network discovery')
-            this.bulbIP = null
-          }
-        } catch (error) {
-          log.error('Error discovering bulb with IP: ', error)
-          this.bulbIP = null
-        }
-      }
-
-      // If not found with IP, try network discovery
-      if (!isBulbFound) {
-        try {
-          const res = await discover({ waitMs: DISCOVER_TIMEOUT })
-          if (res.length > 0) {
-            bulb = res[0]
-            isBulbFound = true
-            log.info('Bulb found via network discovery')
-          } else {
-            log.error('Bulb not found')
-          }
-        } catch (error) {
-          log.error('Error during network discovery: ', error)
-        }
-      }
-
-      // Only retry if bulb wasn't found
-      if (!isBulbFound) {
-        retryCount++
-        if (retryCount < MAX_RETRIES) {
-          log.info(`Retrying to find bulb (${retryCount}/${MAX_RETRIES})`)
-          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
-        } else {
-          log.error('Max retries reached. Could not find bulb.')
-          throw new Error('Bulb not found after maximum retries')
-        }
-      }
+      log.warn('Config not found or unreadable, creating new config')
     }
 
-    return bulb as Bulb
-  }
-
-  private async setUpBulb() {
-    try {
-      const configData = this.getConfigData()
-      this.bulbIP = configData.bulbIp
-      this.bulb = await this.searchBulb()
-
-      log.debug('Getting bulb state...')
-      const pilot = (await this.bulb.getPilot()).result
-      const bulbConfig = (await this.bulb.sendRaw({
-        method: 'getSystemConfig',
-        env: '',
-        params: { mac: '', rssi: 0 }
-      })) as systemConfig
-
-      const configResult = bulbConfig.result
-      this.bulbState = {
-        ...pilot,
-        ...configResult,
-        ip: this.bulb.address,
-        port: this.bulb.bulbPort,
-        name: configData && configData.bulbName ? configData.bulbName : configResult.moduleName,
-        customColors: configData && configData.customColors ? configData.customColors : [],
-        favoriteColors: configData && configData.favoriteColors ? configData.favoriteColors : []
-      }
-
-      this.appData = {
-        bulbIp: this.bulbState.ip,
-        bulbName: this.bulbState.name,
-        customColors: this.bulbState.customColors,
-        favoriteColors: this.bulbState.favoriteColors
-      }
-      this.saveConfig()
-
-      log.debug(this.window ? 'Current window is OK' : 'Current windows is NOT DEFINED')
-      log.debug(this.bulbState ? 'Bulb state is OK' : 'Bulb state is NOT DEFINED')
-
-      this.window.webContents.send('on-update-bulb', this.bulbState)
-      log.info('Sending bulb data to renderer process...')
-    } catch (error) {
-      log.error('Failed to setup bulb: ', error)
-      this.bulbState = null
-      this.bulb = null
-      this.window.webContents.send('on-update-bulb', this.bulbState)
-      throw error
+    // Return fresh config
+    return {
+      bulbs: [],
+      activeBulbIp: null,
+      customColors: [],
+      favoriteColors: [
+        SCENES['Warm White'],
+        SCENES['Daylight'],
+        SCENES['Night Light'],
+        SCENES['Cozy']
+      ]
     }
-  }
-
-  public async getBulbState() {
-    return this.bulbState
   }
 
   private saveConfig() {
+    // Rebuild bulbs entries from current state
+    const bulbEntries: BulbConfigEntry[] = []
+    for (const [ip, state] of this.bulbStates) {
+      bulbEntries.push({
+        bulbIp: ip,
+        bulbName: state.name
+      })
+    }
+
+    this.appData.bulbs = bulbEntries
+    this.appData.activeBulbIp = this.activeBulbIp
     fs.writeFileSync(CONFIG, JSON.stringify(this.appData))
   }
 
   private deleteConfig() {
-    fs.unlinkSync(CONFIG)
+    try {
+      fs.unlinkSync(CONFIG)
+    } catch {
+      log.warn('Config file not found to delete')
+    }
   }
 
-  public async reconnectBulb() {
-    // Close existing connection before reconnecting
-    if (this.bulb) {
-      try {
-        this.bulb.closeConnection()
-        log.info('Closed previous bulb connection')
-      } catch (error) {
-        log.warn('Error closing previous connection: ', error)
+  // --- Discovery ---
+
+  async discoverBulbs() {
+    this.isDiscovering = true
+    this.discoveryFailed = false
+    this.sendStateToRenderer()
+
+    const savedIps = this.appData.bulbs.map((b) => b.bulbIp)
+
+    // Phase 1: Try saved IPs from config
+    if (savedIps.length > 0) {
+      log.info('Phase 1: Trying', savedIps.length, 'saved IPs from config')
+
+      for (let attempt = 0; attempt < MAX_DISCOVERY_RETRIES; attempt++) {
+        for (const ip of savedIps) {
+          if (this.bulbs.has(ip)) continue // Already connected
+
+          try {
+            const res = await discover({ addr: ip, waitMs: DISCOVER_TIMEOUT })
+            if (res.length > 0) {
+              await this.connectBulb(res[0], ip)
+            }
+          } catch (error) {
+            log.warn('Error discovering bulb at IP:', ip, error)
+          }
+        }
+
+        // If we found at least one, we're good
+        if (this.bulbs.size > 0) {
+          log.info('Phase 1: Connected to', this.bulbs.size, 'bulb(s) from saved IPs')
+          break
+        }
+
+        if (attempt < MAX_DISCOVERY_RETRIES - 1) {
+          log.info(`Phase 1: Retry ${attempt + 1}/${MAX_DISCOVERY_RETRIES}`)
+          await this.delay(DISCOVERY_RETRY_DELAY_MS)
+        }
       }
     }
 
-    this.bulbState = null
-    this.bulb = null
-    this.window.webContents.send('on-update-bulb', this.bulbState)
-    log.info('Reconnecting to bulb...')
+    // Phase 2: General broadcast (only if no bulbs found from saved IPs)
+    if (this.bulbs.size === 0) {
+      log.info('Phase 2: Trying general broadcast discovery')
 
+      for (let attempt = 0; attempt < MAX_DISCOVERY_RETRIES; attempt++) {
+        try {
+          const res = await discover({ waitMs: DISCOVER_TIMEOUT })
+          for (const bulb of res) {
+            const ip = bulb.address
+            if (!this.bulbs.has(ip)) {
+              await this.connectBulb(bulb, ip)
+            }
+          }
+        } catch (error) {
+          log.error('Error during broadcast discovery:', error)
+        }
+
+        if (this.bulbs.size > 0) {
+          log.info('Phase 2: Found', this.bulbs.size, 'bulb(s) via broadcast')
+          break
+        }
+
+        if (attempt < MAX_DISCOVERY_RETRIES - 1) {
+          log.info(`Phase 2: Retry ${attempt + 1}/${MAX_DISCOVERY_RETRIES}`)
+          await this.delay(DISCOVERY_RETRY_DELAY_MS)
+        }
+      }
+    }
+
+    // Finalize discovery
+    this.isDiscovering = false
+
+    if (this.bulbs.size === 0) {
+      this.discoveryFailed = true
+      log.error('Discovery failed: no bulbs found after all retries')
+      this.sendToast({
+        id: randomUUID(),
+        message: 'toast.discoveryFailed',
+        type: 'error',
+        autoDismiss: false,
+        retryAction: 'retry-discovery'
+      })
+    }
+
+    // Set active bulb
+    if (this.bulbs.size > 0 && !this.activeBulbIp) {
+      // Try to restore from config, otherwise pick the first one
+      if (this.appData.activeBulbIp && this.bulbStates.has(this.appData.activeBulbIp)) {
+        this.activeBulbIp = this.appData.activeBulbIp
+      } else {
+        this.activeBulbIp = this.bulbStates.keys().next().value ?? null
+      }
+    }
+
+    this.saveConfig()
+    this.sendStateToRenderer()
+  }
+
+  private async connectBulb(bulb: Bulb, ip: string) {
     try {
-      await this.setUpBulb()
+      const state = await this.setUpSingleBulb(bulb, ip)
+      this.bulbs.set(ip, bulb)
+      this.bulbStates.set(ip, state)
+
+      // If this is the first bulb, set it as active
+      if (!this.activeBulbIp) {
+        this.activeBulbIp = ip
+      }
+
+      log.info('Connected to bulb at', ip, '- Name:', state.name)
+      this.sendStateToRenderer()
     } catch (error) {
-      log.error('Failed to reconnect to bulb: ', error)
+      log.error('Failed to set up bulb at', ip, ':', error)
     }
   }
 
-  @needsViewUpdate('toggle bulb')
-  public async toggleBulb() {
-    if (!this.bulbState || !this.bulb) return
+  private async setUpSingleBulb(bulb: Bulb, ip: string): Promise<BulbState> {
+    const pilot = (await bulb.getPilot()).result
+    const bulbConfig = (await bulb.sendRaw({
+      method: 'getSystemConfig',
+      env: '',
+      params: { mac: '', rssi: 0 }
+    })) as systemConfig
 
-    await this.bulb.toggle()
-    this.bulbState.state = !this.bulbState.state
+    const configResult = bulbConfig.result
+
+    // Find saved name from config
+    const savedEntry = this.appData.bulbs.find((b) => b.bulbIp === ip)
+    const name = savedEntry?.bulbName || configResult.moduleName
+
+    return {
+      ...pilot,
+      ...configResult,
+      ip: ip,
+      port: bulb.bulbPort,
+      name: name,
+      customColors: this.appData.customColors,
+      favoriteColors: this.appData.favoriteColors
+    }
+  }
+
+  // --- State management ---
+
+  public getActiveBulb(): BulbState | null {
+    if (!this.activeBulbIp) return null
+    return this.bulbStates.get(this.activeBulbIp) ?? null
+  }
+
+  private getActiveBulbInstance(): Bulb | null {
+    if (!this.activeBulbIp) return null
+    return this.bulbs.get(this.activeBulbIp) ?? null
+  }
+
+  public getMultiBulbState(): MultiBulbState {
+    return {
+      bulbs: Array.from(this.bulbStates.values()),
+      activeBulb: this.getActiveBulb(),
+      isDiscovering: this.isDiscovering,
+      discoveryFailed: this.discoveryFailed
+    }
+  }
+
+  public sendStateToRenderer() {
+    this.window.webContents.send('on-update-bulb', this.getMultiBulbState())
+  }
+
+  private sendToast(toast: ToastMessage) {
+    this.window.webContents.send('on-show-toast', toast)
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  // --- Public actions: Multi-bulb ---
+
+  public setActiveBulb(ip: string) {
+    if (!this.bulbStates.has(ip)) {
+      log.warn('Cannot set active bulb: IP not found:', ip)
+      return
+    }
+    this.activeBulbIp = ip
+    this.saveConfig()
+    this.sendStateToRenderer()
+  }
+
+  @needsViewUpdate('toggle bulb by IP')
+  public async toggleBulbByIp(ip: string) {
+    const bulb = this.bulbs.get(ip)
+    const state = this.bulbStates.get(ip)
+    if (!bulb || !state) return
+
+    await bulb.toggle()
+    state.state = !state.state
+  }
+
+  public async addBulbByIp(ip: string) {
+    // Check if already connected
+    if (this.bulbs.has(ip)) {
+      log.info('Bulb at', ip, 'already exists, ignoring')
+      this.sendToast({
+        id: randomUUID(),
+        message: 'toast.addDuplicate',
+        type: 'info',
+        autoDismiss: true
+      })
+      return
+    }
+
+    try {
+      const res = await discover({ addr: ip, waitMs: DISCOVER_TIMEOUT })
+      if (res.length > 0) {
+        await this.connectBulb(res[0], ip)
+        this.saveConfig()
+
+        this.sendToast({
+          id: randomUUID(),
+          message: 'toast.addSuccess',
+          type: 'success',
+          autoDismiss: true
+        })
+      } else {
+        this.sendToast({
+          id: randomUUID(),
+          message: 'toast.addFailed',
+          type: 'error',
+          autoDismiss: true
+        })
+      }
+    } catch (error) {
+      log.error('Failed to add bulb by IP:', ip, error)
+      this.sendToast({
+        id: randomUUID(),
+        message: 'toast.addFailed',
+        type: 'error',
+        autoDismiss: true
+      })
+    }
+  }
+
+  public async retryDiscovery() {
+    // Clear previous state
+    this.bulbs.clear()
+    this.bulbStates.clear()
+    this.activeBulbIp = null
+    this.discoveryFailed = false
+
+    await this.discoverBulbs()
+  }
+
+  public async reconnectBulb(ip: string) {
+    // Remove from maps
+    this.bulbs.delete(ip)
+    this.bulbStates.delete(ip)
+
+    // If this was the active bulb, reassign
+    if (this.activeBulbIp === ip) {
+      this.activeBulbIp = this.bulbStates.keys().next().value ?? null
+    }
+
+    this.sendStateToRenderer()
+
+    // Try to reconnect
+    try {
+      const res = await discover({ addr: ip, waitMs: DISCOVER_TIMEOUT })
+      if (res.length > 0) {
+        await this.connectBulb(res[0], ip)
+        this.saveConfig()
+      }
+    } catch (error) {
+      log.error('Failed to reconnect to bulb at', ip, ':', error)
+    }
+  }
+
+  // --- Public actions: Active bulb operations ---
+
+  @needsViewUpdate('toggle active bulb')
+  public async toggleBulb() {
+    const bulb = this.getActiveBulbInstance()
+    const state = this.getActiveBulb()
+    if (!bulb || !state) return
+
+    await bulb.toggle()
+    state.state = !state.state
   }
 
   @needsViewUpdate('set brightness')
   public async setBrightness(brightness: number) {
-    if (!this.bulbState || !this.bulb) return
+    const bulb = this.getActiveBulbInstance()
+    const state = this.getActiveBulb()
+    if (!bulb || !state) return
 
-    await this.bulb.brightness(brightness)
-    this.bulbState.dimming = brightness
+    await bulb.brightness(brightness)
+    state.dimming = brightness
   }
 
   @needsViewUpdate('set bulb name')
-  public setBulbName(name: string) {
-    if (!this.bulbState || !this.appData) return
+  public setBulbName(name: string, ip?: string) {
+    const targetIp = ip || this.activeBulbIp
+    if (!targetIp) return
 
-    this.bulbState.name = name
-    this.appData.bulbName = name
+    const state = this.bulbStates.get(targetIp)
+    if (!state) return
+
+    state.name = name
     this.saveConfig()
-  }
-
-  public setIp(ip: string) {
-    this.bulbIP = ip
   }
 
   @needsViewUpdate('set scene')
   public async setScene(sceneId: number) {
-    if (!this.bulbState || !this.bulb) return
+    const bulb = this.getActiveBulbInstance()
+    const state = this.getActiveBulb()
+    if (!bulb || !state) return
 
-    this.bulbState.state = true
-    await this.bulb.scene(sceneId)
-    this.bulbState.sceneId = sceneId
+    state.state = true
+    await bulb.scene(sceneId)
+    state.sceneId = sceneId
   }
 
   private getCustomColorNewId() {
-    if (!this.bulbState) return MAX_DEFAULT_COLORS
+    if (this.appData.customColors.length === 0) return MAX_DEFAULT_COLORS
 
-    if (this.bulbState.customColors.length === 0) return MAX_DEFAULT_COLORS
-
-    const ids = this.bulbState.customColors.map((color) => color.id)
+    const ids = this.appData.customColors.map((color) => color.id)
     return Math.max(...ids) + 1
   }
 
   @needsViewUpdate('toggle favorite color')
   public async toggleFavoriteColor(colorId: number) {
-    if (!this.bulbState || !this.appData) return
-
-    if (this.bulbState.favoriteColors.includes(colorId)) {
-      this.bulbState.favoriteColors = this.bulbState.favoriteColors.filter((id) => id !== colorId)
+    if (this.appData.favoriteColors.includes(colorId)) {
+      this.appData.favoriteColors = this.appData.favoriteColors.filter((id) => id !== colorId)
     } else {
-      this.bulbState.favoriteColors.push(colorId)
+      this.appData.favoriteColors.push(colorId)
     }
-
-    this.appData.favoriteColors = this.bulbState.favoriteColors
+    this.syncGlobalColorsToStates()
     this.saveConfig()
   }
 
   @needsViewUpdate('add custom color')
   public async addCustomColor(colorName: string, colorHex: string) {
-    if (!this.bulbState || !this.appData) return
-
     const newId = this.getCustomColorNewId()
-    this.bulbState.customColors.push({ id: newId, name: colorName, hex: colorHex })
-    this.appData.customColors = this.bulbState.customColors
+    this.appData.customColors.push({ id: newId, name: colorName, hex: colorHex })
+    this.syncGlobalColorsToStates()
     this.saveConfig()
   }
 
   @needsViewUpdate('set custom color')
   public async setCustomColor(colorId: number) {
-    if (!this.bulbState || !this.bulb) return
+    const bulb = this.getActiveBulbInstance()
+    const state = this.getActiveBulb()
+    if (!bulb || !state) return
 
-    const color = this.bulbState.customColors.find((c) => c.id === colorId)
+    const color = this.appData.customColors.find((c) => c.id === colorId)
     if (!color) return
-    this.bulbState.state = true
-    this.bulbState.sceneId = colorId
-    await this.bulb.color(color.hex as `#${string}`)
+
+    state.state = true
+    state.sceneId = colorId
+    await bulb.color(color.hex as `#${string}`)
   }
 
   @needsViewUpdate('edit custom color')
   public async editCustomColor(colorId: number, colorName: string, colorHex: string) {
-    if (!this.bulbState || !this.appData) return
-
-    const color = this.bulbState.customColors.find((c) => c.id === colorId)
+    const color = this.appData.customColors.find((c) => c.id === colorId)
     if (!color) return
+
     color.name = colorName
     color.hex = colorHex
-    this.appData.customColors = this.bulbState.customColors
+    this.syncGlobalColorsToStates()
     this.saveConfig()
   }
 
   @needsViewUpdate('remove custom color')
   public async removeCustomColor(colorId: number) {
-    if (!this.bulbState || !this.appData) return
-
-    this.bulbState.customColors = this.bulbState.customColors.filter((c) => c.id !== colorId)
-    this.appData.customColors = this.bulbState.customColors
-
-    this.bulbState.favoriteColors = this.bulbState.favoriteColors.filter((id) => id !== colorId)
-    this.appData.favoriteColors = this.bulbState.favoriteColors
-
+    this.appData.customColors = this.appData.customColors.filter((c) => c.id !== colorId)
+    this.appData.favoriteColors = this.appData.favoriteColors.filter((id) => id !== colorId)
+    this.syncGlobalColorsToStates()
     this.saveConfig()
-  }
-
-  @needsViewUpdate('delete bulb')
-  public deleteBulb() {
-    this.bulbState = null
-    this.bulb = null
-    this.window.webContents.send('on-update-bulb', this.bulbState)
-    log.info('Bulb deleted')
-    this.saveConfig()
-    this.init()
   }
 
   @needsViewUpdate('set favorite colors order')
   public async setFavoriteColorsOrder(favoriteColors: number[]) {
-    if (!this.bulbState || !this.appData) return
-
-    log.info('Setting favorite colors order: ', favoriteColors)
-    this.bulbState.favoriteColors = favoriteColors
+    log.info('Setting favorite colors order:', favoriteColors)
     this.appData.favoriteColors = favoriteColors
+    this.syncGlobalColorsToStates()
     this.saveConfig()
   }
 
-  @needsViewUpdate('end connection')
+  /**
+   * Sync global customColors and favoriteColors into all BulbState instances
+   * so the renderer always has up-to-date data.
+   */
+  private syncGlobalColorsToStates() {
+    for (const state of this.bulbStates.values()) {
+      state.customColors = this.appData.customColors
+      state.favoriteColors = this.appData.favoriteColors
+    }
+  }
+
+  // --- Delete operations ---
+
+  @needsViewUpdate('delete bulb')
+  public deleteBulb(ip?: string) {
+    const targetIp = ip || this.activeBulbIp
+    if (!targetIp) return
+
+    // Do NOT call closeConnection() here — it uses static state and would
+    // close the global UDP socket, breaking ALL bulb instances.
+    // Just remove from our maps.
+    this.bulbs.delete(targetIp)
+    this.bulbStates.delete(targetIp)
+
+    // Remove from saved config so re-adding works clean
+    this.appData.bulbs = this.appData.bulbs.filter((b) => b.bulbIp !== targetIp)
+
+    // Reassign active if needed
+    if (this.activeBulbIp === targetIp) {
+      this.activeBulbIp = this.bulbStates.keys().next().value ?? null
+    }
+
+    log.info('Bulb deleted:', targetIp)
+    this.saveConfig()
+  }
+
+  @needsViewUpdate('delete profile')
   public deleteProfile() {
-    this.bulbState = null
-    this.bulb = null
-    this.appData = null
-    this.window.webContents.send('on-update-bulb', this.bulbState)
+    // Do NOT call endConnection() here — it closes the static UDP socket,
+    // making it impossible to create new Bulb instances afterwards.
+    // Just clear our maps and let the socket stay open.
+    this.bulbs.clear()
+    this.bulbStates.clear()
+    this.activeBulbIp = null
+
     log.info('Profile deleted')
     this.deleteConfig()
+    this.appData = this.getConfigData()
     this.init()
   }
 
+  // --- Cleanup ---
+
   public endConnection() {
-    if (this.bulb) {
-      this.bulb.closeConnection()
-      log.info('Connection with bulb closed')
+    for (const [ip, bulb] of this.bulbs) {
+      try {
+        bulb.closeConnection()
+        log.info('Closed connection for bulb at', ip)
+      } catch {
+        // ignore
+      }
     }
   }
 }

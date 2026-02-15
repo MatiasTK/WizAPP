@@ -19,7 +19,7 @@ export default function CustomScene({
   onFilter
 }: CustomSceneProps) {
   const { t } = useTranslation()
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const removeCustomColor = useBulbStore((state) => state.removeCustomColor)
   const toggleFavoriteColor = useBulbStore((state) => state.toggleFavoriteColor)
 
@@ -75,6 +75,26 @@ export default function CustomScene({
     setIsCustomColorModalOpen(false)
   }
 
+  const isFilteringByName = nameFilter && nameFilter.length > 0
+
+  const safeCustomColors = bulb?.customColors || []
+
+  const filterByName = (color: CustomColor) =>
+    !isFilteringByName || color.name.toLowerCase().includes(nameFilter!.toLowerCase())
+
+  const customScenes = safeCustomColors.filter(filterByName)
+  const areScenesEmpty = customScenes.length === 0
+
+  useEffect(() => {
+    if (!bulb || !bulb.customColors || bulb.customColors.length === 0) return
+
+    if (areScenesEmpty && showBtnButton) {
+      onFilter(false)
+    } else {
+      onFilter(true)
+    }
+  }, [areScenesEmpty, showBtnButton, onFilter, bulb])
+
   if (!bulb || !bulb.customColors || bulb.customColors.length === 0) {
     if (showBtnButton) {
       return (
@@ -92,22 +112,6 @@ export default function CustomScene({
 
     return null
   }
-
-  const isFilteringByName = nameFilter && nameFilter.length > 0
-
-  const filterByName = (color: CustomColor) =>
-    !isFilteringByName || color.name.toLowerCase().includes(nameFilter!.toLowerCase())
-
-  const customScenes = bulb.customColors.filter(filterByName)
-  const areScenesEmpty = customScenes.length === 0
-
-  useEffect(() => {
-    if (areScenesEmpty && showBtnButton) {
-      onFilter(false)
-    } else {
-      onFilter(true)
-    }
-  }, [areScenesEmpty, showBtnButton, onFilter])
 
   if (areScenesEmpty && showBtnButton) {
     return null

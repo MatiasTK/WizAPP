@@ -19,7 +19,7 @@ export default function CustomSceneItem({
   color,
   kebabMenuOptions
 }: CustomSceneItemProps) {
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const setCustomColor = useBulbStore((state) => state.setCustomColor)
 
   const handleSetCustomColor = () => {

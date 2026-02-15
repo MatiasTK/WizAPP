@@ -1,17 +1,21 @@
 import Modal from '@components/ui/Modal'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { BulbState } from '@shared/types/bulbState'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 type EditNameModalProps = {
   isOpen: boolean
   onClose: () => void
+  targetBulb?: BulbState | null
 }
 
-export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
-  const bulb = useBulbStore((state) => state.bulb)
+export default function EditNameModal({ isOpen, onClose, targetBulb }: EditNameModalProps) {
+  const activeBulb = useBulbStore((state) => state.activeBulb)
   const { t } = useTranslation()
-  const setBulbName = useBulbStore((state) => state.setBulbName)
+
+  // Use the explicitly passed target bulb, or fall back to active
+  const bulb = targetBulb ?? activeBulb
 
   const [error, setError] = useState<string | null>(null)
 
@@ -26,7 +30,7 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
       return false
     }
 
-    if (name === bulb.name) {
+    if (bulb && name === bulb.name) {
       setError(t('errors.sameName'))
       return false
     }
@@ -43,9 +47,8 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
       return
     }
 
-    setBulbName(name)
-
-    window.api.setBulbName(name)
+    // Pass the target bulb's IP so the backend renames the right bulb
+    window.api.setBulbName(name, bulb?.ip)
 
     onClose()
   }
@@ -58,6 +61,8 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
     }
   }
 
+  if (!bulb) return null
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('home.edit.title')}>
       <form onSubmit={handleSubmit}>
@@ -69,6 +74,7 @@ export default function EditNameModal({ isOpen, onClose }: EditNameModalProps) {
           id="name"
           name="name"
           defaultValue={bulb.name}
+          key={bulb.ip}
           onChange={resetError}
           placeholder='e.g. "Living room"'
           className={`w-full bg-secondary-700 text-white p-2 rounded-lg border border-neutral-600 focus:outline-none focus:border-primary focus:border-2  ${areErrors ? 'border-red-500' : 'border-neutral-600'}`}

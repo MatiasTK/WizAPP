@@ -12,7 +12,7 @@ type SortableSceneItemProps = {
 }
 
 export default function SortableSceneItem({ id, name, icon, hex }: SortableSceneItemProps) {
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const setScene = useBulbStore((state) => state.setScene)
   const toggleFavoriteColor = useBulbStore((state) => state.toggleFavoriteColor)
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -49,9 +49,9 @@ export default function SortableSceneItem({ id, name, icon, hex }: SortableScene
       className={`flex items-center ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl pr-4 py-6 text-nowrap transition-colors ${!bulb ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       <div className="px-2 text-neutral-300 relative">
-        <div 
-          {...listeners} 
-          onClick={(e) => e.stopPropagation()} 
+        <div
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
           className="cursor-grab absolute inset-0 -inset-y-5"
         />
         <LuGripVertical size={20} className="relative pointer-events-none" />

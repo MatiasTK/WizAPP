@@ -1,5 +1,5 @@
-import { HEX_COLOR_REGEX, POSSIBLE_MAC_CHARACTERS } from "./constants";
 import os from "os";
+import { HEX_COLOR_REGEX, POSSIBLE_MAC_CHARACTERS } from "./constants";
 
 export const sleep = (ms: number) =>
 	new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -43,6 +43,29 @@ export const ipAddress = (networkInterface?: string) => {
 	}
 
 	return undefined;
+};
+
+export const getBroadcastAddresses = (): string[] => {
+	const nets = os.networkInterfaces();
+	const broadcasts: string[] = [];
+
+	for (const name of Object.keys(nets)) {
+		for (const net of nets[name] ?? []) {
+			const ipv4 = typeof net.family === "string" ? "IPv4" : 4;
+			if (net.family === ipv4 && !net.internal && net.netmask) {
+				const ipParts = net.address.split(".").map(Number);
+				const maskParts = net.netmask.split(".").map(Number);
+				const broadcast = ipParts
+					.map((ip, i) => ip | (~maskParts[i] & 255))
+					.join(".");
+				if (!broadcasts.includes(broadcast)) {
+					broadcasts.push(broadcast);
+				}
+			}
+		}
+	}
+
+	return broadcasts;
 };
 
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
