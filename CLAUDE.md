@@ -21,6 +21,7 @@ pnpm lint             # eslint --fix (modifies files); `pnpm lint:check` does no
 pnpm format           # prettier --write .
 pnpm build:web        # typecheck + vite build -> dist/ (what tauri build runs first)
 pnpm build            # = tauri build: signed NSIS installer (needs the signing key)
+pnpm build:signed     # asks for the key password, reads ~/.tauri/wizapp.key, runs pnpm build
 pnpm build:unsigned   # NSIS installer without updater artifacts, no key needed
 pnpm test:web         # vitest + Testing Library (renderer)
 pnpm check:contrast   # WCAG contrast of every design-token pair, both themes

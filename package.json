@@ -13,6 +13,7 @@
     "dev": "tauri dev",
     "dev:web": "vite",
     "build": "tauri build",
+    "build:signed": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-signed.ps1",
     "build:web": "npm run typecheck && vite build",
     "build:unsigned": "tauri build --bundles nsis --config \"{\\\"bundle\\\":{\\\"createUpdaterArtifacts\\\":false}}\"",
     "start": "cargo run --release --features tauri/custom-protocol --manifest-path src-tauri/Cargo.toml",
