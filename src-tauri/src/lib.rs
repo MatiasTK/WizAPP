@@ -1,3 +1,5 @@
+pub mod config;
+pub mod models;
 pub mod wiz;
 
 use tauri::Manager;

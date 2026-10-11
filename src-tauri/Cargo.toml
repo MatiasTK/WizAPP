@@ -27,3 +27,6 @@ if-addrs = "0.13"
 
 [[example]]
 name = "probe"
+
+[dev-dependencies]
+tempfile = "3"
