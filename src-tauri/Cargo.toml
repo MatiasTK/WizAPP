@@ -1,6 +1,6 @@
 [package]
 name = "wiz-app"
-version = "3.0.0"
+version = "4.0.0-beta.1"
 description = "Simple desktop app to connect and control WiZ bulbs"
 authors = ["MatiasTK"]
 license = "GPL-3.0-only"

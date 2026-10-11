@@ -9,6 +9,8 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    # The signing secrets are stored as secrets of this GitHub environment.
+    environment: release
     permissions:
       contents: write
 
