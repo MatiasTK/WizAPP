@@ -171,10 +171,30 @@
     "toggle": "Alternar bombilla"
   },
   "toast": {
-    "discoveryFailed": "No se encontraron focos en la red",
+    "discoveryFailed": "No se encontraron focos en la red. Asegurate de que estén en la misma red Wi-Fi y de que el firewall permita WiZ APP en redes privadas.",
     "retry": "Reintentar",
     "addSuccess": "Foco agregado correctamente",
     "addFailed": "No se pudo conectar al foco",
-    "addDuplicate": "Este foco ya está agregado"
+    "addDuplicate": "Este foco ya está agregado",
+    "updateAvailable": "Hay una nueva versión de WiZ APP disponible",
+    "updateNow": "Actualizar ahora",
+    "openSettings": "Abrir aplicaciones instaladas",
+    "configImported": "Se importaron tus focos y ajustes de la versión anterior",
+    "configReset": "No se pudo leer tu archivo de ajustes, así que se guardó una copia y se creó uno nuevo",
+    "legacyInstallFound": "La versión anterior de WiZ APP sigue instalada. Podés desinstalarla desde Aplicaciones instaladas.",
+    "error": {
+      "bulbOffline": "El foco no responde",
+      "bulbRejected": "El foco rechazó la solicitud",
+      "unknownBulb": "Ese foco no está en tu lista",
+      "bulbUnreachable": "No se pudo conectar al foco",
+      "invalidArgument": "Ese valor no es válido",
+      "io": "Algo salió mal. Revisá el registro para más detalles.",
+      "updater": "No se pudo buscar o instalar actualizaciones"
+    }
+  },
+  "bulb": {
+    "offline": "{{name}} no responde. Verificá que esté encendido y en la misma red.",
+    "offlineLabel": "sin conexión",
+    "retry": "Reintentar"
   }
 }

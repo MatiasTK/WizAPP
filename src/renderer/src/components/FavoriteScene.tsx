@@ -9,7 +9,7 @@ import {
 import { restrictToParentElement } from '@dnd-kit/modifiers'
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { CustomColor } from '@shared/types/customColor'
+import { CustomColor } from '@renderer/bindings/CustomColor'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Scene, scenes } from 'src/renderer/utils/scenesInfo'

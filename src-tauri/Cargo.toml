@@ -26,6 +26,8 @@ tokio-util = "0.7"
 if-addrs = "0.13"
 log = "0.4"
 uuid = { version = "1", features = ["v4"] }
+sys-locale = "0.3"
+ts-rs = "11"
 
 [[example]]
 name = "probe"

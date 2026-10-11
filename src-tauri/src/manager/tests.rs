@@ -7,7 +7,7 @@ use tempfile::TempDir;
 use super::*;
 use crate::config::{AppConfig, BulbEntry, ConfigStore, LoadOutcome};
 use crate::error::AppError;
-use crate::models::{AddBulbOutcome, MultiBulbState, ToastMessage};
+use crate::models::{AddBulbOutcome, MultiBulbState, RetryAction, ToastMessage};
 use crate::wiz::testing::{Behavior, FakeBulb};
 use crate::wiz::{Timings, WizNet};
 
@@ -171,7 +171,7 @@ async fn no_known_bulbs_reports_failure_with_pinned_retry_toast() {
     assert_eq!(toasts.len(), 1);
     assert_eq!(toasts[0].message, "toast.discoveryFailed");
     assert!(!toasts[0].auto_dismiss);
-    assert_eq!(toasts[0].retry_action.as_deref(), Some("retry-discovery"));
+    assert_eq!(toasts[0].retry_action, Some(RetryAction::RetryDiscovery));
 }
 
 #[tokio::test]

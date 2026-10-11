@@ -13,7 +13,7 @@ use super::{Frontend, ManagerMsg, ManagerOptions, Reply, Target};
 use crate::config::{BulbEntry, ConfigStore, LoadOutcome};
 use crate::error::AppError;
 use crate::models::{
-    AddBulbOutcome, BulbState, CustomColor, MultiBulbState, ToastKind, ToastMessage,
+    AddBulbOutcome, BulbState, CustomColor, MultiBulbState, RetryAction, ToastKind, ToastMessage,
     MAX_DEFAULT_COLORS,
 };
 use crate::wiz::discovery::{discover_unicast, Discovered};
@@ -194,13 +194,19 @@ impl Actor {
 
     // ---- output -----------------------------------------------------------------
 
-    fn toast(&self, message: &str, kind: ToastKind, auto_dismiss: bool, retry: Option<&str>) {
+    fn toast(
+        &self,
+        message: &str,
+        kind: ToastKind,
+        auto_dismiss: bool,
+        retry: Option<RetryAction>,
+    ) {
         self.frontend.toast(ToastMessage {
             id: Uuid::new_v4().to_string(),
             message: message.to_owned(),
             kind,
             auto_dismiss,
-            retry_action: retry.map(str::to_owned),
+            retry_action: retry,
         });
     }
 
@@ -695,7 +701,7 @@ impl Actor {
                         "toast.discoveryFailed",
                         ToastKind::Error,
                         false,
-                        Some("retry-discovery"),
+                        Some(RetryAction::RetryDiscovery),
                     );
                 }
                 self.ensure_active();

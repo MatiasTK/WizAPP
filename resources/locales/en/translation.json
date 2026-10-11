@@ -170,10 +170,30 @@
     "toggle": "Toggle Bulb"
   },
   "toast": {
-    "discoveryFailed": "No bulbs found on the network",
+    "discoveryFailed": "No bulbs found on the network. Make sure they are on the same Wi-Fi and that the firewall allows WiZ APP on private networks.",
     "retry": "Retry",
     "addSuccess": "Bulb added successfully",
     "addFailed": "Could not connect to the bulb",
-    "addDuplicate": "This bulb is already added"
+    "addDuplicate": "This bulb is already added",
+    "updateAvailable": "A new version of WiZ APP is available",
+    "updateNow": "Update now",
+    "openSettings": "Open installed apps",
+    "configImported": "Your bulbs and settings were imported from the previous version",
+    "configReset": "Your settings file could not be read, so a backup was saved and a new one was created",
+    "legacyInstallFound": "The previous version of WiZ APP is still installed. You can uninstall it from Installed apps.",
+    "error": {
+      "bulbOffline": "The bulb is not responding",
+      "bulbRejected": "The bulb rejected the request",
+      "unknownBulb": "That bulb is not in your list",
+      "bulbUnreachable": "Could not connect to the bulb",
+      "invalidArgument": "That value is not valid",
+      "io": "Something went wrong. Check the log for details.",
+      "updater": "Could not check for or install updates"
+    }
+  },
+  "bulb": {
+    "offline": "{{name}} is not responding. Check that it is powered on and on the same network.",
+    "offlineLabel": "offline",
+    "retry": "Retry"
   }
 }

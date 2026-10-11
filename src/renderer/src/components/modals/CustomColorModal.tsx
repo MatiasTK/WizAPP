@@ -1,6 +1,6 @@
 import Modal from '@components/ui/Modal'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { CustomColor } from '@shared/types/customColor'
+import { CustomColor } from '@renderer/bindings/CustomColor'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

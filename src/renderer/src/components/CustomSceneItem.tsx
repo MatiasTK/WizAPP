@@ -22,15 +22,18 @@ export default function CustomSceneItem({
   const bulb = useBulbStore((state) => state.activeBulb)
   const setCustomColor = useBulbStore((state) => state.setCustomColor)
 
+  const usable = !!bulb?.online
+
   const handleSetCustomColor = () => {
+    if (!usable) return
     setCustomColor(id)
   }
 
-  const active = id === bulb.sceneId
+  const active = id === bulb?.sceneId
 
   return (
     <div
-      className={`flex items-center justify-between cursor-pointer ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl px-4 py-6 2xl:px-6 text-nowrap transition-colors`}
+      className={`flex items-center justify-between cursor-pointer ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl px-4 py-6 2xl:px-6 text-nowrap transition-colors ${!usable ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={handleSetCustomColor}
     >
       <div className="flex items-center">

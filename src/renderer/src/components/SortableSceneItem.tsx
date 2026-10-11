@@ -21,10 +21,11 @@ export default function SortableSceneItem({ id, name, icon, hex }: SortableScene
 
   const Icon = icon as IconType
 
+  const usable = !!bulb?.online
   const active = bulb ? bulb.sceneId === id : false
 
   const handleClick = () => {
-    if (!bulb) return
+    if (!usable) return
     setScene(id)
   }
 
@@ -46,7 +47,7 @@ export default function SortableSceneItem({ id, name, icon, hex }: SortableScene
       {...attributes}
       style={style}
       onClick={handleClick}
-      className={`flex items-center ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl pr-4 py-6 text-nowrap transition-colors ${!bulb ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      className={`flex items-center ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl pr-4 py-6 text-nowrap transition-colors ${!usable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       <div className="px-2 text-neutral-300 relative">
         <div

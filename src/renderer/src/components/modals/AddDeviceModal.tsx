@@ -1,4 +1,5 @@
 import Modal from '@components/ui/Modal'
+import { useBulbStore } from '@renderer/context/BulbStore'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -9,6 +10,7 @@ type EditNameModalProps = {
 
 export default function AddDeviceModal({ isOpen, onClose }: EditNameModalProps) {
   const { t } = useTranslation()
+  const addBulbByIp = useBulbStore((state) => state.addBulbByIp)
   const [error, setError] = useState<string | null>(null)
   const areErrors = error !== null
 
@@ -45,7 +47,7 @@ export default function AddDeviceModal({ isOpen, onClose }: EditNameModalProps) 
       return
     }
 
-    window.api.addBulbByIp(event.target.ip.value)
+    addBulbByIp(event.target.ip.value.trim())
 
     onClose()
   }

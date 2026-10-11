@@ -1,6 +1,6 @@
 import Modal from '@components/ui/Modal'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { BulbState } from '@shared/types/bulbState'
+import { BulbState } from '@renderer/bindings/BulbState'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +12,7 @@ type EditNameModalProps = {
 
 export default function EditNameModal({ isOpen, onClose, targetBulb }: EditNameModalProps) {
   const activeBulb = useBulbStore((state) => state.activeBulb)
+  const setBulbName = useBulbStore((state) => state.setBulbName)
   const { t } = useTranslation()
 
   // Use the explicitly passed target bulb, or fall back to active
@@ -48,7 +49,7 @@ export default function EditNameModal({ isOpen, onClose, targetBulb }: EditNameM
     }
 
     // Pass the target bulb's IP so the backend renames the right bulb
-    window.api.setBulbName(name, bulb?.ip)
+    setBulbName(name, bulb?.ip)
 
     onClose()
   }

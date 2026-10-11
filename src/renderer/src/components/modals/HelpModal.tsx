@@ -1,6 +1,9 @@
 import Modal from '@components/ui/Modal'
 import Separator from '@components/ui/Separator'
-import { useState } from 'react'
+import { api } from '@renderer/lib/api'
+import { getVersion } from '@tauri-apps/api/app'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuDownload, LuFolder, LuGithub, LuLoaderCircle, LuUser } from 'react-icons/lu'
 
@@ -13,24 +16,43 @@ export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
   const { t } = useTranslation()
   const [updateMsg, setUpdateMsg] = useState<string | null>(null)
   const [isChecking, setIsChecking] = useState(false)
+  const [version, setVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    getVersion()
+      .then(setVersion)
+      .catch(() => setVersion(null))
+  }, [])
 
   const handleOpenAppFolder = () => {
-    window.api.openAppFolder()
+    void api.openAppFolder()
+  }
+
+  // The webview would navigate in place; hand https links to the system browser.
+  const handleOpenLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    void openUrl(event.currentTarget.href)
   }
 
   const handleCheckForUpdates = () => {
     setIsChecking(true)
-    window.api.checkForUpdates().then((updateFound) => {
-      if (!updateFound) {
-        setUpdateMsg(t('help.noUpdates'))
+    api
+      .checkForUpdates()
+      .then((updateFound) => {
+        // When there is an update the backend pins a toast with "update now".
+        if (!updateFound) {
+          setUpdateMsg(t('help.noUpdates'))
 
-        setTimeout(() => {
-          setUpdateMsg(null)
-        }, 5000)
-      }
-
-      setIsChecking(false)
-    })
+          setTimeout(() => {
+            setUpdateMsg(null)
+          }, 5000)
+        }
+      })
+      .catch(() => {
+        setUpdateMsg(t('toast.error.updater'))
+        setTimeout(() => setUpdateMsg(null), 5000)
+      })
+      .finally(() => setIsChecking(false))
   }
 
   const updateToast = (msg) => (
@@ -42,7 +64,7 @@ export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="WiZ App" maxWidth="max-w-sm">
       <p className="text-sm text-neutral-500 font-medium -mt-6">
-        {t('help.version')}: 3.0.0 (Windows)
+        {t('help.version')}: {version ?? '—'} (Windows)
       </p>
 
       <Separator />
@@ -55,6 +77,7 @@ export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
             href="https://github.com/MatiasTK/WizAPP"
             rel="noreferrer"
             target="_blank"
+            onClick={handleOpenLink}
             className="text-primary underline"
           >
             Github
@@ -70,6 +93,7 @@ export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
               href="https://github.com/MatiasTK"
               rel="noreferrer"
               target="_blank"
+              onClick={handleOpenLink}
               className="text-primary underline"
             >
               MatiasTK

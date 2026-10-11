@@ -1,15 +1,23 @@
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { ToastMessage } from '@shared/types/toastMessage'
+import { ToastMessage } from '@renderer/bindings/ToastMessage'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCircleAlert, LuCircleCheck, LuInfo, LuX } from 'react-icons/lu'
 
 const AUTO_DISMISS_MS = 5000
 
+const ACTION_LABELS = {
+  'retry-discovery': 'toast.retry',
+  'install-update': 'toast.updateNow',
+  'open-apps-settings': 'toast.openSettings'
+} as const
+
 function Toast({ toast }: { toast: ToastMessage }) {
   const { t } = useTranslation()
   const dismissToast = useBulbStore((s) => s.dismissToast)
   const retryDiscovery = useBulbStore((s) => s.retryDiscovery)
+  const installUpdate = useBulbStore((s) => s.installUpdate)
+  const openAppsSettings = useBulbStore((s) => s.openAppsSettings)
   const [isExiting, setIsExiting] = useState(false)
 
   useEffect(() => {
@@ -66,11 +74,13 @@ function Toast({ toast }: { toast: ToastMessage }) {
             <button
               onClick={() => {
                 handleDismiss()
-                retryDiscovery()
+                if (toast.retryAction === 'retry-discovery') retryDiscovery()
+                if (toast.retryAction === 'install-update') installUpdate()
+                if (toast.retryAction === 'open-apps-settings') openAppsSettings()
               }}
               className="mt-1 w-fit rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20 active:bg-white/25 cursor-pointer"
             >
-              {t('toast.retry')}
+              {t(ACTION_LABELS[toast.retryAction])}
             </button>
           )}
         </div>

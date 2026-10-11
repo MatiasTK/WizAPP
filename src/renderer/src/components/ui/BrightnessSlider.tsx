@@ -13,7 +13,7 @@ export default function BrightnessSlider() {
   // Sync brightness when active bulb changes
   useEffect(() => {
     if (bulb) {
-      setCurrentBrightness(bulb.dimming)
+      setCurrentBrightness(bulb.dimming ?? 50)
     }
   }, [bulb?.ip, bulb?.dimming])
 
@@ -47,7 +47,8 @@ export default function BrightnessSlider() {
         onChange={handleChangeBrightness}
         value={currentBrightness}
         step={10}
-        className="w-full"
+        disabled={!bulb?.online}
+        className="w-full disabled:opacity-40 disabled:cursor-not-allowed"
         role="slider"
       />
     </div>

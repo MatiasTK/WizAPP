@@ -22,9 +22,8 @@
       "@assets/*": ["src/renderer/src/assets/*"],
       "@resources/*": ["resources/*"],
       "@/types/*": ["src/renderer/src/types/*"],
-      "@pages/*": ["src/renderer/src/pages/*"],
-      "@shared/*": ["src/shared/*"]
+      "@pages/*": ["src/renderer/src/pages/*"]
     }
   },
-  "include": ["src/renderer", "src/i18n", "src/shared", "vite.config.ts"]
+  "include": ["src/renderer", "src/i18n", "vite.config.ts"]
 }

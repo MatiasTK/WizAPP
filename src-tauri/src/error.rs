@@ -1,10 +1,12 @@
 use serde::Serialize;
+use ts_rs::TS;
 
 use crate::wiz::WizError;
 
 /// Error returned by every command. Serialized as `{ "code": "bulbOffline", "ip": "..." }`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS, thiserror::Error)]
 #[serde(tag = "code", rename_all = "camelCase")]
+#[ts(export)]
 pub enum AppError {
     /// Timed out or unreachable after one retry; the bulb is now shown as offline.
     #[error("bulb {ip} is offline")]

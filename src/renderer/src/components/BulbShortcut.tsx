@@ -16,10 +16,10 @@ export default function BulbShortcut() {
             {activeBulb.name}
           </p>
           <span className="text-xs text-neutral-400 font-bold">
-            {activeBulb.state ? 'On' : 'Off'}
+            {activeBulb.online ? (activeBulb.state ? 'On' : 'Off') : 'Offline'}
           </span>
         </div>
-        <PowerButton isOn={activeBulb.state} onToggle={toggleBulb} />
+        <PowerButton isOn={activeBulb.state} onToggle={toggleBulb} disabled={!activeBulb.online} />
       </div>
       <BrightnessSlider />
     </div>

@@ -6,14 +6,23 @@ import EditNameModal from '@renderer/components/modals/EditNameModal'
 import SearchBulbCard from '@renderer/components/SearchBulbCard'
 import Button from '@renderer/components/ui/Button'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { api } from '@renderer/lib/api'
 import { HomeModalState, ModalType } from '@renderer/types/modals'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuCirclePlus, LuSquarePen, LuToggleLeft, LuTrash } from 'react-icons/lu'
+import { LuCirclePlus, LuSquarePen, LuToggleLeft, LuTrash, LuWifiOff } from 'react-icons/lu'
 
 export default function Home() {
-  const { bulbs, activeBulb, isDiscovering, toggleBulbByIp, setActiveBulb, deleteBulb, isReady } =
-    useBulbStore()
+  const {
+    bulbs,
+    activeBulb,
+    isDiscovering,
+    toggleBulbByIp,
+    setActiveBulb,
+    deleteBulb,
+    probeBulb,
+    isReady
+  } = useBulbStore()
   const { t } = useTranslation()
   const [modals, setModals] = useState<HomeModalState>({
     edit: false,
@@ -25,7 +34,7 @@ export default function Home() {
     if (isReady) {
       document.fonts.ready.then(() => {
         requestAnimationFrame(() => {
-          window.api.showWindow()
+          void api.showWindow()
         })
       })
     }
@@ -87,6 +96,25 @@ export default function Home() {
           {t('home.selectedBulb')}:{' '}
           <span className="text-primary font-semibold">{activeBulb.name}</span>
         </p>
+      )}
+
+      {activeBulb && !activeBulb.online && (
+        <div
+          role="alert"
+          className="mt-4 flex items-center gap-3 rounded-lg bg-red-500/10 px-4 py-3 text-sm ring-1 ring-red-500/40"
+        >
+          <LuWifiOff size={20} className="shrink-0 text-red-400" />
+          <p className="grow text-neutral-200">{t('bulb.offline', { name: activeBulb.name })}</p>
+          <button
+            type="button"
+            tabIndex={0}
+            aria-label={t('bulb.retry')}
+            onClick={() => probeBulb(activeBulb.ip)}
+            className="cursor-pointer rounded-md bg-white/10 px-3 py-1.5 font-medium text-white transition-colors hover:bg-white/20"
+          >
+            {t('bulb.retry')}
+          </button>
+        </div>
       )}
 
       <article className="mt-4 grid grid-cols-3 gap-x-4 gap-y-4 lg:gap-y-6 lg:grid-cols-4 xl:grid-cols-5">
