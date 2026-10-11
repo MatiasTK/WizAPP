@@ -47,7 +47,7 @@ Version 4 is a new build of the app and **does not update from 3.x automatically
 
 ## Building 📦
 
-If you want to build the app yourself, you need [Node.js](https://nodejs.org/) 20+, [pnpm](https://pnpm.io/) 10, the stable [Rust toolchain](https://rustup.rs/) and the [Tauri prerequisites for Windows](https://tauri.app/start/prerequisites/):
+If you want to build the app yourself, you need [Node.js](https://nodejs.org/) 22.19+, [pnpm](https://pnpm.io/) 10, the stable [Rust toolchain](https://rustup.rs/) and the [Tauri prerequisites for Windows](https://tauri.app/start/prerequisites/):
 
 - Clone the repo.
 - Install the dependencies with `pnpm install`.
@@ -56,6 +56,25 @@ If you want to build the app yourself, you need [Node.js](https://nodejs.org/) 2
 - `pnpm test` runs the backend tests (they use a fake bulb, no hardware needed).
 
 To try the app without a bulb, run `PYTHONIOENCODING=utf-8 python scripts/wiz_emulator.py` and add `127.0.0.1`, `127.0.0.2` and `127.0.0.3` from the *Add device* dialog.
+
+## Releasing 🚀
+
+Releases are built by the **Release** workflow ([.github/workflows/release.yml](.github/workflows/release.yml)) when a `v*.*.*` tag is pushed. It builds the installer, signs it with the updater key, uploads `latest.json` and creates a **draft** release (prerelease if the tag contains `-beta`).
+
+1. Bump the version in `package.json` and `src-tauri/Cargo.toml` (they must match the tag, the workflow checks it).
+2. Commit and push to the branch.
+3. Tag and push the tag:
+
+   ```bash
+   git tag v4.0.0-beta.1
+   git push origin v4.0.0-beta.1
+   ```
+
+4. Check the run in the **Actions** tab, then open the draft under **Releases**, review the assets (`.exe` and `latest.json`) and publish it.
+
+Requirements, set once in the repo: the `release` environment must hold the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and they must match the `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`. If the secrets are replaced, the public key has to be replaced too, or the auto-updater rejects the new builds.
+
+To redo a tag after a failed run: `git push origin :refs/tags/v4.0.0-beta.1` and `git tag -d v4.0.0-beta.1`, then tag again.
 
 ## Troubleshooting 🔨
 
