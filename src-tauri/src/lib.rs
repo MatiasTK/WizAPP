@@ -38,7 +38,11 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let dir = app.path().app_config_dir()?;
+            // Debug builds can point at a scratch directory (end-to-end tests).
+            let dir = match std::env::var_os("WIZAPP_DATA_DIR").filter(|_| cfg!(debug_assertions)) {
+                Some(custom) => std::path::PathBuf::from(custom),
+                None => app.path().app_config_dir()?,
+            };
             std::fs::create_dir_all(&dir)?;
 
             // Logs go next to config.json so "open app folder" shows both.
@@ -66,7 +70,11 @@ pub fn run() {
             let (manager, actor) =
                 ManagerHandle::build(frontend, store, outcome, ManagerOptions::default());
             tauri::async_runtime::spawn(actor.run());
-            app.manage(AppState { manager, language: i18n::system_language() });
+            app.manage(AppState {
+                manager,
+                data_dir: dir.clone(),
+                language: i18n::system_language(),
+            });
 
             // The window starts hidden and the renderer shows it once it painted. If the JS
             // never gets there, show it anyway instead of leaving an invisible app.

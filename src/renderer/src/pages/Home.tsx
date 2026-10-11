@@ -32,10 +32,10 @@ export default function Home() {
 
   useEffect(() => {
     if (isReady) {
+      // The window is hidden until now, and a hidden webview does not run
+      // requestAnimationFrame, so a short timer stands in for "first paint".
       document.fonts.ready.then(() => {
-        requestAnimationFrame(() => {
-          void api.showWindow()
-        })
+        window.setTimeout(() => void api.showWindow(), 50)
       })
     }
   }, [isReady])

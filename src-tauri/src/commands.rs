@@ -1,7 +1,7 @@
 //! `#[tauri::command]` layer. Everything here only translates arguments into a call on
 //! the [`ManagerHandle`]; the logic lives in `manager`.
 
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_opener::OpenerExt;
 
 use crate::error::AppError;
@@ -10,6 +10,8 @@ use crate::models::{AddBulbOutcome, MultiBulbState, ToastMessage};
 
 pub struct AppState {
     pub manager: ManagerHandle,
+    /// Folder with `config.json` and `wiz-app.log`.
+    pub data_dir: std::path::PathBuf,
     pub language: &'static str,
 }
 
@@ -151,11 +153,10 @@ pub fn show_window(app: AppHandle) -> Res<()> {
 
 /// Opens the folder holding `config.json` and `wiz-app.log`.
 #[tauri::command]
-pub fn open_app_folder(app: AppHandle) -> Res<()> {
+pub fn open_app_folder(app: AppHandle, state: State<'_, AppState>) -> Res<()> {
     let io = |e: &dyn std::fmt::Display| AppError::Io { message: e.to_string() };
-    let dir = app.path().app_config_dir().map_err(|e| io(&e))?;
-    std::fs::create_dir_all(&dir).map_err(|e| io(&e))?;
-    app.opener().open_path(dir.to_string_lossy(), None::<&str>).map_err(|e| io(&e))
+    std::fs::create_dir_all(&state.data_dir).map_err(|e| io(&e))?;
+    app.opener().open_path(state.data_dir.to_string_lossy(), None::<&str>).map_err(|e| io(&e))
 }
 
 /// Windows "Installed apps" settings page (used for the old-install notice).
