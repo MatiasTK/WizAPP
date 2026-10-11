@@ -10,3 +10,82 @@ pub struct CustomColor {
     pub name: String,
     pub hex: String,
 }
+
+/// What the renderer sees for one bulb. `online: false` entries carry the last known
+/// pilot values (defaults if the bulb never answered this session).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BulbState {
+    pub mac: String,
+    pub rssi: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub src: Option<String>,
+    pub state: bool,
+    pub scene_id: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temp: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub g: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub b: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub c: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub w: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dimming: Option<u32>,
+    pub home_id: u64,
+    pub room_id: u64,
+    pub rgn: String,
+    pub module_name: String,
+    pub fw_version: String,
+    pub group_id: u64,
+    pub ping: u32,
+    pub ip: String,
+    pub port: u16,
+    pub name: String,
+    pub online: bool,
+    pub custom_colors: Vec<CustomColor>,
+    pub favorite_colors: Vec<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MultiBulbState {
+    pub bulbs: Vec<BulbState>,
+    pub active_bulb: Option<BulbState>,
+    pub is_discovering: bool,
+    pub discovery_failed: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ToastKind {
+    Success,
+    Error,
+    Info,
+}
+
+/// `message` is an i18n key; the renderer translates it.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToastMessage {
+    pub id: String,
+    pub message: String,
+    #[serde(rename = "type")]
+    pub kind: ToastKind,
+    pub auto_dismiss: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry_action: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AddBulbOutcome {
+    Added,
+    Duplicate,
+}

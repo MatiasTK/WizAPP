@@ -4724,6 +4724,7 @@ name = "wiz-app"
 version = "3.0.0"
 dependencies = [
  "if-addrs",
+ "log",
  "serde",
  "serde_json",
  "tauri",
@@ -4735,6 +4736,7 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",
+ "uuid",
 ]
 
 [[package]]

@@ -24,6 +24,8 @@ thiserror = "2"
 tokio = { version = "1", features = ["net", "time", "sync", "macros", "rt-multi-thread"] }
 tokio-util = "0.7"
 if-addrs = "0.13"
+log = "0.4"
+uuid = { version = "1", features = ["v4"] }
 
 [[example]]
 name = "probe"

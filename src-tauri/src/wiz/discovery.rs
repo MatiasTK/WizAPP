@@ -3,6 +3,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
 
 use tokio::net::UdpSocket;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::time::{timeout, Instant};
 use tokio_util::sync::CancellationToken;
 
@@ -24,7 +25,7 @@ pub async fn discover_unicast(
     wait: Duration,
     cancel: &CancellationToken,
 ) -> Result<Vec<Discovered>, WizError> {
-    probe(ips, net, wait, cancel, true).await
+    collect(|tx| probe(ips, net, wait, cancel, true, tx)).await
 }
 
 /// Sends `getPilot` to every interface broadcast address and listens for the full
@@ -43,7 +44,47 @@ pub async fn discover_broadcast_to(
     wait: Duration,
     cancel: &CancellationToken,
 ) -> Result<Vec<Discovered>, WizError> {
-    probe(targets, net, wait, cancel, false).await
+    collect(|tx| probe(targets, net, wait, cancel, false, tx)).await
+}
+
+async fn collect<F, Fut>(f: F) -> Result<Vec<Discovered>, WizError>
+where
+    F: FnOnce(UnboundedSender<Discovered>) -> Fut,
+    Fut: std::future::Future<Output = Result<(), WizError>>,
+{
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let probing = f(tx);
+    let gathering = async {
+        let mut out = Vec::new();
+        while let Some(d) = rx.recv().await {
+            out.push(d);
+        }
+        out
+    };
+    let (res, found) = tokio::join!(probing, gathering);
+    res.map(|()| found)
+}
+
+/// Like [`discover_unicast`], but every reply is pushed to `sink` as it arrives.
+pub async fn discover_unicast_stream(
+    ips: &[Ipv4Addr],
+    net: WizNet,
+    wait: Duration,
+    cancel: &CancellationToken,
+    sink: UnboundedSender<Discovered>,
+) -> Result<(), WizError> {
+    probe(ips, net, wait, cancel, true, sink).await
+}
+
+/// Like [`discover_broadcast_to`], streaming each reply to `sink`.
+pub async fn discover_broadcast_stream(
+    targets: &[Ipv4Addr],
+    net: WizNet,
+    wait: Duration,
+    cancel: &CancellationToken,
+    sink: UnboundedSender<Discovered>,
+) -> Result<(), WizError> {
+    probe(targets, net, wait, cancel, false, sink).await
 }
 
 async fn probe(
@@ -52,9 +93,10 @@ async fn probe(
     wait: Duration,
     cancel: &CancellationToken,
     stop_when_all_answered: bool,
-) -> Result<Vec<Discovered>, WizError> {
+    sink: UnboundedSender<Discovered>,
+) -> Result<(), WizError> {
     if targets.is_empty() {
-        return Ok(Vec::new());
+        return Ok(());
     }
     let sock = UdpSocket::bind("0.0.0.0:0").await.map_err(|e| WizError::from_io(&e))?;
     sock.set_broadcast(true).map_err(|e| WizError::from_io(&e))?;
@@ -67,14 +109,13 @@ async fn probe(
 
     let wanted: HashSet<Ipv4Addr> = targets.iter().copied().collect();
     let mut seen: HashSet<Ipv4Addr> = HashSet::new();
-    let mut found = Vec::new();
     let deadline = Instant::now() + wait;
     let mut buf = [0u8; 2048];
 
     loop {
         let remaining = deadline.saturating_duration_since(Instant::now());
         let recv = tokio::select! {
-            _ = cancel.cancelled() => return Ok(found),
+            _ = cancel.cancelled() => return Ok(()),
             r = timeout(remaining, sock.recv_from(&mut buf)) => r,
         };
         let (n, from) = match recv {
@@ -94,10 +135,12 @@ async fn probe(
         if !seen.insert(ip) {
             continue;
         }
-        found.push(Discovered { ip, pilot });
+        if sink.send(Discovered { ip, pilot }).is_err() {
+            break;
+        }
         if stop_when_all_answered && wanted.iter().all(|w| seen.contains(w)) {
             break;
         }
     }
-    Ok(found)
+    Ok(())
 }

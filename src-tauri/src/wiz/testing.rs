@@ -53,7 +53,11 @@ impl FakeBulb {
     }
 
     pub async fn start_on(ip: Ipv4Addr, port: u16, mac: &str) -> Self {
-        let sock = Arc::new(UdpSocket::bind((ip, port)).await.expect("bind fake bulb"));
+        Self::try_start_on(ip, port, mac).await.expect("bind fake bulb")
+    }
+
+    pub async fn try_start_on(ip: Ipv4Addr, port: u16, mac: &str) -> std::io::Result<Self> {
+        let sock = Arc::new(UdpSocket::bind((ip, port)).await?);
         let addr = sock.local_addr().unwrap();
         let state = Arc::new(Mutex::new(FakeState {
             mac: mac.to_lowercase(),
@@ -69,7 +73,7 @@ impl FakeBulb {
             received: Vec::new(),
         }));
         let task = tokio::spawn(serve(sock, state.clone()));
-        Self { addr, state, task }
+        Ok(Self { addr, state, task })
     }
 
     pub fn ip(&self) -> Ipv4Addr {
