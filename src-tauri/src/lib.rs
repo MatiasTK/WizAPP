@@ -2,6 +2,7 @@ pub mod commands;
 pub mod config;
 pub mod error;
 pub mod i18n;
+pub mod legacy;
 pub mod manager;
 pub mod models;
 pub mod tray;
@@ -15,8 +16,11 @@ use tauri::{AppHandle, Manager, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 
 use commands::{AppState, TauriFrontend};
-use config::{legacy_dirs_for, ConfigStore};
+use config::{legacy_dirs_for, ConfigStore, LoadOutcome};
+use manager::Frontend;
 use manager::{ManagerHandle, ManagerOptions};
+use models::{RetryAction, ToastKind, ToastMessage};
+use uuid::Uuid;
 
 pub const MAIN_WINDOW: &str = "main";
 
@@ -84,12 +88,23 @@ pub fn run() {
             let (store, outcome) = ConfigStore::load(&dir, &legacy_dirs_for(&dir));
             log::info!("config loaded from {}: {outcome:?}", store.path().display());
 
-            let frontend = Arc::new(TauriFrontend(app.handle().clone()));
+            // First run (new or imported config): mention a still-installed Electron app.
+            let first_run = matches!(outcome, LoadOutcome::Created | LoadOutcome::Imported { .. });
+            let frontend = Arc::new(TauriFrontend::new(app.handle().clone()));
+            if first_run && legacy::find_legacy_install().is_some() {
+                frontend.toast(ToastMessage {
+                    id: Uuid::new_v4().to_string(),
+                    message: "toast.legacyInstallFound".to_owned(),
+                    kind: ToastKind::Info,
+                    auto_dismiss: false,
+                    retry_action: Some(RetryAction::OpenAppsSettings),
+                });
+            }
             let (manager, actor) =
-                ManagerHandle::build(frontend, store, outcome, ManagerOptions::default());
+                ManagerHandle::build(frontend.clone(), store, outcome, ManagerOptions::default());
             tauri::async_runtime::spawn(actor.run());
             let language = i18n::system_language();
-            app.manage(AppState { manager, data_dir: dir.clone(), language });
+            app.manage(AppState { manager, frontend, data_dir: dir.clone(), language });
             tray::setup(app.handle(), language)?;
             tauri::async_runtime::spawn(updater::check_on_startup(app.handle().clone()));
 
@@ -132,6 +147,7 @@ pub fn run() {
             commands::show_window,
             commands::open_app_folder,
             commands::open_apps_settings,
+            commands::has_legacy_install,
             commands::check_for_updates,
             commands::install_update,
         ])

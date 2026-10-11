@@ -4,47 +4,94 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-WiZ APP — a desktop app (Tauri 2 + React 19 + TypeScript + Tailwind v4 + Zustand) that discovers and controls WiZ smart bulbs over the local network via UDP.
+WiZ APP — a Windows desktop app (Tauri 2 + Rust backend, React 19 + TypeScript + Tailwind v4 + Zustand renderer) that discovers and controls WiZ smart bulbs over the local network via UDP.
 
-**This branch (`tauri`) is mid-migration from Electron.** `MIGRATION.md` is the plan and defines the module order (M0–M8); `docs/electron-inventory.md` describes the old behaviour. `main` is still Electron 3.0.x. Current status: **M0 and M1 done** (scaffolding; `src-tauri/src/wiz/` UDP client with tests). The manager/commands are not written yet — `src-tauri/` only opens the window, so the renderer still calls the removed `window.api` (typed by a temporary shim in `src/renderer/src/env.d.ts`) and every bulb action fails until M4.
+**This branch (`tauri`) replaces the Electron app.** `MIGRATION.md` is the plan and its §7 is the execution log (what was verified, what is still pending). `docs/electron-inventory.md` describes the old behaviour. `main` is still Electron 3.0.x until this branch is merged.
 
 ## Commands
 
-The package manager is **pnpm** (`.npmrc` sets `shamefully-hoist=true`). Rust stable via `src-tauri/rust-toolchain.toml`.
+The package manager is **pnpm** (`.npmrc` sets `shamefully-hoist=true`). Rust stable, pinned in `src-tauri/rust-toolchain.toml`.
 
 ```bash
 pnpm install
-pnpm tauri dev        # Vite on :5173 (strictPort) + Rust app with HMR
-pnpm dev              # renderer only, in a browser
+pnpm tauri dev        # Vite on :5173 (strictPort) + Rust app, renderer HMR
+pnpm dev              # renderer only, in a browser (no backend: commands reject)
 pnpm typecheck        # tsc --noEmit -p tsconfig.json
-pnpm lint             # eslint with --fix (it modifies files)
+pnpm lint             # eslint --fix (modifies files); `pnpm lint:check` does not
 pnpm format           # prettier --write .
 pnpm build            # typecheck + vite build -> dist/
-cd src-tauri && cargo check   # also fmt / clippy -D warnings / test from M1 on
+cd src-tauri
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test            # also regenerates src/renderer/src/bindings/*.ts
 ```
 
-There are no JS tests. Rust tests: `cd src-tauri && cargo test` (uses an in-process `FakeBulb`, no emulator needed). Manual probe: `cargo run --example probe -- 127.0.0.1`.
+- `cargo` needs `dist/` to exist (`tauri.conf.json` `frontendDist`); run `pnpm build` once on a fresh clone.
+- `pnpm tauri build` needs `TAURI_SIGNING_PRIVATE_KEY` because `createUpdaterArtifacts` is on, and a real `plugins.updater.pubkey` (it is a placeholder until the maintainer generates the key pair).
+- Debug builds honour `WIZAPP_DATA_DIR` (config + log directory). Release builds ignore it. Tauri does **not** honour a changed `%APPDATA%`.
+- `cargo build --release --features tauri/custom-protocol` produces a release exe that serves `dist/`; without that feature the exe loads the Vite dev server.
 
 ### Testing without physical bulbs
 
-`PYTHONIOENCODING=utf-8 python scripts/wiz_emulator.py` (the env var is needed on Windows or the script dies on `→`) starts three virtual bulbs on UDP port 38899 at `127.0.0.1`, `127.0.0.2` and `127.0.0.3`. Add them manually by IP through the app's "add device" modal rather than relying on broadcast discovery.
+- Rust: `cargo test` uses an in-process `FakeBulb` (`src/wiz/testing.rs`); no emulator needed. Manual probe: `cargo run --example probe -- 127.0.0.1`.
+- Whole app: `PYTHONIOENCODING=utf-8 python scripts/wiz_emulator.py` starts three bulbs on UDP 38899 at `127.0.0.1`–`.3` (the env var is required on Windows or the script dies on `→`). Add them by IP in the app, or seed a config with those IPs.
+- Driving the real window without clicking: start the exe with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<port>` and use CDP `Runtime.evaluate` with `window.__TAURI_INTERNALS__.invoke(...)`. Seed a debug-only data dir with `WIZAPP_DATA_DIR` so real bulbs/config are never touched.
 
-## Layout
+## Architecture
 
-- `src-tauri/` — Rust backend (`tauri.conf.json`, `capabilities/default.json`; the planned module tree is in `MIGRATION.md` §2.2).
-- `src/renderer/` — React app (hash router: `/`, `/scenes`, `/information`). Vite `root` is `src/renderer`, output goes to `dist/`.
-- `src/shared/` — legacy TS types and constants; to be replaced by `ts-rs` bindings in `src/renderer/src/bindings/` (M4).
-- `src/i18n/` + `resources/locales/{en,es}/translation.json` — single source of UI strings.
-- `scripts/wiz_emulator.py` — fake bulbs.
-- `wizapp-tauri/` (untracked) holds only an old build output; deletion is waiting on the user's confirmation (`MIGRATION.md` §6).
+### Process layout
 
-### Path aliases
+- `src-tauri/` — Rust backend. `lib.rs` wires plugins (single-instance first, opener, updater, log), the config, the manager actor, tray and window events. `main.rs` only calls `run()`.
+- `src/renderer/` — React app (hash router: `/`, `/scenes`, `/information`). Vite `root` is `src/renderer`, output `dist/`.
+- `src/i18n/` + `resources/locales/{en,es}/translation.json` — single source of UI strings; Rust embeds the same files for the tray (`i18n.rs`).
+- `src/renderer/src/bindings/` — generated by `ts-rs` from `models.rs` / `error.rs`. Never edit by hand; CI fails on a diff.
 
-Declared once in `tsconfig.json` and picked up by `vite-tsconfig-paths`. `@/types/*` → `src/renderer/src/types/*`.
+### State flow (the manager actor is the single source of truth)
+
+1. The renderer calls an action on the Zustand store (`context/BulbStore.tsx`), which wraps `api.*` (`lib/api.ts`, thin `invoke`/`listen`) in `call()`. A rejected command becomes a `toast.error.<code>` toast. The store does **not** update itself optimistically.
+2. `commands.rs` translates the command into a call on `ManagerHandle`.
+3. `manager/actor.rs` (one task) owns `ConfigStore` and the bulb list. **It never awaits the network**: it forwards work to a per-bulb `worker` and handles the result as `ManagerMsg::WorkerDone`. Distinct bulbs run in parallel; commands to one bulb run in FIFO order.
+4. After each change the actor emits the full `MultiBulbState` (`on-update-bulb`) through the `Frontend` trait. Toasts go over `on-show-toast` with an i18n **key**; `TauriFrontend` queues them until the renderer's first `get_bulbs` (events sent earlier are lost).
+
+Rule for toasts: a command the renderer awaits returns `Result<_, AppError>` and the **renderer** builds the toast. Rust emits toasts only for things nobody awaits (discovery, tray, updater, config import/reset, legacy-install notice).
+
+Adding a bulb action touches: `manager/worker.rs`/`actor.rs` → `ManagerHandle` method in `manager/mod.rs` → `commands.rs` + `generate_handler!` in `lib.rs` → `lib/api.ts` → `BulbStore.tsx`.
+
+### Bulb failure policy
+
+Timeout or ICMP-unreachable: one retry, then that bulb (not necessarily the active one) becomes `online: false`, a `bulbOffline` error is returned and **the config is not touched**. A bulb's `error` reply is `bulbRejected` and it stays online. There are no timers: a bulb is polled again when a command targets it, when it is selected, on `probe_bulb`, or on `RefreshAll` (window restored from tray / second instance, throttled).
+
+### Discovery (`manager/discovery.rs`)
+
+Run per "generation" with a `CancellationToken`; results of a cancelled generation are dropped. Phase 1: unicast to saved IPs (3 attempts, 5 s apart, stops once one answers). Phase 2: broadcast only if none answered; it **adopts** everything only when the saved list was empty, otherwise it only **relocates** known MACs to a new IP. Identity is the MAC (`mac` may be `null` for imported entries until the bulb answers). `discoveryFailed` is true only when no bulb is known at the end.
+
+### Config (`config.rs`)
+
+`<app_config_dir>/config.json`, version 2, written atomically (`.tmp` + rename) only by the actor. An unreadable / wrong-shape / future-version file is moved to `config.corrupt-<ts>.json` and a toast is shown. When no new config exists, the Electron `config.json` is imported once from `%APPDATA%\Wiz App\` (then `WiZ APP\`, `wiz_app\`); the original is never modified. Colors and favorites are global and copied into every `BulbState` on serialization.
+
+### Wire client (`wiz/`)
+
+One connected UDP socket per bulb; `request` matches replies by `method`, drains stale datagrams first, and treats `WSAECONNRESET` as `Unreachable` (the socket stays usable). Replies deserialize leniently (all fields optional, unknown ignored). `PilotPatch::validate` rejects out-of-range scene/dimming before anything is sent.
+
+### Scenes vs. custom colors
+
+Scene IDs below `MAX_DEFAULT_COLORS` (33, in `src/renderer/src/constants.ts` and `models.rs`) are built-in WiZ scenes (`set_scene`); IDs `>= 33` are user colors sent as RGB (`set_custom_color`). The store's `setScene` / `setCustomColor` redirect to each other based on that threshold, and `favoriteColors` mixes both kinds of ID.
+
+### Window, tray, updater
+
+- The window starts hidden; `Home.tsx` calls `show_window` after the first state and `fonts.ready` (+50 ms timer — `requestAnimationFrame` does not run in a hidden WebView2). Rust shows it anyway after 5 s.
+- The X hides to the tray, minimize is normal, "Quit" lives in the tray menu. A second instance restores the window.
+- Updater: GitHub releases, signed with minisign. `updater.rs` checks 8 s after start (release builds only) and pins a toast with "update now"; nothing is installed without the user asking.
+- `legacy.rs` looks for the still-installed Electron app in `HKCU\...\Uninstall` (`DisplayName` starting with `WiZ APP`, uninstaller not ours) and shows a notice.
+
+### Other notes
+
+- `wizapp-tauri/` (untracked) holds only an old build output; deleting it is waiting on the maintainer's confirmation (`MIGRATION.md` §6).
+- `testing/`, `.vscode/` and `.cursor/` are gitignored.
 
 ## Code style
 
-- Prettier: single quotes, no semicolons, 100 columns, no trailing commas. The vendored `src/lib/wikari` keeps its own style.
+- Prettier: single quotes, no semicolons, 100 columns, no trailing commas. Rust: `src-tauri/rustfmt.toml` (`cargo fmt`).
 - All user-facing strings go through i18next; add keys to both `en` and `es` translation files.
 - From the project's Cursor rules for React code:
   - Style with Tailwind classes only; avoid custom CSS.

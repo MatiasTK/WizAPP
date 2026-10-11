@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, tauri]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint:check
+
+      # Typechecks, then builds dist/ (tauri's generate_context! needs frontendDist).
+      - name: Typecheck and build renderer
+        run: pnpm build
+
+      - name: Rust format
+        run: cargo fmt --check
+        working-directory: src-tauri
+
+      - name: Rust clippy
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: src-tauri
+
+      # Also regenerates the ts-rs bindings.
+      - name: Rust tests
+        run: cargo test
+        working-directory: src-tauri
+
+      - name: Bindings are up to date
+        shell: bash
+        run: |
+          git add -N src/renderer/src/bindings
+          git diff --exit-code src/renderer/src/bindings

@@ -60,5 +60,8 @@ export const api = {
   installUpdate: () => invoke<void>('install_update'),
   openAppFolder: () => invoke<void>('open_app_folder'),
   openAppsSettings: () => invoke<void>('open_apps_settings'),
+  /** Never rejects: a failed lookup just means "no notice". */
+  hasLegacyInstall: (): Promise<boolean> =>
+    invoke<boolean>('has_legacy_install').catch(() => false),
   showWindow: () => invoke<void>('show_window')
 }

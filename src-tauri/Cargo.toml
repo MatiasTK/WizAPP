@@ -30,6 +30,9 @@ uuid = { version = "1", features = ["v4"] }
 sys-locale = "0.3"
 ts-rs = "11"
 
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"
+
 [[example]]
 name = "probe"
 

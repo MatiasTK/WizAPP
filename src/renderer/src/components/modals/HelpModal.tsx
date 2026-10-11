@@ -5,7 +5,14 @@ import { getVersion } from '@tauri-apps/api/app'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuDownload, LuFolder, LuGithub, LuLoaderCircle, LuUser } from 'react-icons/lu'
+import {
+  LuDownload,
+  LuFolder,
+  LuGithub,
+  LuLoaderCircle,
+  LuTriangleAlert,
+  LuUser
+} from 'react-icons/lu'
 
 type AboutModalProps = {
   isOpen: boolean
@@ -17,6 +24,14 @@ export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
   const [updateMsg, setUpdateMsg] = useState<string | null>(null)
   const [isChecking, setIsChecking] = useState(false)
   const [version, setVersion] = useState<string | null>(null)
+  const [hasLegacy, setHasLegacy] = useState(false)
+
+  // Re-checked every time the dialog opens, so the notice goes away after uninstalling.
+  useEffect(() => {
+    if (isOpen) {
+      void api.hasLegacyInstall().then(setHasLegacy)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     getVersion()
@@ -68,6 +83,26 @@ export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
       </p>
 
       <Separator />
+
+      {hasLegacy && (
+        <div
+          role="alert"
+          className="mt-6 flex items-start gap-3 rounded-lg bg-yellow-500/10 p-3 text-sm ring-1 ring-yellow-500/40"
+        >
+          <LuTriangleAlert size={20} className="mt-0.5 shrink-0 text-yellow-400" />
+          <div className="flex flex-col gap-2">
+            <p>{t('toast.legacyInstallFound')}</p>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => void api.openAppsSettings()}
+              className="w-fit cursor-pointer rounded-md bg-white/10 px-3 py-1.5 font-medium text-white transition-colors hover:bg-white/20"
+            >
+              {t('toast.openSettings')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <article className="flex flex-col gap-1 mt-8">
         <div className="flex items-center gap-2">

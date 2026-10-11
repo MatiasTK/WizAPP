@@ -1,6 +1,8 @@
 //! `#[tauri::command]` layer. Everything here only translates arguments into a call on
 //! the [`ManagerHandle`]; the logic lives in `manager`.
 
+use std::sync::Mutex;
+
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_opener::OpenerExt;
 
@@ -10,24 +12,74 @@ use crate::models::{AddBulbOutcome, MultiBulbState, ToastMessage};
 
 pub struct AppState {
     pub manager: ManagerHandle,
+    pub frontend: std::sync::Arc<TauriFrontend>,
     /// Folder with `config.json` and `wiz-app.log`.
     pub data_dir: std::path::PathBuf,
     pub language: &'static str,
 }
 
+/// Holds toasts until the renderer has subscribed; events sent earlier are lost.
+#[derive(Default)]
+pub struct ToastGate {
+    inner: Mutex<(bool, Vec<ToastMessage>)>,
+}
+
+impl ToastGate {
+    /// `Some(toast)` when it can be delivered now, `None` when it was queued.
+    pub fn push(&self, toast: ToastMessage) -> Option<ToastMessage> {
+        let mut g = self.inner.lock().unwrap();
+        if g.0 {
+            Some(toast)
+        } else {
+            g.1.push(toast);
+            None
+        }
+    }
+
+    /// Marks the renderer as listening and returns what was queued, in order.
+    pub fn open(&self) -> Vec<ToastMessage> {
+        let mut g = self.inner.lock().unwrap();
+        g.0 = true;
+        std::mem::take(&mut g.1)
+    }
+}
+
 /// Pushes manager output to the webview as events.
-pub struct TauriFrontend(pub AppHandle);
+pub struct TauriFrontend {
+    app: AppHandle,
+    gate: ToastGate,
+}
+
+impl TauriFrontend {
+    pub fn new(app: AppHandle) -> Self {
+        Self { app, gate: ToastGate::default() }
+    }
+
+    fn emit_toast(&self, toast: ToastMessage) {
+        if let Err(e) = self.app.emit("on-show-toast", toast) {
+            log::warn!("could not emit on-show-toast: {e}");
+        }
+    }
+
+    /// Called when the renderer asks for the initial state, which it does right after
+    /// subscribing to events.
+    pub fn renderer_ready(&self) {
+        for toast in self.gate.open() {
+            self.emit_toast(toast);
+        }
+    }
+}
 
 impl Frontend for TauriFrontend {
     fn state(&self, state: &MultiBulbState) {
-        if let Err(e) = self.0.emit("on-update-bulb", state) {
+        if let Err(e) = self.app.emit("on-update-bulb", state) {
             log::warn!("could not emit on-update-bulb: {e}");
         }
     }
 
     fn toast(&self, toast: ToastMessage) {
-        if let Err(e) = self.0.emit("on-show-toast", toast) {
-            log::warn!("could not emit on-show-toast: {e}");
+        if let Some(toast) = self.gate.push(toast) {
+            self.emit_toast(toast);
         }
     }
 }
@@ -36,6 +88,7 @@ type Res<T> = Result<T, AppError>;
 
 #[tauri::command]
 pub async fn get_bulbs(state: State<'_, AppState>) -> Res<MultiBulbState> {
+    state.frontend.renderer_ready();
     state.manager.get_bulbs().await
 }
 
@@ -167,6 +220,12 @@ pub fn open_apps_settings(app: AppHandle) -> Res<()> {
         .map_err(|e| AppError::Io { message: e.to_string() })
 }
 
+/// Whether the Electron-era install is still registered (help dialog notice).
+#[tauri::command]
+pub fn has_legacy_install() -> bool {
+    crate::legacy::find_legacy_install().is_some()
+}
+
 #[tauri::command]
 pub async fn check_for_updates(app: AppHandle) -> Res<bool> {
     crate::updater::check_for_updates(&app).await
@@ -175,4 +234,34 @@ pub async fn check_for_updates(app: AppHandle) -> Res<bool> {
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> Res<()> {
     crate::updater::install_update(&app).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::ToastKind;
+
+    fn toast(n: u32) -> ToastMessage {
+        ToastMessage {
+            id: n.to_string(),
+            message: "toast.x".into(),
+            kind: ToastKind::Info,
+            auto_dismiss: true,
+            retry_action: None,
+        }
+    }
+
+    #[test]
+    fn toasts_wait_for_the_renderer_and_keep_order() {
+        let gate = ToastGate::default();
+        assert!(gate.push(toast(1)).is_none());
+        assert!(gate.push(toast(2)).is_none());
+
+        let flushed = gate.open();
+        assert_eq!(flushed.iter().map(|t| t.id.as_str()).collect::<Vec<_>>(), ["1", "2"]);
+
+        // Once open, toasts pass straight through and nothing is queued.
+        assert_eq!(gate.push(toast(3)).map(|t| t.id), Some("3".to_owned()));
+        assert!(gate.open().is_empty());
+    }
 }
