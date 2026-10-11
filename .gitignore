@@ -99,3 +99,5 @@ testing/
 .cursor
 .env
 out/
+src-tauri/target
+src-tauri/gen

@@ -1,4 +1,30 @@
 {
-  "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "useDefineForClassFields": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": ["src/renderer/src/*"],
+      "@components/*": ["src/renderer/src/components/*"],
+      "@context/*": ["src/renderer/src/context/*"],
+      "@i18n/*": ["src/i18n/*"],
+      "@assets/*": ["src/renderer/src/assets/*"],
+      "@resources/*": ["resources/*"],
+      "@/types/*": ["src/renderer/src/types/*"],
+      "@pages/*": ["src/renderer/src/pages/*"],
+      "@shared/*": ["src/shared/*"]
+    }
+  },
+  "include": ["src/renderer", "src/i18n", "src/shared", "vite.config.ts"]
 }

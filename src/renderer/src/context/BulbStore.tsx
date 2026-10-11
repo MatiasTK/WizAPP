@@ -2,7 +2,7 @@ import { MAX_DEFAULT_COLORS } from '@shared/constants'
 import { BulbState } from '@shared/types/bulbState'
 import { MultiBulbState } from '@shared/types/multiBulbState'
 import { ToastMessage } from '@shared/types/toastMessage'
-import log from 'electron-log/renderer'
+import * as log from '@tauri-apps/plugin-log'
 import { create } from 'zustand'
 
 interface BulbStore {
@@ -77,7 +77,7 @@ export const useBulbStore = create<BulbStore>((set) => ({
     log.debug('[RENDERER] Setting bulb name')
     await window.api.setBulbName(name)
   },
-  setScene: async (sceneId: number) => {
+  setScene: async (sceneId: number): Promise<void> => {
     if (sceneId >= MAX_DEFAULT_COLORS) {
       log.debug('[RENDERER] Trying to set a custom color')
       return useBulbStore.getState().setCustomColor(sceneId)
@@ -99,7 +99,7 @@ export const useBulbStore = create<BulbStore>((set) => ({
     log.debug('[RENDERER] Adding custom color')
     await window.api.addCustomColor(colorName, colorHex)
   },
-  setCustomColor: async (colorId: number) => {
+  setCustomColor: async (colorId: number): Promise<void> => {
     if (colorId < MAX_DEFAULT_COLORS) {
       log.debug('[RENDERER] Trying to set a default color')
       return useBulbStore.getState().setScene(colorId)
@@ -131,19 +131,19 @@ export const useBulbStore = create<BulbStore>((set) => ({
 
   // Multi-bulb actions
   setActiveBulb: (ip: string) => {
-    log.debug('[RENDERER] Setting active bulb:', ip)
+    log.debug(`[RENDERER] Setting active bulb: ${ip}`)
     window.api.setActiveBulb(ip)
   },
   toggleBulbByIp: (ip: string) => {
-    log.debug('[RENDERER] Toggling bulb by IP:', ip)
+    log.debug(`[RENDERER] Toggling bulb by IP: ${ip}`)
     window.api.toggleBulbByIp(ip)
   },
   addBulbByIp: (ip: string) => {
-    log.debug('[RENDERER] Adding bulb by IP:', ip)
+    log.debug(`[RENDERER] Adding bulb by IP: ${ip}`)
     window.api.addBulbByIp(ip)
   },
   deleteBulb: (ip: string) => {
-    log.debug('[RENDERER] Deleting bulb:', ip)
+    log.debug(`[RENDERER] Deleting bulb: ${ip}`)
     window.api.deleteBulb(ip)
   },
   retryDiscovery: () => {
