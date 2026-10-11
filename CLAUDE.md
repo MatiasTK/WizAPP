@@ -14,20 +14,23 @@ The package manager is **pnpm** (`.npmrc` sets `shamefully-hoist=true`). Rust st
 
 ```bash
 pnpm install
-pnpm tauri dev        # Vite on :5173 (strictPort) + Rust app, renderer HMR
-pnpm dev              # renderer only, in a browser (no backend: commands reject)
+pnpm dev              # = tauri dev: Vite on :5173 (strictPort) + Rust app, renderer HMR
+pnpm dev:web          # renderer only, in a browser (no backend: commands reject)
 pnpm typecheck        # tsc --noEmit -p tsconfig.json
 pnpm lint             # eslint --fix (modifies files); `pnpm lint:check` does not
 pnpm format           # prettier --write .
-pnpm build            # typecheck + vite build -> dist/
+pnpm build:web        # typecheck + vite build -> dist/ (what tauri build runs first)
+pnpm build            # = tauri build: signed NSIS installer (needs the signing key)
+pnpm build:unsigned   # NSIS installer without updater artifacts, no key needed
+pnpm test             # cargo test (also regenerates the ts-rs bindings)
 cd src-tauri
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test            # also regenerates src/renderer/src/bindings/*.ts
 ```
 
-- `cargo` needs `dist/` to exist (`tauri.conf.json` `frontendDist`); run `pnpm build` once on a fresh clone.
-- `pnpm tauri build` needs `TAURI_SIGNING_PRIVATE_KEY` because `createUpdaterArtifacts` is on, and a real `plugins.updater.pubkey` (it is a placeholder until the maintainer generates the key pair).
+- `cargo` needs `dist/` to exist (`tauri.conf.json` `frontendDist`); run `pnpm build:web` once on a fresh clone.
+- `pnpm build` needs `TAURI_SIGNING_PRIVATE_KEY` because `createUpdaterArtifacts` is on, and the matching `plugins.updater.pubkey` in `tauri.conf.json`.
 - Debug builds honour `WIZAPP_DATA_DIR` (config + log directory). Release builds ignore it. Tauri does **not** honour a changed `%APPDATA%`.
 - `cargo build --release --features tauri/custom-protocol` produces a release exe that serves `dist/`; without that feature the exe loads the Vite dev server.
 

@@ -51,9 +51,9 @@ If you want to build the app yourself, you need [Node.js](https://nodejs.org/) 2
 
 - Clone the repo.
 - Install the dependencies with `pnpm install`.
-- `pnpm tauri dev` runs the app with hot reload.
-- `pnpm tauri build` builds the NSIS installer in `src-tauri/target/release/bundle/nsis`. Release builds are signed for the auto-updater, so set `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) first.
-- `cd src-tauri && cargo test` runs the backend tests (they use a fake bulb, no hardware needed).
+- `pnpm dev` runs the app with hot reload.
+- `pnpm build` builds the NSIS installer in `src-tauri/target/release/bundle/nsis`. It is signed for the auto-updater, so set `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) first, or use `pnpm build:unsigned`.
+- `pnpm test` runs the backend tests (they use a fake bulb, no hardware needed).
 
 To try the app without a bulb, run `PYTHONIOENCODING=utf-8 python scripts/wiz_emulator.py` and add `127.0.0.1`, `127.0.0.2` and `127.0.0.3` from the *Add device* dialog.
 
