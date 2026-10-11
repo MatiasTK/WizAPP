@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WiZ APP — a desktop app (Tauri 2 + React 19 + TypeScript + Tailwind v4 + Zustand) that discovers and controls WiZ smart bulbs over the local network via UDP.
 
-**This branch (`tauri`) is mid-migration from Electron.** `MIGRATION.md` is the plan and defines the module order (M0–M8); `docs/electron-inventory.md` describes the old behaviour. `main` is still Electron 3.0.x. Current status: **M0 done** (scaffolding), no Rust backend yet — `src-tauri/` only opens the window, so the renderer still calls the removed `window.api` (typed by a temporary shim in `src/renderer/src/env.d.ts`) and every bulb action fails until M4.
+**This branch (`tauri`) is mid-migration from Electron.** `MIGRATION.md` is the plan and defines the module order (M0–M8); `docs/electron-inventory.md` describes the old behaviour. `main` is still Electron 3.0.x. Current status: **M0 and M1 done** (scaffolding; `src-tauri/src/wiz/` UDP client with tests). The manager/commands are not written yet — `src-tauri/` only opens the window, so the renderer still calls the removed `window.api` (typed by a temporary shim in `src/renderer/src/env.d.ts`) and every bulb action fails until M4.
 
 ## Commands
 
@@ -23,11 +23,11 @@ pnpm build            # typecheck + vite build -> dist/
 cd src-tauri && cargo check   # also fmt / clippy -D warnings / test from M1 on
 ```
 
-There are no JS tests. Rust tests arrive with M1.
+There are no JS tests. Rust tests: `cd src-tauri && cargo test` (uses an in-process `FakeBulb`, no emulator needed). Manual probe: `cargo run --example probe -- 127.0.0.1`.
 
 ### Testing without physical bulbs
 
-`python scripts/wiz_emulator.py` starts three virtual bulbs on UDP port 38899 at `127.0.0.1`, `127.0.0.2` and `127.0.0.3`. Add them manually by IP through the app's "add device" modal rather than relying on broadcast discovery.
+`PYTHONIOENCODING=utf-8 python scripts/wiz_emulator.py` (the env var is needed on Windows or the script dies on `→`) starts three virtual bulbs on UDP port 38899 at `127.0.0.1`, `127.0.0.2` and `127.0.0.3`. Add them manually by IP through the app's "add device" modal rather than relying on broadcast discovery.
 
 ## Layout
 

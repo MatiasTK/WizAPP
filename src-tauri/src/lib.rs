@@ -1,3 +1,5 @@
+pub mod wiz;
+
 use tauri::Manager;
 
 pub fn run() {

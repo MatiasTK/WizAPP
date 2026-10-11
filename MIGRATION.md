@@ -350,5 +350,7 @@ Pendiente de M0:
 - Spike de ventana sin parpadeo blanco (verificación visual; hoy `setup` muestra la ventana de inmediato).
 - HMR no verificado visualmente.
 - Borrar `wizapp-tauri/` (espera confirmación).
-- `cargo fmt --check` / `clippy` aún no corridos; los íconos son los 256 px de Electron, no los generados por `pnpm tauri icon`.
+- `cargo fmt --check` y `clippy -D warnings` pasan. Los íconos son los 256 px de Electron, no los generados por `pnpm tauri icon`.
 - Desviaciones: `strict` queda en `false` en `tsconfig.json` porque el código del renderer no compila en modo estricto; se mantiene el comportamiento del preset anterior. `src/renderer/src/env.d.ts` trae una declaración temporal de `window.api` hasta M4.
+
+**M1 — hecho (2026-10-10).** `src-tauri/src/wiz/` (protocol, client, discovery, netif, testing) con 14 tests en verde con `FakeBulb`, incluido `WSAECONNRESET` real en Windows. `cargo clippy --all-targets -D warnings` limpio. Verificado a mano con `cargo run --example probe -- 127.0.0.2` contra el emulador. Nota: en Windows el emulador necesita `PYTHONIOENCODING=utf-8` (imprime `→` y cae con cp1252).
