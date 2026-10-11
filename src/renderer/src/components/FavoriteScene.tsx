@@ -1,86 +1,119 @@
+import SceneTile from '@components/SceneTile'
+import SortableSceneItem from '@components/SortableSceneItem'
 import {
   closestCenter,
   DndContext,
-  DragEndEvent,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
-  useSensors
+  useSensors,
+  type DragEndEvent
 } from '@dnd-kit/core'
 import { restrictToParentElement } from '@dnd-kit/modifiers'
-import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable'
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates
+} from '@dnd-kit/sortable'
+import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { CustomColor } from '@renderer/bindings/CustomColor'
-import { useMemo } from 'react'
+import { useCatalog } from '@renderer/lib/catalog'
+import { matches } from '@renderer/lib/search'
 import { useTranslation } from 'react-i18next'
-import { Scene, scenes } from 'src/renderer/utils/scenesInfo'
-import SortableSceneItem from './SortableSceneItem'
 
-export default function FavoriteScene() {
-  const bulb = useBulbStore((state) => state.activeBulb)
+/** New favorites order after moving `activeId` to where `overId` is; `null` if nothing moves. */
+export const reorderFavorites = (
+  ids: number[],
+  activeId: number,
+  overId: number
+): number[] | null => {
+  const from = ids.indexOf(activeId)
+  const to = ids.indexOf(overId)
+  if (from < 0 || to < 0 || from === to) return null
+  return arrayMove(ids, from, to)
+}
+
+type FavoriteSceneProps = {
+  /** The bulb a favorite is applied to. */
+  bulb: BulbState | null
+  /** While filtering, favorites are shown but not reorderable. */
+  query?: string
+}
+
+/** Favorites, reorderable with the mouse or with the keyboard (handle + arrow keys). */
+export default function FavoriteScene({ bulb, query = '' }: FavoriteSceneProps) {
   const { t } = useTranslation()
-  const setFavoriteColorsOrder = useBulbStore((state) => state.setFavoriteColorsOrder)
-  const sensors = useSensors(useSensor(PointerSensor))
+  const { favorites } = useCatalog()
+  const setScene = useBulbStore((s) => s.setScene)
+  const toggleFavoriteColor = useBulbStore((s) => s.toggleFavoriteColor)
+  const setFavoriteColorsOrder = useBulbStore((s) => s.setFavoriteColorsOrder)
 
-  const favorites = useMemo(() => {
-    if (!bulb) return []
-
-    // Create a map of all available scenes and custom colors for quick lookup
-    const scenesMap = new Map(scenes.map((scene) => [scene.id, scene]))
-    const customColorsMap = new Map(bulb.customColors.map((color) => [color.id, color]))
-
-    // Use bulb.favoriteColors order to create the final array
-    return bulb.favoriteColors
-      .map((id) => scenesMap.get(id) || customColorsMap.get(id))
-      .filter((item): item is Scene | CustomColor => item !== undefined)
-  }, [bulb?.favoriteColors])
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (over && active.id !== over.id) {
-      const oldIndex = favorites.findIndex((item) => item.id === active.id)
-      const newIndex = favorites.findIndex((item) => item.id === over.id)
-      const newFavorites = arrayMove(favorites, oldIndex, newIndex) as (Scene | CustomColor)[]
-      setFavoriteColorsOrder(newFavorites.map((item) => item.id))
-    }
+    if (!over) return
+    const order = reorderFavorites(
+      favorites.map((f) => f.id),
+      Number(active.id),
+      Number(over.id)
+    )
+    if (order) void setFavoriteColorsOrder(order)
+  }
+
+  if (favorites.length === 0) {
+    return query ? null : <p className="text-sm text-muted">{t('scenes.missingFavorites')}</p>
+  }
+
+  if (query.trim() !== '') {
+    const shown = favorites.filter((f) => matches(f.name, query))
+    if (shown.length === 0) return null
+    return (
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3">
+        {shown.map((entry) => (
+          <li key={entry.id} className="min-w-0">
+            <SceneTile
+              entry={entry}
+              active={bulb?.sceneId === entry.id}
+              disabled={!bulb?.online}
+              favorite
+              onApply={() => void setScene(entry.id, bulb?.ip)}
+              onToggleFavorite={() => void toggleFavoriteColor(entry.id)}
+            />
+          </li>
+        ))}
+      </ul>
+    )
   }
 
   return (
     <DndContext
-      modifiers={[restrictToParentElement]}
       sensors={sensors}
       collisionDetection={closestCenter}
+      modifiers={[restrictToParentElement]}
       onDragEnd={handleDragEnd}
+      accessibility={{
+        screenReaderInstructions: { draggable: t('scenes.favorite.dragInstructions') }
+      }}
     >
-      <h2 className="text-2xl font-semibold">{t('scenes.favorites')}</h2>
-      {bulb && bulb.favoriteColors.length > 0 ? (
-        <SortableContext items={favorites} strategy={rectSortingStrategy}>
-          <article className="mt-8 w-full grid grid-cols-3 gap-x-4 gap-y-4 lg:gap-y-6 lg:grid-cols-4 xl:grid-cols-5">
-            {favorites.map((color) => {
-              if ('hex' in color) {
-                return (
-                  <SortableSceneItem
-                    id={color.id}
-                    name={color.name}
-                    hex={color.hex}
-                    key={color.id}
-                  />
-                )
-              }
-              return (
-                <SortableSceneItem
-                  id={color.id}
-                  name={t(`scenes.names.${color.name}`)}
-                  icon={color.icon}
-                  key={color.id}
-                />
-              )
-            })}
-          </article>
-        </SortableContext>
-      ) : (
-        <p className="my-12 text-center text-neutral-500 font-bold text-sm">
-          {t('scenes.missingFavorites')}
-        </p>
-      )}
+      <SortableContext items={favorites.map((f) => f.id)} strategy={rectSortingStrategy}>
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3">
+          {favorites.map((entry) => (
+            <SortableSceneItem
+              key={entry.id}
+              entry={entry}
+              active={bulb?.sceneId === entry.id}
+              disabled={!bulb?.online}
+              favorite
+              onApply={() => void setScene(entry.id, bulb?.ip)}
+              onToggleFavorite={() => void toggleFavoriteColor(entry.id)}
+            />
+          ))}
+        </ul>
+      </SortableContext>
     </DndContext>
   )
 }

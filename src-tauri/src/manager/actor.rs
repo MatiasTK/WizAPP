@@ -13,8 +13,8 @@ use super::{Frontend, ManagerMsg, ManagerOptions, Reply, Target};
 use crate::config::{BulbEntry, ConfigStore, LoadOutcome};
 use crate::error::AppError;
 use crate::models::{
-    AddBulbOutcome, BulbState, CustomColor, MultiBulbState, RetryAction, ToastKind, ToastMessage,
-    MAX_DEFAULT_COLORS,
+    AddBulbOutcome, BulbState, CustomColor, MultiBulbState, RetryAction, Settings, ToastKind,
+    ToastMessage, MAX_DEFAULT_COLORS,
 };
 use crate::wiz::discovery::{discover_unicast, Discovered};
 use crate::wiz::{BulbClient, Pilot, PilotPatch, SystemConfig, WizError};
@@ -29,11 +29,17 @@ struct Bulb {
 }
 
 /// What to do with the result of a worker job.
+#[derive(Clone)]
 enum Pending {
     Toggle,
+    /// Explicit on/off (used by "all bulbs").
+    Power(bool),
     Brightness(u32),
     Scene(u32),
-    Color { id: u32, rgb: (u8, u8, u8) },
+    Color {
+        id: u32,
+        rgb: (u8, u8, u8),
+    },
     Refresh,
 }
 
@@ -130,13 +136,40 @@ impl Actor {
                     let _ = reply.send(Err(e));
                 }
             },
-            ManagerMsg::SetBrightness(value, reply) => {
-                self.patch_active(PilotPatch::dimming(value), Pending::Brightness(value), reply);
+            ManagerMsg::SetBrightness(target, value, reply) => {
+                self.patch(&target, PilotPatch::dimming(value), Pending::Brightness(value), reply);
             }
-            ManagerMsg::SetScene(id, reply) => {
-                self.patch_active(PilotPatch::scene(id), Pending::Scene(id), reply);
+            ManagerMsg::SetScene(target, id, reply) => {
+                self.patch(&target, PilotPatch::scene(id), Pending::Scene(id), reply);
             }
-            ManagerMsg::SetCustomColor(id, reply) => self.set_custom_color(id, reply),
+            ManagerMsg::SetCustomColor(target, id, reply) => match self.color_patch(id) {
+                Ok((patch, kind)) => self.patch(&target, patch, kind, reply),
+                Err(e) => {
+                    let _ = reply.send(Err(e));
+                }
+            },
+            ManagerMsg::SetAll { on, reply } => {
+                self.patch_all(PilotPatch::state(on), Pending::Power(on), reply);
+            }
+            ManagerMsg::ApplyAll(id, reply) => {
+                let prepared = if id < MAX_DEFAULT_COLORS {
+                    Ok((PilotPatch::scene(id), Pending::Scene(id)))
+                } else {
+                    self.color_patch(id)
+                };
+                match prepared {
+                    Ok((patch, kind)) => self.patch_all(patch, kind, reply),
+                    Err(e) => {
+                        let _ = reply.send(Err(e));
+                    }
+                }
+            }
+            ManagerMsg::GetSettings(reply) => {
+                let _ = reply.send(self.store.config().settings());
+            }
+            ManagerMsg::SetSettings { settings, reply } => {
+                let _ = reply.send(self.set_settings(settings));
+            }
             ManagerMsg::SetBulbName { name, ip, reply } => {
                 let _ = reply.send(self.set_name(name, ip));
             }
@@ -167,6 +200,9 @@ impl Actor {
             }
             ManagerMsg::SetFavoriteOrder(order, reply) => {
                 let _ = reply.send(self.set_favorite_order(order));
+            }
+            ManagerMsg::SetBulbOrder(ips, reply) => {
+                let _ = reply.send(self.set_bulb_order(&ips));
             }
             ManagerMsg::RetryDiscovery(reply) => {
                 for b in &mut self.bulbs {
@@ -356,12 +392,12 @@ impl Actor {
         self.dispatch(ip, op, Pending::Refresh, reply);
     }
 
-    fn patch_active(&mut self, patch: PilotPatch, kind: Pending, reply: Reply<()>) {
+    fn patch(&mut self, target: &Target, patch: PilotPatch, kind: Pending, reply: Reply<()>) {
         if let Err(e) = patch.validate() {
             let _ = reply.send(Err(AppError::from_wiz(e, "")));
             return;
         }
-        match self.resolve(&Target::Active) {
+        match self.resolve(target) {
             Ok(ip) => self.dispatch(&ip, WorkerOp::Patch(patch), kind, Some(reply)),
             Err(e) => {
                 let _ = reply.send(Err(e));
@@ -369,20 +405,56 @@ impl Actor {
         }
     }
 
-    fn set_custom_color(&mut self, id: u32, reply: Reply<()>) {
-        let Some(color) = self.store.config().custom_colors.iter().find(|c| c.id == id) else {
-            let _ = reply.send(Err(AppError::invalid("colorId")));
+    /// Sends the same patch to every online bulb, each through its own worker, and replies
+    /// with the IPs that did not answer (offline ones are not even tried). The actor does
+    /// not wait: a helper task joins the per-bulb replies.
+    fn patch_all(&mut self, patch: PilotPatch, kind: Pending, reply: Reply<Vec<String>>) {
+        if let Err(e) = patch.validate() {
+            let _ = reply.send(Err(AppError::from_wiz(e, "")));
             return;
-        };
-        let patch = match PilotPatch::from_hex(&color.hex) {
-            Ok(p) => p,
-            Err(e) => {
-                let _ = reply.send(Err(AppError::from_wiz(e, "")));
-                return;
+        }
+        let mut failed = Vec::new();
+        let mut waiting = Vec::new();
+        let bulbs: Vec<(String, bool)> =
+            self.bulbs.iter().map(|b| (b.ip.clone(), b.online)).collect();
+        for (ip, online) in bulbs {
+            if !online {
+                failed.push(ip);
+                continue;
             }
-        };
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            self.dispatch(&ip, WorkerOp::Patch(patch.clone()), kind.clone(), Some(tx));
+            waiting.push((ip, rx));
+        }
+        tokio::spawn(async move {
+            for (ip, rx) in waiting {
+                if !matches!(rx.await, Ok(Ok(()))) {
+                    failed.push(ip);
+                }
+            }
+            let _ = reply.send(Ok(failed));
+        });
+    }
+
+    /// Patch and cache update for applying custom color `id`.
+    fn color_patch(&self, id: u32) -> Result<(PilotPatch, Pending), AppError> {
+        let color = self
+            .store
+            .config()
+            .custom_colors
+            .iter()
+            .find(|c| c.id == id)
+            .ok_or_else(|| AppError::invalid("colorId"))?;
+        let patch = PilotPatch::from_hex(&color.hex).map_err(|e| AppError::from_wiz(e, ""))?;
         let rgb = (patch.r.unwrap_or(0), patch.g.unwrap_or(0), patch.b.unwrap_or(0));
-        self.patch_active(patch, Pending::Color { id, rgb }, reply);
+        Ok((patch, Pending::Color { id, rgb }))
+    }
+
+    fn set_settings(&mut self, settings: Settings) -> Result<(), AppError> {
+        let cfg = self.store.config_mut();
+        cfg.theme = settings.theme;
+        cfg.language = settings.language;
+        self.store.save().map_err(|e| AppError::Io { message: e.to_string() })
     }
 
     // ---- worker results ---------------------------------------------------------
@@ -436,6 +508,7 @@ impl Actor {
                 }
             }
             (_, WorkerOutput::Toggled(on)) => b.pilot.state = Some(on),
+            (Pending::Power(on), _) => b.pilot.state = Some(*on),
             (Pending::Brightness(d), _) => b.pilot.dimming = Some(*d),
             (Pending::Scene(id), _) => {
                 b.pilot.state = Some(true);
@@ -625,6 +698,22 @@ impl Actor {
         } else {
             cfg.favorite_colors.push(id);
         }
+        self.persist()?;
+        self.emit();
+        Ok(())
+    }
+
+    /// Bulbs named in `ips` come first, in that order; any the list missed keep their place after.
+    fn set_bulb_order(&mut self, ips: &[String]) -> Result<(), AppError> {
+        let mut rest = std::mem::take(&mut self.bulbs);
+        let mut ordered = Vec::with_capacity(rest.len());
+        for ip in ips {
+            if let Some(i) = rest.iter().position(|b| &b.ip == ip) {
+                ordered.push(rest.remove(i));
+            }
+        }
+        ordered.append(&mut rest);
+        self.bulbs = ordered;
         self.persist()?;
         self.emit();
         Ok(())

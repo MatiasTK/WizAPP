@@ -15,7 +15,7 @@ use tokio::sync::{mpsc, oneshot};
 
 use crate::config::{ConfigStore, LoadOutcome};
 use crate::error::AppError;
-use crate::models::{AddBulbOutcome, MultiBulbState, ToastMessage};
+use crate::models::{AddBulbOutcome, MultiBulbState, Settings, ToastMessage};
 use crate::wiz::{Timings, WizNet};
 
 pub use actor::Actor;
@@ -53,14 +53,33 @@ pub enum Target {
     Ip(String),
 }
 
+impl Target {
+    pub fn from_ip(ip: Option<String>) -> Self {
+        ip.map_or(Target::Active, Target::Ip)
+    }
+}
+
 pub(crate) type Reply<T> = oneshot::Sender<Result<T, AppError>>;
 
 pub(crate) enum ManagerMsg {
     GetBulbs(oneshot::Sender<MultiBulbState>),
     Toggle(Target, Reply<()>),
-    SetBrightness(u32, Reply<()>),
-    SetScene(u32, Reply<()>),
-    SetCustomColor(u32, Reply<()>),
+    SetBrightness(Target, u32, Reply<()>),
+    SetScene(Target, u32, Reply<()>),
+    SetCustomColor(Target, u32, Reply<()>),
+    /// Power every bulb; replies with the IPs that did not respond.
+    SetAll {
+        on: bool,
+        reply: Reply<Vec<String>>,
+    },
+    /// Apply a scene (`id < MAX_DEFAULT_COLORS`) or custom color to every bulb; replies
+    /// with the IPs that did not respond.
+    ApplyAll(u32, Reply<Vec<String>>),
+    GetSettings(oneshot::Sender<Settings>),
+    SetSettings {
+        settings: Settings,
+        reply: Reply<()>,
+    },
     SetBulbName {
         name: String,
         ip: Option<String>,
@@ -84,6 +103,7 @@ pub(crate) enum ManagerMsg {
     RemoveColor(u32, Reply<()>),
     ToggleFavorite(u32, Reply<()>),
     SetFavoriteOrder(Vec<u32>, Reply<()>),
+    SetBulbOrder(Vec<String>, Reply<()>),
     RetryDiscovery(Reply<()>),
     DeleteProfile(Reply<()>),
     RefreshAll,
@@ -148,16 +168,45 @@ impl ManagerHandle {
         self.ask(|r| ManagerMsg::Toggle(Target::Ip(ip), r)).await
     }
 
-    pub async fn set_brightness(&self, brightness: u32) -> Result<(), AppError> {
-        self.ask(|r| ManagerMsg::SetBrightness(brightness, r)).await
+    /// `ip: None` targets the active bulb.
+    pub async fn set_brightness(
+        &self,
+        ip: Option<String>,
+        brightness: u32,
+    ) -> Result<(), AppError> {
+        self.ask(|r| ManagerMsg::SetBrightness(Target::from_ip(ip), brightness, r)).await
     }
 
-    pub async fn set_scene(&self, scene_id: u32) -> Result<(), AppError> {
-        self.ask(|r| ManagerMsg::SetScene(scene_id, r)).await
+    pub async fn set_scene(&self, ip: Option<String>, scene_id: u32) -> Result<(), AppError> {
+        self.ask(|r| ManagerMsg::SetScene(Target::from_ip(ip), scene_id, r)).await
     }
 
-    pub async fn set_custom_color(&self, color_id: u32) -> Result<(), AppError> {
-        self.ask(|r| ManagerMsg::SetCustomColor(color_id, r)).await
+    pub async fn set_custom_color(
+        &self,
+        ip: Option<String>,
+        color_id: u32,
+    ) -> Result<(), AppError> {
+        self.ask(|r| ManagerMsg::SetCustomColor(Target::from_ip(ip), color_id, r)).await
+    }
+
+    /// Returns the IPs of the bulbs that could not be reached.
+    pub async fn set_all(&self, on: bool) -> Result<Vec<String>, AppError> {
+        self.ask(|reply| ManagerMsg::SetAll { on, reply }).await
+    }
+
+    /// Applies a scene or custom color to every bulb; returns the IPs that failed.
+    pub async fn apply_all(&self, id: u32) -> Result<Vec<String>, AppError> {
+        self.ask(|r| ManagerMsg::ApplyAll(id, r)).await
+    }
+
+    pub async fn get_settings(&self) -> Result<Settings, AppError> {
+        let (reply, rx) = oneshot::channel();
+        self.tx.send(ManagerMsg::GetSettings(reply)).map_err(|_| gone())?;
+        rx.await.map_err(|_| gone())
+    }
+
+    pub async fn set_settings(&self, settings: Settings) -> Result<(), AppError> {
+        self.ask(|reply| ManagerMsg::SetSettings { settings, reply }).await
     }
 
     pub async fn set_bulb_name(&self, name: String, ip: Option<String>) -> Result<(), AppError> {
@@ -199,6 +248,10 @@ impl ManagerHandle {
 
     pub async fn toggle_favorite_color(&self, id: u32) -> Result<(), AppError> {
         self.ask(|r| ManagerMsg::ToggleFavorite(id, r)).await
+    }
+
+    pub async fn set_bulb_order(&self, ips: Vec<String>) -> Result<(), AppError> {
+        self.ask(|r| ManagerMsg::SetBulbOrder(ips, r)).await
     }
 
     pub async fn set_favorite_colors_order(&self, order: Vec<u32>) -> Result<(), AppError> {

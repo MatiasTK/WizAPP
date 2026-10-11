@@ -41,6 +41,12 @@ jobs:
       - name: Lint
         run: pnpm lint:check
 
+      - name: Design token contrast
+        run: pnpm check:contrast
+
+      - name: Renderer tests
+        run: pnpm test:web
+
       # Typechecks, then builds dist/ (tauri's generate_context! needs frontendDist).
       - name: Typecheck and build renderer
         run: pnpm build:web

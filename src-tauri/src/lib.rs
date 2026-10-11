@@ -90,7 +90,8 @@ pub fn run() {
 
             // First run (new or imported config): mention a still-installed Electron app.
             let first_run = matches!(outcome, LoadOutcome::Created | LoadOutcome::Imported { .. });
-            let frontend = Arc::new(TauriFrontend::new(app.handle().clone()));
+            let language = i18n::resolve_language(store.config().language);
+            let frontend = Arc::new(TauriFrontend::new(app.handle().clone(), language));
             if first_run && legacy::find_legacy_install().is_some() {
                 frontend.toast(ToastMessage {
                     id: Uuid::new_v4().to_string(),
@@ -103,8 +104,7 @@ pub fn run() {
             let (manager, actor) =
                 ManagerHandle::build(frontend.clone(), store, outcome, ManagerOptions::default());
             tauri::async_runtime::spawn(actor.run());
-            let language = i18n::system_language();
-            app.manage(AppState { manager, frontend, data_dir: dir.clone(), language });
+            app.manage(AppState { manager, frontend, data_dir: dir.clone() });
             tray::setup(app.handle(), language)?;
             tauri::async_runtime::spawn(updater::check_on_startup(app.handle().clone()));
 
@@ -131,6 +131,10 @@ pub fn run() {
             commands::set_brightness,
             commands::set_scene,
             commands::set_custom_color,
+            commands::set_all_bulbs,
+            commands::apply_to_all,
+            commands::get_settings,
+            commands::set_settings,
             commands::set_bulb_name,
             commands::set_active_bulb,
             commands::delete_bulb,
@@ -141,6 +145,7 @@ pub fn run() {
             commands::remove_custom_color,
             commands::toggle_favorite_color,
             commands::set_favorite_colors_order,
+            commands::set_bulbs_order,
             commands::retry_discovery,
             commands::delete_profile,
             commands::get_language,

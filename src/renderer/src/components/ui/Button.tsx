@@ -1,59 +1,43 @@
-type ButtonProps = {
-  children: React.ReactNode
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'outline' | 'ghost'
-  size?: 'small' | 'medium' | 'large'
-  disabled?: boolean
-  fullWidth?: boolean
-  onClick?: () => void
-  type?: 'button' | 'submit' | 'reset'
-  className?: string
+import { cn, focusRing } from '@renderer/lib/cn'
+import type { ComponentProps } from 'react'
+
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'chip'
+export type ButtonSize = 'dense' | 'normal'
+
+type ButtonProps = ComponentProps<'button'> & {
+  variant?: ButtonVariant
+  size?: ButtonSize
 }
 
-export default function Button({
-  children,
-  variant = 'primary',
-  size = 'medium',
-  disabled = false,
-  fullWidth = false,
-  onClick,
-  type = 'button',
-  className
-}: ButtonProps) {
-  const baseStyles = 'rounded-md transition-all duration-200 focus:outline-none focus:ring-offset-2'
+const variants: Record<ButtonVariant, string> = {
+  primary: 'bg-primary text-on-primary hover:bg-primary-hover',
+  secondary: 'bg-raised text-fg hover:bg-border',
+  ghost: 'bg-transparent text-fg hover:bg-raised',
+  destructive: 'bg-danger text-on-danger hover:bg-danger-hover',
+  // A toggleable pill: `aria-pressed` marks the selected one.
+  chip: 'bg-raised text-fg hover:bg-border aria-pressed:bg-primary aria-pressed:text-on-primary'
+}
 
-  const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-    secondary: 'bg-secondary-400/50 hover:bg-secondary-400/75 focus:ring-secondary-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
-    ghost: ''
-  }
+const sizes: Record<ButtonSize, string> = {
+  dense: 'h-8 gap-1.5 px-3 text-sm',
+  normal: 'h-10 gap-2 px-5 text-sm'
+}
 
-  const sizes = {
-    small: 'px-3 py-1.5 text-sm',
-    medium: 'px-4 py-2 text-base',
-    large: 'px-6 py-3 text-lg'
-  }
-
-  const widthClass = fullWidth ? 'w-full' : ''
-  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-
-  return (
-    <button
-      type={type}
-      className={`
-            ${baseStyles}
-            ${variants[variant]}
-            ${sizes[size]}
-            ${widthClass}
-            ${disabledClass}
-            ${className}
-        `}
-      onClick={onClick}
-      disabled={disabled}
-    >
-      {children}
-    </button>
+export const buttonClasses = (variant: ButtonVariant = 'secondary', size: ButtonSize = 'normal') =>
+  cn(
+    'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg font-medium whitespace-nowrap transition-colors',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+    focusRing,
+    variants[variant],
+    sizes[size]
   )
+
+export default function Button({
+  variant = 'secondary',
+  size = 'normal',
+  type = 'button',
+  className,
+  ...rest
+}: ButtonProps) {
+  return <button type={type} className={cn(buttonClasses(variant, size), className)} {...rest} />
 }

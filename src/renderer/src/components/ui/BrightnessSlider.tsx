@@ -1,56 +1,75 @@
+import Slider from '@components/ui/Slider'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-export default function BrightnessSlider() {
+export const MIN_BRIGHTNESS = 10
+export const MAX_BRIGHTNESS = 100
+const KEYBOARD_PAUSE_MS = 200
+
+type BrightnessSliderProps = {
+  ip: string
+  dimming?: number
+  disabled?: boolean
+  /** Bulb name, for the accessible name. */
+  name: string
+  showValue?: boolean
+}
+
+/**
+ * Brightness of one bulb. The value is sent when the thumb is released, or shortly
+ * after the last key press, never on every intermediate step.
+ */
+export default function BrightnessSlider({
+  ip,
+  dimming,
+  disabled,
+  name,
+  showValue = true
+}: BrightnessSliderProps) {
   const { t } = useTranslation()
-  const bulb = useBulbStore((state) => state.activeBulb)
-  const setBrightness = useBulbStore((state) => state.setBrightness)
+  const setBrightness = useBulbStore((s) => s.setBrightness)
+  const [value, setValue] = useState(dimming ?? 50)
+  const editing = useRef(false)
+  const timer = useRef<number>(undefined)
 
-  const [isDragging, setIsDragging] = useState(false)
-  const [currentBrightness, setCurrentBrightness] = useState(bulb?.dimming ?? 50)
-
-  // Sync brightness when active bulb changes
+  // Follow the bulb unless the user is in the middle of changing it.
   useEffect(() => {
-    if (bulb) {
-      setCurrentBrightness(bulb.dimming ?? 50)
-    }
-  }, [bulb?.ip, bulb?.dimming])
+    if (!editing.current) setValue(dimming ?? 50)
+  }, [dimming, ip])
 
-  const handleMouseUp = () => {
-    if (isDragging && currentBrightness) {
-      setBrightness(currentBrightness)
-      setIsDragging(false)
-    }
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  const handleChange = (next: number) => {
+    editing.current = true
+    setValue(next)
   }
 
-  const handleMouseDown = () => {
-    setIsDragging(true)
-  }
-
-  const handleChangeBrightness = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentBrightness(parseInt(event.target.value))
+  const handleCommit = (next: number) => {
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => {
+      editing.current = false
+      void setBrightness(next, ip)
+    }, KEYBOARD_PAUSE_MS)
   }
 
   return (
-    <div className="flex flex-col my-2 gap-2">
-      <label className="text-xs text-neutral-400/75 subpixel-antialiased">
-        {t('sidebar.brightness')}: {currentBrightness}%
-      </label>
-      <input
-        aria-label="Brightness control"
-        type="range"
-        min={10}
-        max={100}
-        onMouseUp={handleMouseUp}
-        onMouseDown={handleMouseDown}
-        onChange={handleChangeBrightness}
-        value={currentBrightness}
+    <div className="flex items-center gap-2">
+      <Slider
+        aria-label={t('bulb.brightness', { name })}
+        value={value}
+        min={MIN_BRIGHTNESS}
+        max={MAX_BRIGHTNESS}
         step={10}
-        disabled={!bulb?.online}
-        className="w-full disabled:opacity-40 disabled:cursor-not-allowed"
-        role="slider"
+        disabled={disabled}
+        onValueChange={handleChange}
+        onValueCommit={handleCommit}
       />
+      {showValue && (
+        <span aria-hidden className="w-9 shrink-0 text-right text-xs text-muted tabular-nums">
+          {value}%
+        </span>
+      )}
     </div>
   )
 }

@@ -1,54 +1,161 @@
+import Button from '@components/ui/Button'
+import EmptyState from '@components/ui/EmptyState'
+import IconButton from '@components/ui/IconButton'
+import Spinner from '@components/ui/Spinner'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { useCatalog } from '@renderer/lib/catalog'
+import { cn } from '@renderer/lib/cn'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuCpu } from 'react-icons/lu'
+import { LuCopy, LuInfo, LuRefreshCw } from 'react-icons/lu'
+
+const NONE = '—'
 
 export default function Information() {
-  const bulb = useBulbStore((state) => state.activeBulb)
   const { t } = useTranslation()
+  const bulbs = useBulbStore((s) => s.bulbs)
+  const activeBulb = useBulbStore((s) => s.activeBulb)
+  const probeAll = useBulbStore((s) => s.probeAll)
+  const pushToast = useBulbStore((s) => s.pushToast)
+  const { byId } = useCatalog()
+  const [refreshing, setRefreshing] = useState(false)
 
-  const renderLabel = (name: string, value: string | number) => (
-    <p>
-      <span className="font-medium me-2">{name}:</span>
-      <span>{value}</span>
-    </p>
-  )
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await probeAll()
+    setRefreshing(false)
+  }
 
-  const renderCardInfo = () => (
-    <article className="mt-14 flex bg-secondary-700 rounded-xl px-6 py-5 flex-col w-fit shadow-lg">
-      <div className="flex items-center gap-2">
-        <LuCpu size={28} strokeWidth={1} />
-        <h2 className="text-2xl lg:text-2xl font-semibold">{bulb.name}</h2>
-      </div>
+  const handleCopy = async (value: string, kind: 'ip' | 'mac') => {
+    try {
+      await navigator.clipboard.writeText(value)
+      pushToast(kind === 'ip' ? 'information.copiedIp' : 'information.copiedMac', 'success')
+    } catch {
+      pushToast('information.copyFailed', 'error')
+    }
+  }
 
-      <div className="mt-4 lg:text-lg leading-normal">
-        {renderLabel(t('information.moduleName'), bulb.moduleName)}
-        {renderLabel(t('information.ip'), bulb.ip)}
-        {renderLabel(t('information.port'), bulb.port)}
-        {renderLabel(t('information.mac'), bulb.mac)}
-        {renderLabel(t('information.state'), bulb.state ? 'ON' : 'OFF')}
-        {renderLabel(t('information.sceneId'), bulb.sceneId)}
-        {renderLabel(t('information.firmwareVersion'), bulb.fwVersion)}
-        {renderLabel(t('information.homeId'), bulb.homeId)}
-        {renderLabel(t('information.roomId'), bulb.roomId)}
-      </div>
-    </article>
-  )
+  const copyCell = (value: string, kind: 'ip' | 'mac', name: string) => {
+    if (!value) return NONE
+    return (
+      <span className="flex items-center gap-1">
+        <span className="tabular-nums">{value}</span>
+        <IconButton
+          label={t(kind === 'ip' ? 'information.copyIp' : 'information.copyMac', { name })}
+          onClick={() => void handleCopy(value, kind)}
+          className="size-6"
+        >
+          <LuCopy size={14} aria-hidden />
+        </IconButton>
+      </span>
+    )
+  }
+
+  const headers = [
+    'name',
+    'status',
+    'addresses',
+    'modelFirmware',
+    'signal',
+    'brightness',
+    'scene'
+  ] as const
 
   return (
-    <section className="py-8 px-8">
-      <h1 className="font-bold text-4xl">{t('information.title')}</h1>
-      <h2 className="text-sm lg:text-lg mt-2 text-neutral-400 font-medium">
-        {t('information.subtitle')}
-      </h2>
-      {bulb ? (
-        renderCardInfo()
+    <div className="flex flex-col gap-8 p-8">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">{t('information.title')}</h1>
+          <p className="mt-1 text-base text-muted">{t('information.subtitle')}</p>
+        </div>
+        <Button disabled={refreshing || bulbs.length === 0} onClick={() => void handleRefresh()}>
+          {refreshing ? <Spinner /> : <LuRefreshCw size={16} aria-hidden />}
+          {t('information.refresh')}
+        </Button>
+      </header>
+
+      {bulbs.length === 0 ? (
+        <EmptyState
+          icon={<LuInfo size={28} aria-hidden />}
+          title={t('information.missingTitle')}
+          description={t('information.missing')}
+        />
       ) : (
-        <div className="flex flex-col gap-4 mt-14 rounded-xl py-5 w-fit text-neutral-400">
-          <p className="my-12 text-center text-neutral-500 font-bold text-sm">
-            {t('information.missing')}
-          </p>
+        <div className="overflow-x-auto rounded-lg bg-surface">
+          <table className="w-full text-left text-sm">
+            <caption className="sr-only">{t('information.caption')}</caption>
+            <thead className="bg-sunken text-xs text-muted">
+              <tr>
+                {headers.map((h) => (
+                  <th key={h} scope="col" className="px-3 py-3 font-medium">
+                    {t(`information.columns.${h}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bulbs.map((bulb) => {
+                const scene = bulb.sceneId > 0 ? byId.get(bulb.sceneId) : undefined
+                return (
+                  <tr
+                    key={bulb.ip}
+                    aria-current={bulb.ip === activeBulb?.ip ? 'true' : undefined}
+                    className={cn(
+                      'border-b border-border last:border-b-0',
+                      bulb.ip === activeBulb?.ip && 'bg-raised'
+                    )}
+                  >
+                    <th scope="row" className="px-3 py-3 font-medium">
+                      {bulb.name}
+                    </th>
+                    <td className="px-3 py-3">
+                      {bulb.online ? (
+                        <>
+                          {t('bulb.connected')}
+                          <span className="block text-xs text-muted">
+                            {bulb.state ? t('bulb.on') : t('bulb.off')}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-danger-text">
+                          {t('bulb.offlineLabel')}
+                          <span className="block text-xs text-muted">
+                            {t('information.lastKnown')}
+                          </span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="flex items-center gap-1.5">
+                          <span className="sr-only">{t('information.columns.ip')}:</span>
+                          {copyCell(bulb.ip, 'ip', bulb.name)}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-muted">
+                          <span className="sr-only">{t('information.columns.mac')}:</span>
+                          {copyCell(bulb.mac, 'mac', bulb.name)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      {bulb.moduleName || NONE}
+                      <span className="block text-xs text-muted">
+                        <span className="sr-only">{t('information.columns.firmware')}: </span>
+                        {bulb.fwVersion || NONE}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 tabular-nums">{bulb.rssi !== 0 ? bulb.rssi : NONE}</td>
+                    <td className="px-3 py-3 tabular-nums">
+                      {bulb.dimming != null ? `${bulb.dimming}%` : NONE}
+                    </td>
+                    <td className="px-3 py-3">{scene?.name ?? NONE}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-    </section>
+    </div>
   )
 }

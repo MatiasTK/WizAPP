@@ -1,5 +1,6 @@
 import type { AddBulbOutcome } from '@renderer/bindings/AddBulbOutcome'
 import type { MultiBulbState } from '@renderer/bindings/MultiBulbState'
+import type { Settings } from '@renderer/bindings/Settings'
 import type { ToastMessage } from '@renderer/bindings/ToastMessage'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -26,12 +27,18 @@ export const api = {
 
   getBulbs: () => invoke<MultiBulbState>('get_bulbs'),
 
-  // Active bulb
+  // One bulb. `ip` omitted means the active bulb.
   toggleBulb: () => invoke<void>('toggle_bulb'),
-  setBrightness: (brightness: number) => invoke<void>('set_brightness', { brightness }),
+  setBrightness: (brightness: number, ip?: string) =>
+    invoke<void>('set_brightness', { brightness, ip }),
   setBulbName: (name: string, ip?: string) => invoke<void>('set_bulb_name', { name, ip }),
-  setScene: (sceneId: number) => invoke<void>('set_scene', { sceneId }),
-  setCustomColor: (colorId: number) => invoke<void>('set_custom_color', { colorId }),
+  setScene: (sceneId: number, ip?: string) => invoke<void>('set_scene', { sceneId, ip }),
+  setCustomColor: (colorId: number, ip?: string) =>
+    invoke<void>('set_custom_color', { colorId, ip }),
+
+  // Every bulb. Resolve with the IPs that did not respond.
+  setAllBulbs: (on: boolean) => invoke<string[]>('set_all_bulbs', { on }),
+  applyToAll: (id: number) => invoke<string[]>('apply_to_all', { id }),
 
   // Colors and favorites (global)
   addCustomColor: (colorName: string, colorHex: string) =>
@@ -40,6 +47,7 @@ export const api = {
     invoke<void>('edit_custom_color', { colorId, colorName, colorHex }),
   removeCustomColor: (colorId: number) => invoke<void>('remove_custom_color', { colorId }),
   toggleFavoriteColor: (colorId: number) => invoke<void>('toggle_favorite_color', { colorId }),
+  setBulbsOrder: (ips: string[]) => invoke<void>('set_bulbs_order', { ips }),
   setFavoriteColorsOrder: (favoriteColors: number[]) =>
     invoke<void>('set_favorite_colors_order', { favoriteColors }),
 
@@ -54,8 +62,9 @@ export const api = {
 
   // App
   /** Never rejects: the UI must mount even if the backend is unavailable. */
-  getLanguage: (): Promise<string> =>
-    invoke<string>('get_language').catch(() => 'en'),
+  getLanguage: (): Promise<string> => invoke<string>('get_language').catch(() => 'en'),
+  getSettings: () => invoke<Settings>('get_settings'),
+  setSettings: (settings: Settings) => invoke<void>('set_settings', { settings }),
   checkForUpdates: () => invoke<boolean>('check_for_updates'),
   installUpdate: () => invoke<void>('install_update'),
   openAppFolder: () => invoke<void>('open_app_folder'),

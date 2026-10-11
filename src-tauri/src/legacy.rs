@@ -50,6 +50,11 @@ pub fn find_legacy_install() -> Option<LegacyInstall> {
         .ok()?;
     for key in uninstall.enum_keys().flatten() {
         let Ok(sub) = uninstall.open_subkey(&key) else { continue };
+        // Tauri's NSIS installer (this app, or a test build of it) writes `MainBinaryName`;
+        // electron-builder does not. Those entries are never the old Electron install.
+        if sub.get_value::<String, _>("MainBinaryName").is_ok() {
+            continue;
+        }
         let Ok(display_name) = sub.get_value::<String, _>("DisplayName") else { continue };
         let uninstall_string = sub.get_value::<String, _>("UninstallString").unwrap_or_default();
         if is_legacy_entry(&display_name, &uninstall_string, own_dir.as_deref()) {

@@ -1,29 +1,54 @@
-import { LuPower } from 'react-icons/lu'
+import { cn, focusRing } from '@renderer/lib/cn'
+import { useTranslation } from 'react-i18next'
 
 type PowerButtonProps = {
-  size?: number
   isOn: boolean
   onToggle: () => void
   disabled?: boolean
+  /** What the switch controls, e.g. the bulb name. */
+  label: string
+  /** `sm` for compact places such as the sidebar card. */
+  size?: 'sm' | 'md'
+  className?: string
 }
 
-export default function PowerButton({ size = 20, isOn, onToggle, disabled = false }: PowerButtonProps) {
-  const handleToggleBulb = (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent card click from triggering
-    if (disabled) return
-    onToggle()
-  }
-
+/** The on/off switch of a bulb. */
+export default function PowerButton({
+  isOn,
+  onToggle,
+  disabled = false,
+  label,
+  size = 'md',
+  className
+}: PowerButtonProps) {
+  const { t } = useTranslation()
   return (
     <button
       type="button"
-      tabIndex={0}
-      aria-label="Toggle bulb"
+      role="switch"
+      aria-checked={isOn}
+      aria-label={t('bulb.power', { name: label })}
       disabled={disabled}
-      className={`bg-neutral-300 text-primary p-1.5 rounded-full transition-all duration-300 ${disabled ? 'cursor-not-allowed opacity-40' : `cursor-pointer hover:text-white ${isOn ? 'hover:bg-alert' : 'hover:bg-lime-600'}`}`}
-      onClick={handleToggleBulb}
+      onClick={onToggle}
+      className={cn(
+        'relative inline-flex shrink-0 cursor-pointer items-center rounded-full border transition-colors',
+        size === 'sm' ? 'h-6 w-10' : 'h-7 w-12',
+        'disabled:cursor-not-allowed disabled:opacity-50',
+        isOn ? 'border-primary bg-primary' : 'border-control bg-sunken',
+        focusRing,
+        className
+      )}
     >
-      <LuPower strokeWidth={3} size={size} />
+      <span
+        aria-hidden
+        className={cn(
+          'block rounded-full transition-transform',
+          size === 'sm' ? 'size-4' : 'size-5',
+          isOn
+            ? cn('bg-on-primary', size === 'sm' ? 'translate-x-[18px]' : 'translate-x-6')
+            : cn('bg-control', size === 'sm' ? 'translate-x-0.5' : 'translate-x-1')
+        )}
+      />
     </button>
   )
 }

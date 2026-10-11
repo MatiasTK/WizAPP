@@ -1,82 +1,48 @@
+import SceneTile, { type SceneTileProps } from '@components/SceneTile'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useBulbStore } from '@renderer/context/BulbStore'
-import { IconType } from 'react-icons'
-import { LuGripVertical, LuHeart } from 'react-icons/lu'
+import { cn, focusRing } from '@renderer/lib/cn'
+import { useTranslation } from 'react-i18next'
+import { LuGripVertical } from 'react-icons/lu'
 
-type SortableSceneItemProps = {
-  id: number
-  name: string
-  icon?: IconType
-  hex?: string
-}
+type SortableSceneItemProps = Omit<SceneTileProps, 'handle'>
 
-export default function SortableSceneItem({ id, name, icon, hex }: SortableSceneItemProps) {
-  const bulb = useBulbStore((state) => state.activeBulb)
-  const setScene = useBulbStore((state) => state.setScene)
-  const toggleFavoriteColor = useBulbStore((state) => state.toggleFavoriteColor)
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id
-  })
+/** A favorite tile that can be reordered by dragging the handle or with the keyboard. */
+export default function SortableSceneItem(props: SortableSceneItemProps) {
+  const { t } = useTranslation()
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: props.entry.id })
 
-  const Icon = icon as IconType
-
-  const usable = !!bulb?.online
-  const active = bulb ? bulb.sceneId === id : false
-
-  const handleClick = () => {
-    if (!usable) return
-    setScene(id)
-  }
-
-  const handleAddFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    toggleFavoriteColor(id)
-  }
-
-  const isFavorite = bulb ? bulb.favoriteColors.includes(id) : false
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition
-  }
+  const handle = (
+    <button
+      type="button"
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label={t('scenes.favorite.reorder', { name: props.entry.name })}
+      className={cn(
+        'flex h-full w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg opacity-70 hover:opacity-100',
+        focusRing
+      )}
+    >
+      <LuGripVertical size={18} aria-hidden />
+    </button>
+  )
 
   return (
-    <div
+    <li
       ref={setNodeRef}
-      {...attributes}
-      style={style}
-      onClick={handleClick}
-      className={`flex items-center ${active ? 'bg-primary hover:bg-primary-600' : 'bg-secondary hover:bg-secondary-600'} text-white rounded-2xl pr-4 py-6 text-nowrap transition-colors ${!usable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn('min-w-0', isDragging && 'relative z-10 opacity-80')}
     >
-      <div className="px-2 text-neutral-300 relative">
-        <div
-          {...listeners}
-          onClick={(e) => e.stopPropagation()}
-          className="cursor-grab absolute inset-0 -inset-y-5"
-        />
-        <LuGripVertical size={20} className="relative pointer-events-none" />
-      </div>
-
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center">
-          {icon ? (
-            <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
-          ) : (
-            <span className="w-5 h-5 lg:w-6 lg:h-6 rounded-full" style={{ backgroundColor: hex }} />
-          )}
-          <span className="text-white font-medium text-sm lg:text-md ms-1 lg:ms-2 tracking-tighter lg:tracking-normal">
-            {name}
-          </span>
-        </div>
-        <button
-          className={` cursor-pointer ms-1 lg:ms-2 ${isFavorite ? 'text-alert hover:text-neutral-300' : 'text-neutral-300 hover:text-alert'} transition-colors duration-300 disabled:cursor-not-allowed`}
-          disabled={!bulb}
-          onClick={handleAddFavorite}
-        >
-          <LuHeart className="w-5 h-5" fill={isFavorite ? 'currentColor' : 'none'} />
-        </button>
-      </div>
-    </div>
+      <SceneTile {...props} handle={handle} />
+    </li>
   )
 }

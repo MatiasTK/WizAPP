@@ -1,86 +1,92 @@
 import logo from '@assets/logo_sidebar.png'
 import BulbShortcut from '@components/BulbShortcut'
-import MenuLink from '@components/MenuLink'
-import HelpModal from '@components/modals/HelpModal'
-import SettingsModal from '@components/modals/SettingsModal'
 import Button from '@components/ui/Button'
-import Separator from '@components/ui/Separator'
-import { useBulbStore } from '@renderer/context/BulbStore'
-import { SidebarModalState } from '@renderer/types/modals'
-import { ReactNode, useState } from 'react'
+import { cn, focusRing } from '@renderer/lib/cn'
 import { useTranslation } from 'react-i18next'
-import { LuCircleHelp, LuImages, LuInfo, LuLamp, LuSettings } from 'react-icons/lu'
+import { LuCircleHelp, LuImages, LuInfo, LuLamp, LuSearch, LuSettings } from 'react-icons/lu'
+import { NavLink } from 'react-router'
 
-export default function Sidebar() {
+type SidebarProps = {
+  onOpenSearch: () => void
+  onOpenSettings: () => void
+  onOpenHelp: () => void
+}
+
+const linkClasses = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'flex h-10 items-center gap-3 rounded-lg px-4 text-sm font-medium transition-colors',
+    isActive ? 'bg-primary text-on-primary' : 'text-fg hover:bg-raised',
+    focusRing
+  )
+
+export default function Sidebar({ onOpenSearch, onOpenSettings, onOpenHelp }: SidebarProps) {
   const { t } = useTranslation()
-  const bulb = useBulbStore((state) => state.activeBulb)
-  const [modals, setModals] = useState<SidebarModalState>({
-    about: false,
-    settings: false
-  })
-
-  const toggleModal = (modal: keyof SidebarModalState) => {
-    setModals((prev) => ({ ...prev, [modal]: !prev[modal] }))
-  }
-
-  const renderMenuOption = (icon: ReactNode, label: string, onClick: () => void) => {
-    return (
-      <li>
-        <Button
-          className="flex w-full gap-2 items-center transition duration-200 py-2 px-4 border-none rounded-lg hover:scale-105 hover:bg-secondary cursor-pointer"
-          variant="ghost"
-          aria-label={label}
-          onClick={onClick}
-        >
-          {icon}
-          <span>{label}</span>
-        </Button>
-      </li>
-    )
-  }
 
   return (
-    <aside className="bg-sidebar-bg p-4 w-56 flex flex-col min-h-screen max-h-screen fixed">
-      <img src={logo} alt="Wiz logo banner" width={100} className="mx-auto" />
-      <Separator />
+    <aside className="flex h-full w-60 shrink-0 flex-col gap-4 overflow-y-auto bg-sidebar p-4">
+      <img
+        src={logo}
+        alt="WiZ APP"
+        width={88}
+        className="mx-auto mt-1 shrink-0 invert dark:invert-0"
+      />
 
-      <div className="flex-grow-1">
-        <p className="text-neutral-500 text-xs subpixel-antialiased mb-3 ps-2">
-          {t('sidebar.menu')}
-        </p>
-        <ul className="text-white flex flex-col gap-2">
-          <MenuLink index={0} label={t('sidebar.home')} to="/" icon={<LuLamp size={20} />} />
-          <MenuLink
-            index={1}
-            label={t('sidebar.scenes')}
-            to="/scenes"
-            icon={<LuImages size={20} />}
-          />
-          <MenuLink
-            index={2}
-            label={t('sidebar.information')}
-            to="/information"
-            icon={<LuInfo size={20} />}
-          />
+      <button
+        type="button"
+        onClick={onOpenSearch}
+        className={cn(
+          'flex h-10 w-full shrink-0 cursor-pointer items-center gap-3 rounded-lg bg-raised px-3.5 text-sm text-muted transition-colors hover:text-fg',
+          focusRing
+        )}
+      >
+        <LuSearch size={16} aria-hidden />
+        <span className="grow text-left">{t('sidebar.search')}</span>
+        <kbd aria-hidden className="rounded-sm bg-sidebar px-1.5 py-0.5 text-xs">
+          Ctrl K
+        </kbd>
+      </button>
+
+      <nav aria-label={t('sidebar.menu')} className="shrink-0">
+        <ul className="flex flex-col gap-1">
+          <li>
+            <NavLink to="/" end className={linkClasses}>
+              <LuLamp size={20} aria-hidden />
+              {t('sidebar.home')}
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/scenes" className={linkClasses}>
+              <LuImages size={20} aria-hidden />
+              {t('sidebar.scenes')}
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/information" className={linkClasses}>
+              <LuInfo size={20} aria-hidden />
+              {t('sidebar.information')}
+            </NavLink>
+          </li>
         </ul>
-      </div>
+      </nav>
 
-      {bulb && <BulbShortcut />}
-      <Separator />
+      <div className="grow" />
 
-      <div>
-        <ul className="text-white flex flex-col gap-2">
-          {renderMenuOption(<LuSettings size={20} />, t('sidebar.settings'), () =>
-            toggleModal('settings')
-          )}
-          {renderMenuOption(<LuCircleHelp size={20} />, t('sidebar.help'), () =>
-            toggleModal('about')
-          )}
-        </ul>
-      </div>
+      <BulbShortcut />
 
-      <HelpModal isOpen={modals.about} onClose={() => toggleModal('about')} />
-      <SettingsModal isOpen={modals.settings} onClose={() => toggleModal('settings')} />
+      <ul className="flex shrink-0 gap-2 border-t border-border pt-4">
+        <li className="min-w-0 grow">
+          <Button variant="ghost" className="w-full gap-2 px-2" onClick={onOpenSettings}>
+            <LuSettings size={18} aria-hidden />
+            {t('sidebar.settings')}
+          </Button>
+        </li>
+        <li className="min-w-0 grow">
+          <Button variant="ghost" className="w-full gap-2 px-2" onClick={onOpenHelp}>
+            <LuCircleHelp size={18} aria-hidden />
+            {t('sidebar.help')}
+          </Button>
+        </li>
+      </ul>
     </aside>
   )
 }

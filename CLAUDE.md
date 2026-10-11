@@ -22,7 +22,9 @@ pnpm format           # prettier --write .
 pnpm build:web        # typecheck + vite build -> dist/ (what tauri build runs first)
 pnpm build            # = tauri build: signed NSIS installer (needs the signing key)
 pnpm build:unsigned   # NSIS installer without updater artifacts, no key needed
-pnpm test             # cargo test (also regenerates the ts-rs bindings)
+pnpm test:web         # vitest + Testing Library (renderer)
+pnpm check:contrast   # WCAG contrast of every design-token pair, both themes
+pnpm test             # test:web + cargo test (also regenerates the ts-rs bindings)
 cd src-tauri
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
@@ -51,12 +53,14 @@ cargo test            # also regenerates src/renderer/src/bindings/*.ts
 
 ### State flow (the manager actor is the single source of truth)
 
-1. The renderer calls an action on the Zustand store (`context/BulbStore.tsx`), which wraps `api.*` (`lib/api.ts`, thin `invoke`/`listen`) in `call()`. A rejected command becomes a `toast.error.<code>` toast. The store does **not** update itself optimistically.
+1. The renderer calls an action on the Zustand store (`context/BulbStore.tsx`), which wraps `api.*` (`lib/api.ts`, thin `invoke`/`listen`) in `call()`. Brightness, power, scene and color commands are **optimistic** (DESIGN.md §2.1): the store keeps an overlay per bulb (`state`, `dimming`, `sceneId`) on top of the backend state, drops it when the next `on-update-bulb` arrives or the command rejects, and the control goes back to the real value. A rejected command becomes a `toast.error.<code>` toast, except `bulbOffline`, which the bulb's row already shows. Backend state remains the only source of truth.
 2. `commands.rs` translates the command into a call on `ManagerHandle`.
 3. `manager/actor.rs` (one task) owns `ConfigStore` and the bulb list. **It never awaits the network**: it forwards work to a per-bulb `worker` and handles the result as `ManagerMsg::WorkerDone`. Distinct bulbs run in parallel; commands to one bulb run in FIFO order.
 4. After each change the actor emits the full `MultiBulbState` (`on-update-bulb`) through the `Frontend` trait. Toasts go over `on-show-toast` with an i18n **key**; `TauriFrontend` queues them until the renderer's first `get_bulbs` (events sent earlier are lost).
 
 Rule for toasts: a command the renderer awaits returns `Result<_, AppError>` and the **renderer** builds the toast. Rust emits toasts only for things nobody awaits (discovery, tray, updater, config import/reset, legacy-install notice).
+
+Commands that act on one bulb take an optional `ip` (omitted = active bulb); `set_all_bulbs` / `apply_to_all` act on every online bulb and return the IPs that did not answer. Theme and language live in `config.json` (`get_settings` / `set_settings`); the tray menu (favorites, all on/off) is rebuilt by `TauriFrontend` when favorites or language change.
 
 Adding a bulb action touches: `manager/worker.rs`/`actor.rs` → `ManagerHandle` method in `manager/mod.rs` → `commands.rs` + `generate_handler!` in `lib.rs` → `lib/api.ts` → `BulbStore.tsx`.
 
@@ -82,7 +86,7 @@ Scene IDs below `MAX_DEFAULT_COLORS` (33, in `src/renderer/src/constants.ts` and
 
 ### Window, tray, updater
 
-- The window starts hidden; `Home.tsx` calls `show_window` after the first state and `fonts.ready` (+50 ms timer — `requestAnimationFrame` does not run in a hidden WebView2). Rust shows it anyway after 5 s.
+- The window starts hidden; `Layout.tsx` calls `show_window` after the first state and `fonts.ready` (+50 ms timer — `requestAnimationFrame` does not run in a hidden WebView2). Rust shows it anyway after 5 s.
 - The X hides to the tray, minimize is normal, "Quit" lives in the tray menu. A second instance restores the window.
 - Updater: GitHub releases, signed with minisign. `updater.rs` checks 8 s after start (release builds only) and pins a toast with "update now"; nothing is installed without the user asking.
 - `legacy.rs` looks for the still-installed Electron app in `HKCU\...\Uninstall` (`DisplayName` starting with `WiZ APP`, uninstaller not ours) and shows a notice.
@@ -91,6 +95,13 @@ Scene IDs below `MAX_DEFAULT_COLORS` (33, in `src/renderer/src/constants.ts` and
 
 - `wizapp-tauri/` (untracked) holds only an old build output; deleting it is waiting on the maintainer's confirmation (`MIGRATION.md` §6).
 - `testing/`, `.vscode/` and `.cursor/` are gitignored.
+
+## UI (see `DESIGN.md`)
+
+- Colors, radii, z-index and durations are tokens in `assets/main.css` (light/dark, `data-theme` on `<html>`). Components use only the semantic classes (`bg-surface`, `text-muted`, `border-control`, `bg-primary`...), never Tailwind's default palette or arbitrary color values. Run `pnpm check:contrast` after touching a token.
+- Primitives live in `components/ui/` (Radix UI underneath): `Button`, `IconButton`, `TextField`, `Select`, `Slider`, `Dialog`, `AlertDialog`, `Menu`, `Tooltip`, `Spinner`, `EmptyState`, `InlineAlert`. Use `cn` from `lib/cn.ts` to merge classes and `focusRing` for the one focus style.
+- Dialogs open from state, so `useReturnFocus` (in `Dialog.tsx`) gives focus back to whatever opened them; modals register in `OverlayStore` (Ctrl+K does not open over another dialog); the toast region is an `aria-live` region, which Radix does not hide, and its toasts set `pointer-events-auto`.
+- Scenes and custom colors share one `SceneTile`; names come from `lib/catalog.ts`. Search ignores case and accents (`lib/search.ts`).
 
 ## Code style
 

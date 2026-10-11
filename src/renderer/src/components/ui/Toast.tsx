@@ -1,10 +1,13 @@
-import { useBulbStore } from '@renderer/context/BulbStore'
-import { ToastMessage } from '@renderer/bindings/ToastMessage'
-import { useEffect, useState } from 'react'
+import Button from '@components/ui/Button'
+import IconButton from '@components/ui/IconButton'
+import { useBulbStore, type AppToast } from '@renderer/context/BulbStore'
+import { cn } from '@renderer/lib/cn'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { LuCircleAlert, LuCircleCheck, LuInfo, LuX } from 'react-icons/lu'
 
-const AUTO_DISMISS_MS = 5000
+const AUTO_DISMISS_MS = 6000
 
 const ACTION_LABELS = {
   'retry-discovery': 'toast.retry',
@@ -12,103 +15,96 @@ const ACTION_LABELS = {
   'open-apps-settings': 'toast.openSettings'
 } as const
 
-function Toast({ toast }: { toast: ToastMessage }) {
+const TONES = {
+  success: {
+    icon: <LuCircleCheck size={18} />,
+    color: 'text-success-text',
+    edge: 'border-l-success'
+  },
+  error: { icon: <LuCircleAlert size={18} />, color: 'text-danger-text', edge: 'border-l-danger' },
+  info: { icon: <LuInfo size={18} />, color: 'text-primary-text', edge: 'border-l-primary' }
+} as const
+
+function Toast({ toast }: { toast: AppToast }) {
   const { t } = useTranslation()
   const dismissToast = useBulbStore((s) => s.dismissToast)
   const retryDiscovery = useBulbStore((s) => s.retryDiscovery)
   const installUpdate = useBulbStore((s) => s.installUpdate)
   const openAppsSettings = useBulbStore((s) => s.openAppsSettings)
-  const [isExiting, setIsExiting] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const remaining = useRef(AUTO_DISMISS_MS)
 
+  // Auto-dismiss is paused while the pointer or the focus is on the toast.
   useEffect(() => {
-    if (toast.autoDismiss) {
-      const timer = setTimeout(() => handleDismiss(), AUTO_DISMISS_MS)
-      return () => clearTimeout(timer)
+    if (!toast.autoDismiss || paused) return undefined
+    const startedAt = Date.now()
+    const timer = window.setTimeout(() => dismissToast(toast.id), remaining.current)
+    return () => {
+      window.clearTimeout(timer)
+      remaining.current = Math.max(1000, remaining.current - (Date.now() - startedAt))
     }
-    return undefined
-  }, [toast.id, toast.autoDismiss])
+  }, [toast.id, toast.autoDismiss, paused, dismissToast])
 
-  const handleDismiss = () => {
-    setIsExiting(true)
-    setTimeout(() => dismissToast(toast.id), 300) // Wait for exit animation
+  const tone = TONES[toast.type]
+
+  const handleAction = () => {
+    dismissToast(toast.id)
+    if (toast.retryAction === 'retry-discovery') void retryDiscovery()
+    if (toast.retryAction === 'install-update') void installUpdate()
+    if (toast.retryAction === 'open-apps-settings') void openAppsSettings()
   }
-
-  const styles = {
-    success: {
-      icon: <LuCircleCheck className="h-5 w-5" />,
-      sidebar: 'bg-green-500',
-      iconColor: 'text-green-500'
-    },
-    error: {
-      icon: <LuCircleAlert className="h-5 w-5" />,
-      sidebar: 'bg-red-500',
-      iconColor: 'text-red-500'
-    },
-    info: {
-      icon: <LuInfo className="h-5 w-5" />,
-      sidebar: 'bg-blue-500',
-      iconColor: 'text-blue-500'
-    }
-  }[toast.type]
 
   return (
     <div
-      className={`
-        relative flex w-full min-w-[320px] max-w-[400px] overflow-hidden rounded-xl
-        bg-sidebar-bg shadow-xl shadow-black/20 ring-1 ring-white/10
-        transition-all duration-300 ease-out
-        ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100 animate-slide-in-right'}
-      `}
-      role="alert"
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      className={cn(
+        'pointer-events-auto flex w-96 items-start gap-3 rounded-lg border-l-4 bg-sidebar p-4 text-fg shadow-xl',
+        tone.edge
+      )}
     >
-      {/* Colored sidebar indicator */}
-      <div className={`w-1 shrink-0 ${styles.sidebar}`} />
-
-      <div className="flex flex-1 items-start gap-3 p-4">
-        <div className={`mt-0.5 shrink-0 ${styles.iconColor}`}>{styles.icon}</div>
-
-        <div className="flex flex-1 flex-col gap-1.5">
-          <p className="text-sm font-medium leading-snug text-gray-100">{t(toast.message)}</p>
-
-          {toast.retryAction && (
-            <button
-              onClick={() => {
-                handleDismiss()
-                if (toast.retryAction === 'retry-discovery') retryDiscovery()
-                if (toast.retryAction === 'install-update') installUpdate()
-                if (toast.retryAction === 'open-apps-settings') openAppsSettings()
-              }}
-              className="mt-1 w-fit rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20 active:bg-white/25 cursor-pointer"
-            >
-              {t(ACTION_LABELS[toast.retryAction])}
-            </button>
-          )}
-        </div>
-
-        <button
-          onClick={handleDismiss}
-          className="group -mr-1 -mt-1 p-1 text-gray-400 transition-colors hover:text-white cursor-pointer"
-          aria-label="Close"
-        >
-          <LuX size={16} className="transition-transform group-hover:scale-110" />
-        </button>
+      <span aria-hidden className={cn('mt-0.5 shrink-0', tone.color)}>
+        {tone.icon}
+      </span>
+      <div className="flex min-w-0 grow flex-col gap-2">
+        <p className="text-sm">{t(toast.message, toast.params)}</p>
+        {toast.retryAction && (
+          <Button size="dense" variant="secondary" className="w-fit" onClick={handleAction}>
+            {t(ACTION_LABELS[toast.retryAction])}
+          </Button>
+        )}
       </div>
+      <IconButton
+        label={t('common.close')}
+        tooltip={false}
+        onClick={() => dismissToast(toast.id)}
+        className="-mt-1 -mr-1"
+      >
+        <LuX size={14} aria-hidden />
+      </IconButton>
     </div>
   )
 }
 
 export function ToastContainer() {
+  const { t } = useTranslation()
   const toasts = useBulbStore((s) => s.toasts)
-
-  if (toasts.length === 0) return null
-
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+  return createPortal(
+    <div
+      role="region"
+      // Live regions are not hidden from assistive technology when a modal opens,
+      // so toasts stay announced above dialogs.
+      aria-live="polite"
+      aria-label={t('toast.region')}
+      className="pointer-events-none fixed right-4 bottom-4 z-(--z-toast) flex flex-col gap-2"
+    >
       {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
-          <Toast toast={toast} />
-        </div>
+        <Toast key={toast.id} toast={toast} />
       ))}
-    </div>
+    </div>,
+    document.body
   )
 }

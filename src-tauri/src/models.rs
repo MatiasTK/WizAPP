@@ -119,3 +119,33 @@ pub enum AddBulbOutcome {
     Added,
     Duplicate,
 }
+
+/// Color scheme preference. `System` follows the OS.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+#[ts(export)]
+pub enum Theme {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+/// UI language preference. `Auto` follows the OS.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+#[ts(export)]
+pub enum LanguagePref {
+    #[default]
+    Auto,
+    En,
+    Es,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Settings {
+    pub theme: Theme,
+    pub language: LanguagePref,
+}

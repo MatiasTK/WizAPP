@@ -1,200 +1,267 @@
 {
+  "common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "add": "Agregar",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "sidebar": {
+    "menu": "Menú principal",
+    "home": "Bombillas",
+    "scenes": "Escenas",
+    "information": "Información",
+    "settings": "Ajustes",
+    "help": "Ayuda",
+    "search": "Buscar",
+    "activeBulb": "Bombilla activa"
+  },
+  "bulb": {
+    "reorder": "Reordenar bombilla {{name}}",
+    "dragInstructions": "Pulsa la barra espaciadora para tomar esta bombilla, muévela con las flechas y pulsa espacio otra vez para soltarla.",
+    "power": "Encendido de {{name}}",
+    "brightness": "Brillo de {{name}}",
+    "on": "Encendida",
+    "off": "Apagada",
+    "connected": "Conectada",
+    "offlineLabel": "Sin respuesta",
+    "offline": "{{name}} no responde. Revisa que esté enchufada y en la misma red Wi-Fi.",
+    "retry": "Reintentar",
+    "retryFor": "Reintentar la conexión con {{name}}",
+    "select": "Seleccionar {{name}}",
+    "chooseScene": "Escena de {{name}}: {{scene}}. Cambiar escena",
+    "noScene": "Sin escena",
+    "options": "Opciones de {{name}}",
+    "rename": "Renombrar",
+    "details": "Ver detalle",
+    "delete": "Eliminar",
+    "sceneFor": "Escena para {{name}}",
+    "renameTitle": "Renombrar bombilla",
+    "newName": "Nombre nuevo",
+    "namePlaceholder": "Por ejemplo, Sala",
+    "deleteTitle": "Eliminar bombilla",
+    "deleteMessage": "«{{name}}» se quitará de tu lista. Puedes agregarla de nuevo cuando quieras.",
+    "deleteConfirm": "Eliminar bombilla"
+  },
   "home": {
-    "title": "Focos",
-    "subtitle": "Gestiona tus focos",
-    "search": "Buscando focos...",
+    "title": "Bombillas",
+    "subtitle": "Enciende, apaga y ajusta tus bombillas.",
+    "listLabel": "Tus bombillas",
+    "allOn": "Encender todas",
+    "allOff": "Apagar todas",
+    "searching": "Buscando bombillas…",
+    "searchingHint": "Suele tardar unos segundos.",
+    "notFoundTitle": "No encontramos ninguna bombilla",
+    "notFoundDescription": "Prueba estas cosas y vuelve a buscar:",
+    "emptyTitle": "Todavía no tienes bombillas",
+    "emptyDescription": "Busca bombillas en tu red o agrega una con su dirección IP.",
+    "tipNetwork": "Asegúrate de que este equipo y tus bombillas estén en la misma red Wi-Fi.",
+    "tipPower": "Revisa que las bombillas estén enchufadas y encendidas.",
+    "tipFirewall": "Permite que WiZ APP pase por el firewall de Windows en redes privadas.",
+    "retrySearch": "Buscar de nuevo",
+    "addByIp": "Agregar por IP",
+    "favoritesFor": "Se aplican a {{name}}",
     "add": {
-      "title": "Agregar dispositivo",
-      "entry": "Agregar",
-      "example": "ej. 192.168.1.34"
-    },
-    "toggle": "Alternar",
-    "selectedBulb": "Foco seleccionado",
-    "edit": {
-      "entry": "Editar nombre",
-      "title": "Editar nombre de la bombilla",
-      "label": "Nuevo nombre",
-      "example": "ej. Sala de estar"
-    },
-    "delete": {
-      "entry": "Eliminar",
-      "title": "Eliminar bombilla",
-      "message": "¿Estás seguro de que deseas eliminar la bombilla "
+      "entry": "Agregar bombilla",
+      "title": "Agregar una bombilla",
+      "description": "Escribe la dirección IP de la bombilla. La encuentras en tu router o en la app de WiZ.",
+      "ipLabel": "Dirección IP",
+      "example": "192.168.1.34",
+      "hint": "Cuatro números entre 0 y 255, separados por puntos.",
+      "connecting": "Conectando…"
     }
   },
   "scenes": {
     "title": "Escenas",
-    "subtitle": "Personaliza la iluminación",
+    "subtitle": "Elige cómo se ilumina tu casa.",
+    "subtitleFor": "Se aplican a {{name}}.",
     "favorites": "Favoritas",
-    "missingFavorites": "Aún no has seleccionado ninguna favorita. Intenta seleccionar una.",
-    "available": "Disponibles",
+    "missingFavorites": "Aún no tienes favoritas. Marca una escena con el corazón y la verás aquí.",
+    "filter": "Filtrar escenas",
+    "filterPlaceholder": "Buscar por nombre",
+    "notFound": "Sin resultados. Prueba con otro nombre.",
+    "noBulbs": "Agrega una bombilla para aplicar escenas.",
+    "goToBulbs": "Ir a Bombillas",
+    "applyToAll": "Aplicar «{{name}}» a todas",
+    "applyToAllEmpty": "Aplicar a todas",
+    "groups": "Filtrar por tipo",
     "tags": {
       "all": "Todas",
-      "static": "Estática",
-      "dynamic": "Dinámica",
-      "custom": "Personalizada"
+      "static": "Estáticas",
+      "dynamic": "Dinámicas",
+      "custom": "Personalizadas"
     },
-    "notFound": "No se encontraron escenas, prueba con otro término de búsqueda",
-    "search": "Buscar escenas",
-    "custom": {
-      "missing": "No se encontraron colores personalizados. Intenta agregar uno primero.",
-      "fav": "Favorito",
-      "unfav": "Quitar favorito",
-      "add": {
-        "entry": "Agregar",
-        "title": "Agregar color personalizado",
-        "nameLabel": "Nombre",
-        "nameExample": "ej. Rojo",
-        "colorLabel": "Color"
-      },
-      "edit": {
-        "entry": "Editar",
-        "title": "Editar color personalizado",
-        "label": "Nuevo nombre",
-        "example": "ej. Sala de estar"
-      },
-      "delete": {
-        "entry": "Eliminar",
-        "title": "Eliminar color personalizado",
-        "message": "¿Estás seguro de que deseas eliminar el color personalizado "
-      }
+    "favorite": {
+      "add": "Agregar {{name}} a favoritas",
+      "remove": "Quitar {{name}} de favoritas",
+      "reorder": "Reordenar {{name}}",
+      "dragInstructions": "Pulsa la barra espaciadora para tomar esta favorita, muévela con las flechas y pulsa espacio otra vez para soltarla."
+    },
+    "color": {
+      "new": "Nuevo color",
+      "newTitle": "Nuevo color",
+      "editTitle": "Editar color",
+      "name": "Nombre",
+      "namePlaceholder": "Por ejemplo, Atardecer",
+      "color": "Color",
+      "options": "Opciones de {{name}}",
+      "emptyTitle": "Aún no tienes colores personalizados",
+      "emptyDescription": "Crea un color y aparecerá aquí y en el buscador rápido.",
+      "deleteTitle": "Eliminar color",
+      "deleteMessage": "«{{name}}» se eliminará, también de tus favoritas.",
+      "deleteConfirm": "Eliminar color"
     },
     "names": {
-      "whites": "Blanco",
       "warmWhite": "Blanco cálido",
       "dayLight": "Luz de día",
       "coldWhite": "Blanco frío",
-      "functional": "Funcional",
-      "nightLight": "Luz Nocturna",
+      "nightLight": "Luz nocturna",
       "cozy": "Acogedor",
-      "trueColors": "Colores Reales",
-      "relax": "Relax",
+      "trueColors": "Colores reales",
+      "relax": "Relajación",
       "focus": "Concentración",
-      "tvTime": "Hora de la TV",
-      "plantGrowth": "Plantas",
+      "tvTime": "Hora de la tele",
+      "plantGrowth": "Crecimiento de plantas",
       "candleLight": "Luz de vela",
       "pulse": "Pulso",
       "goldenWhite": "Blanco dorado",
       "steampunk": "Steampunk",
-      "color": "Color",
       "fireplace": "Chimenea",
       "fall": "Otoño",
       "club": "Club",
       "sunset": "Atardecer",
       "romance": "Romance",
       "party": "Fiesta",
-      "pastelColors": "Colores Pastel",
+      "pastelColors": "Colores pastel",
       "spring": "Primavera",
       "summer": "Verano",
       "forest": "Bosque",
-      "jungle": "Jungla",
+      "jungle": "Selva",
       "mojito": "Mojito",
       "ocean": "Océano",
       "deepDive": "Inmersión",
       "christmas": "Navidad",
       "halloween": "Halloween",
-      "progressive": "Progresivo",
-      "bedtime": "Acostarse",
-      "wakeUp": "Despertarse"
+      "bedtime": "Hora de dormir",
+      "wakeUp": "Despertar"
     }
   },
   "information": {
     "title": "Información",
-    "subtitle": "Información sobre tu sistema de iluminación WiZ",
-    "missing": "No hay información disponible. Intenta conectar una bombilla primero.",
-    "moduleName": "Nombre del módulo",
-    "ip": "Dirección IP",
-    "port": "Puerto",
-    "mac": "Dirección MAC",
-    "state": "Estado",
-    "sceneId": "ID de escena",
-    "firmwareVersion": "Versión del firmware",
-    "homeId": "ID del hogar",
-    "roomId": "ID de la habitación"
+    "subtitle": "Detalles técnicos de tus bombillas.",
+    "caption": "Detalles de cada bombilla",
+    "refresh": "Actualizar",
+    "missingTitle": "No hay bombillas para mostrar",
+    "missing": "Agrega una bombilla desde la página Bombillas y sus detalles aparecerán aquí.",
+    "lastKnown": "Últimos datos conocidos",
+    "copyIp": "Copiar la dirección IP de {{name}}",
+    "copyMac": "Copiar la dirección MAC de {{name}}",
+    "copiedIp": "Dirección IP copiada",
+    "copiedMac": "Dirección MAC copiada",
+    "copyFailed": "No se pudo copiar al portapapeles",
+    "columns": {
+      "name": "Nombre",
+      "status": "Estado",
+      "addresses": "IP y MAC",
+      "modelFirmware": "Modelo y firmware",
+      "ip": "IP",
+      "mac": "MAC",
+      "model": "Modelo",
+      "firmware": "Firmware",
+      "signal": "Señal (dBm)",
+      "brightness": "Brillo",
+      "scene": "Escena"
+    }
   },
   "settings": {
     "title": "Ajustes",
     "theme": {
       "title": "Tema",
+      "system": "Igual que el sistema",
       "light": "Claro",
-      "dark": "Oscuro",
-      "system": "Sistema"
+      "dark": "Oscuro"
     },
     "language": {
       "title": "Idioma",
-      "auto": "Automático",
+      "auto": "Igual que el sistema",
       "english": "Inglés",
       "spanish": "Español"
     },
+    "search": {
+      "title": "Buscar bombillas de nuevo",
+      "hint": "Busca bombillas nuevas en tu red.",
+      "button": "Buscar"
+    },
     "deleteProfile": {
       "title": "Eliminar perfil",
-      "button": "Eliminar",
-      "description": "¿Estás seguro de que deseas eliminar tu perfil? Esto eliminará todos los datos de tu configuración, escenas personalizadas y favoritos."
+      "hint": "Borra tus bombillas, colores y favoritas.",
+      "button": "Eliminar perfil",
+      "description": "Se borrarán tu lista de bombillas, tus colores personalizados y tus favoritas. Esta acción no se puede deshacer.",
+      "confirm": "Eliminar perfil"
     }
   },
   "help": {
-    "title": "Ayuda",
     "version": "Versión",
     "source": "Código fuente",
     "author": "Autor",
     "checkUpdates": "Buscar actualizaciones",
-    "checkingUpdates": "Buscando actualizaciones...",
-    "openFolder": "Abrir carpeta del programa",
-    "noUpdates": "No hay actualizaciones disponibles"
+    "checkingUpdates": "Buscando…",
+    "openFolder": "Abrir carpeta de datos",
+    "noUpdates": "Ya tienes la última versión."
   },
-  "sidebar": {
-    "menu": "Menú",
-    "home": "Focos",
-    "scenes": "Escenas",
-    "information": "Información",
-    "settings": "Ajustes",
-    "help": "Ayuda",
-    "brightness": "Brillo"
-  },
-  "modals": {
-    "add": "Agregar",
-    "cancel": "Cancelar",
-    "save": "Guardar",
-    "delete": "Eliminar"
+  "palette": {
+    "title": "Buscador rápido",
+    "label": "Buscar escenas, bombillas y acciones",
+    "placeholder": "Busca escenas, bombillas y acciones…",
+    "results": "Resultados",
+    "noResults": "Sin resultados.",
+    "count_one": "{{count}} resultado",
+    "count_other": "{{count}} resultados",
+    "applyScene": "Aplicar a {{name}}",
+    "selectBulb": "Hacer activa",
+    "turnOn": "Encender",
+    "turnOff": "Apagar",
+    "everyBulb": "Todas las bombillas"
   },
   "errors": {
-    "emptyName": "El nombre no puede estar vacío",
-    "longName": "El nombre no puede tener más de 15 caracteres",
-    "sameName": "El nombre no puede ser igual al nombre actual",
-    "emptyIp": "La dirección IP no puede estar vacía",
-    "longIP": "La dirección IP no puede tener más de 15 caracteres",
-    "invalidIP": "Esa no parece una dirección IP válida"
+    "emptyName": "Escribe un nombre.",
+    "longName": "El nombre puede tener hasta 15 caracteres.",
+    "customLongName": "El nombre puede tener hasta 10 caracteres.",
+    "sameName": "Ese ya es el nombre actual.",
+    "duplicateColor": "Ya tienes un color con ese nombre.",
+    "emptyIp": "Escribe la dirección IP.",
+    "invalidIP": "Esa no es una dirección IP válida. Usa cuatro números de 0 a 255, como 192.168.1.34.",
+    "duplicateBulb": "Esa bombilla ya está en tu lista.",
+    "unreachable": "La bombilla no respondió. Revisa que esté encendida y en la misma red.",
+    "addFailed": "No se pudo agregar la bombilla. Inténtalo de nuevo."
   },
   "tray": {
-    "show": "Mostrar",
-    "quit": "Salir",
-    "toggle": "Alternar bombilla"
+    "show": "Mostrar WiZ APP",
+    "toggle": "Encender o apagar la bombilla activa",
+    "allOn": "Encender todas",
+    "allOff": "Apagar todas",
+    "quit": "Salir"
   },
   "toast": {
-    "discoveryFailed": "No se encontraron focos en la red. Asegurate de que estén en la misma red Wi-Fi y de que el firewall permita WiZ APP en redes privadas.",
-    "retry": "Reintentar",
-    "addSuccess": "Foco agregado correctamente",
-    "addFailed": "No se pudo conectar al foco",
-    "addDuplicate": "Este foco ya está agregado",
-    "updateAvailable": "Hay una nueva versión de WiZ APP disponible",
+    "region": "Notificaciones",
+    "retry": "Buscar de nuevo",
     "updateNow": "Actualizar ahora",
     "openSettings": "Abrir aplicaciones instaladas",
-    "configImported": "Se importaron tus focos y ajustes de la versión anterior",
-    "configReset": "No se pudo leer tu archivo de ajustes, así que se guardó una copia y se creó uno nuevo",
-    "legacyInstallFound": "La versión anterior de WiZ APP sigue instalada. Podés desinstalarla desde Aplicaciones instaladas.",
+    "someDidNotRespond": "Estas bombillas no respondieron: {{names}}.",
+    "discoveryFailed": "No encontramos ninguna bombilla. Revisa que estén encendidas y en la misma red Wi-Fi.",
+    "updateAvailable": "Hay una versión nueva de WiZ APP disponible.",
+    "configImported": "Importamos tus bombillas y ajustes de la versión anterior.",
+    "configReset": "No se pudo leer tu archivo de ajustes. Guardamos una copia y empezamos uno nuevo.",
+    "legacyInstallFound": "La versión anterior de WiZ APP sigue instalada. Puedes desinstalarla desde Aplicaciones instaladas.",
     "error": {
-      "bulbOffline": "El foco no responde",
-      "bulbRejected": "El foco rechazó la solicitud",
-      "unknownBulb": "Ese foco no está en tu lista",
-      "bulbUnreachable": "No se pudo conectar al foco",
-      "invalidArgument": "Ese valor no es válido",
-      "io": "Algo salió mal. Revisá el registro para más detalles.",
-      "updater": "No se pudo buscar o instalar actualizaciones"
+      "bulbOffline": "La bombilla no responde. Revisa que esté encendida y en la misma red.",
+      "bulbRejected": "La bombilla no aceptó el cambio. Inténtalo de nuevo.",
+      "unknownBulb": "Esa bombilla ya no está en tu lista.",
+      "bulbUnreachable": "No se pudo conectar con la bombilla. Revisa que esté encendida y en la misma red.",
+      "invalidArgument": "Ese valor no es válido.",
+      "io": "Algo salió mal. Inténtalo de nuevo; si sigue pasando, revisa el registro en la carpeta de datos.",
+      "updater": "No se pudo buscar actualizaciones. Revisa tu conexión a internet."
     }
-  },
-  "bulb": {
-    "offline": "{{name}} no responde. Verificá que esté encendido y en la misma red.",
-    "offlineLabel": "sin conexión",
-    "retry": "Reintentar"
   }
 }

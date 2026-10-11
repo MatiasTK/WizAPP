@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::CustomColor;
+use crate::models::{CustomColor, LanguagePref, Settings, Theme};
 
 pub const CONFIG_VERSION: u32 = 2;
 const FILE_NAME: &str = "config.json";
@@ -36,6 +36,17 @@ pub struct AppConfig {
     pub active_bulb_ip: Option<String>,
     pub custom_colors: Vec<CustomColor>,
     pub favorite_colors: Vec<u32>,
+    /// Optional so a config written before the redesign still loads.
+    #[serde(default)]
+    pub theme: Theme,
+    #[serde(default)]
+    pub language: LanguagePref,
+}
+
+impl AppConfig {
+    pub fn settings(&self) -> Settings {
+        Settings { theme: self.theme, language: self.language }
+    }
 }
 
 impl Default for AppConfig {
@@ -46,6 +57,8 @@ impl Default for AppConfig {
             active_bulb_ip: None,
             custom_colors: Vec::new(),
             favorite_colors: DEFAULT_FAVORITES.to_vec(),
+            theme: Theme::default(),
+            language: LanguagePref::default(),
         }
     }
 }
@@ -192,6 +205,7 @@ fn import_legacy(dirs: &[PathBuf]) -> Option<(AppConfig, PathBuf)> {
             active_bulb_ip: legacy.active_bulb_ip,
             custom_colors: legacy.custom_colors,
             favorite_colors: legacy.favorite_colors,
+            ..AppConfig::default()
         };
         return Some((config, path));
     }
@@ -218,6 +232,7 @@ mod tests {
             active_bulb_ip: Some("192.168.1.40".into()),
             custom_colors: vec![CustomColor { id: 33, name: "Rosa".into(), hex: "#ff66aa".into() }],
             favorite_colors: vec![11, 33, 6],
+            ..AppConfig::default()
         }
     }
 

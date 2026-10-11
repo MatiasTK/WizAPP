@@ -162,6 +162,27 @@ async fn startup_keeps_offline_bulbs_in_the_list_and_config() {
 }
 
 #[tokio::test]
+async fn bulb_order_is_applied_and_persisted() {
+    let (port, fakes) = fakes(3).await;
+    let cfg = config_with(vec![
+        entry(Some("aa0000000001"), "127.0.0.1", "Uno"),
+        entry(Some("aa0000000002"), "127.0.0.2", "Dos"),
+        entry(Some("aa0000000003"), "127.0.0.3", "Tres"),
+    ]);
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    // Unknown IPs are ignored and bulbs the list missed keep their relative order after.
+    h.handle
+        .set_bulb_order(vec!["127.0.0.3".into(), "10.9.9.9".into(), "127.0.0.2".into()])
+        .await
+        .unwrap();
+    let disk: Vec<String> = h.disk().bulbs.iter().map(|b| b.ip.clone()).collect();
+    assert_eq!(disk, vec!["127.0.0.3", "127.0.0.2", "127.0.0.1"]);
+    drop(fakes);
+}
+
+#[tokio::test]
 async fn no_known_bulbs_reports_failure_with_pinned_retry_toast() {
     let (port, _f) = fakes(1).await;
     let h = Harness::start(port, AppConfig::default(), Some(vec![])).await;
@@ -371,7 +392,7 @@ async fn overlapping_commands_to_one_bulb_run_in_order_and_all_succeed() {
     h.settled().await;
     fakes[0].with(|s| s.received.clear());
 
-    let calls: Vec<_> = (1..=20u32).map(|i| h.handle.set_brightness(i * 5)).collect();
+    let calls: Vec<_> = (1..=20u32).map(|i| h.handle.set_brightness(None, i * 5)).collect();
     for r in futures_util_join_all(calls).await {
         r.unwrap();
     }
@@ -416,26 +437,29 @@ async fn scene_and_custom_color_update_cached_state() {
 
     h.handle.toggle_bulb().await.unwrap(); // on -> off
     assert!(!fakes[0].with(|s| s.on));
-    h.handle.set_scene(6).await.unwrap();
+    h.handle.set_scene(None, 6).await.unwrap();
     let s = h.ui.last().unwrap();
     assert_eq!(s.active_bulb.as_ref().unwrap().scene_id, 6);
     assert!(s.active_bulb.unwrap().state);
 
     h.handle.add_custom_color("Rosa".into(), "#ff66aa".into()).await.unwrap();
-    h.handle.set_custom_color(33).await.unwrap();
+    h.handle.set_custom_color(None, 33).await.unwrap();
     let a = h.ui.last().unwrap().active_bulb.unwrap();
     assert_eq!((a.scene_id, a.r, a.g, a.b), (33, Some(255), Some(102), Some(170)));
 
     // Out of range values never reach the bulb.
     assert!(matches!(
-        h.handle.set_scene(40).await,
+        h.handle.set_scene(None, 40).await,
         Err(AppError::InvalidArgument { field }) if field == "sceneId"
     ));
     assert!(matches!(
-        h.handle.set_brightness(101).await,
+        h.handle.set_brightness(None, 101).await,
         Err(AppError::InvalidArgument { field }) if field == "dimming"
     ));
-    assert!(matches!(h.handle.set_custom_color(99).await, Err(AppError::InvalidArgument { .. })));
+    assert!(matches!(
+        h.handle.set_custom_color(None, 99).await,
+        Err(AppError::InvalidArgument { .. })
+    ));
 }
 
 #[tokio::test]
@@ -566,4 +590,105 @@ async fn legacy_entry_without_mac_gets_its_mac_filled_in() {
     assert!(s.bulbs[0].online);
     assert_eq!(s.bulbs[0].name, "Importada");
     assert_eq!(h.disk().bulbs[0].mac.as_deref(), Some("aa0000000001"));
+}
+
+// ---- per-IP commands, "all", settings ---------------------------------------------
+
+#[tokio::test]
+async fn commands_by_ip_act_on_a_bulb_that_is_not_active() {
+    let (port, fakes) = fakes(2).await;
+    let cfg = config_with(vec![
+        entry(Some("aa0000000001"), "127.0.0.1", "Uno"),
+        entry(Some("aa0000000002"), "127.0.0.2", "Dos"),
+    ]);
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    h.handle.set_brightness(Some("127.0.0.2".into()), 40).await.unwrap();
+    h.handle.set_scene(Some("127.0.0.2".into()), 6).await.unwrap();
+
+    let s = h.ui.last().unwrap();
+    assert_eq!(s.active_bulb.unwrap().ip, "127.0.0.1", "active bulb must not change");
+    assert_eq!(s.bulbs[1].dimming, Some(40));
+    assert_eq!(s.bulbs[1].scene_id, 6);
+    // The active bulb never got the commands.
+    assert!(!fakes[0].received().iter().any(|m| m == "setPilot"));
+    assert!(fakes[1].received().iter().any(|m| m == "setPilot"));
+
+    assert!(matches!(
+        h.handle.set_brightness(Some("10.9.9.9".into()), 40).await,
+        Err(AppError::UnknownBulb { .. })
+    ));
+}
+
+#[tokio::test]
+async fn all_reports_the_bulbs_that_did_not_respond() {
+    let (port, fakes) = fakes(3).await;
+    let cfg = config_with(vec![
+        entry(Some("aa0000000001"), "127.0.0.1", "Uno"),
+        entry(Some("aa0000000002"), "127.0.0.2", "Dos"),
+        entry(Some("aa0000000003"), "127.0.0.3", "Tres"),
+    ]);
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    fakes[1].set_behavior(Behavior::Silent);
+    let failed = h.handle.set_all(false).await.unwrap();
+    assert_eq!(failed, vec!["127.0.0.2".to_owned()]);
+
+    let s = h.wait_for("second bulb offline", |s| !s.bulbs[1].online).await;
+    assert!(!s.bulbs[0].state && !s.bulbs[2].state);
+
+    // Offline bulbs are reported without being tried again.
+    let failed = h.handle.set_all(true).await.unwrap();
+    assert_eq!(failed, vec!["127.0.0.2".to_owned()]);
+    let s = h.wait_for("others on", |s| s.bulbs[0].state && s.bulbs[2].state).await;
+    assert!(!s.bulbs[1].online);
+}
+
+#[tokio::test]
+async fn apply_all_takes_scenes_and_custom_colors() {
+    let (port, _fakes) = fakes(2).await;
+    let mut cfg = config_with(vec![
+        entry(Some("aa0000000001"), "127.0.0.1", "Uno"),
+        entry(Some("aa0000000002"), "127.0.0.2", "Dos"),
+    ]);
+    cfg.custom_colors =
+        vec![crate::models::CustomColor { id: 33, name: "Rosa".into(), hex: "#ff66aa".into() }];
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    assert!(h.handle.apply_all(6).await.unwrap().is_empty());
+    let s = h.ui.last().unwrap();
+    assert!(s.bulbs.iter().all(|b| b.scene_id == 6));
+
+    assert!(h.handle.apply_all(33).await.unwrap().is_empty());
+    let s = h.ui.last().unwrap();
+    assert!(s.bulbs.iter().all(|b| b.scene_id == 33 && b.r == Some(255)));
+
+    assert!(matches!(h.handle.apply_all(99).await, Err(AppError::InvalidArgument { .. })));
+    assert!(matches!(h.handle.apply_all(40).await, Err(AppError::InvalidArgument { .. })));
+}
+
+#[tokio::test]
+async fn settings_persist_and_old_configs_load_with_defaults() {
+    use crate::models::{LanguagePref, Settings, Theme};
+
+    let (port, _f) = fakes(1).await;
+    let cfg = config_with(vec![entry(Some("aa0000000001"), "127.0.0.1", "Uno")]);
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    assert_eq!(h.handle.get_settings().await.unwrap(), Settings::default());
+    let chosen = Settings { theme: Theme::Dark, language: LanguagePref::Es };
+    h.handle.set_settings(chosen).await.unwrap();
+    assert_eq!(h.handle.get_settings().await.unwrap(), chosen);
+    assert_eq!(h.disk().settings(), chosen);
+
+    // A file written before the redesign has neither field.
+    let old = r#"{"version":2,"bulbs":[],"customColors":[],"favoriteColors":[11]}"#;
+    std::fs::write(h.dir.path().join("config.json"), old).unwrap();
+    let (store, outcome) = ConfigStore::load(h.dir.path(), &[]);
+    assert_eq!(outcome, LoadOutcome::Loaded);
+    assert_eq!(store.config().settings(), Settings::default());
 }
