@@ -167,13 +167,12 @@ pub fn open_apps_settings(app: AppHandle) -> Res<()> {
         .map_err(|e| AppError::Io { message: e.to_string() })
 }
 
-// Wired up for real in M6 (updater).
 #[tauri::command]
-pub async fn check_for_updates() -> Res<bool> {
-    Ok(false)
+pub async fn check_for_updates(app: AppHandle) -> Res<bool> {
+    crate::updater::check_for_updates(&app).await
 }
 
 #[tauri::command]
-pub async fn install_update() -> Res<()> {
-    Err(AppError::Updater { message: "updater not configured yet".into() })
+pub async fn install_update(app: AppHandle) -> Res<()> {
+    crate::updater::install_update(&app).await
 }

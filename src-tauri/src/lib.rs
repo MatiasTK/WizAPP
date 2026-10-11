@@ -5,6 +5,7 @@ pub mod i18n;
 pub mod manager;
 pub mod models;
 pub mod tray;
+pub mod updater;
 pub mod wiz;
 
 use std::sync::Arc;
@@ -44,6 +45,7 @@ pub fn run() {
             restore_main_window(app);
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|window, event| {
             // The X hides to the tray; quitting is only available from the tray menu.
             if window.label() == MAIN_WINDOW {
@@ -89,6 +91,7 @@ pub fn run() {
             let language = i18n::system_language();
             app.manage(AppState { manager, data_dir: dir.clone(), language });
             tray::setup(app.handle(), language)?;
+            tauri::async_runtime::spawn(updater::check_on_startup(app.handle().clone()));
 
             // The window starts hidden and the renderer shows it once it painted. If the JS
             // never gets there, show it anyway instead of leaving an invisible app.
