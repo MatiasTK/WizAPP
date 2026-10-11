@@ -23,11 +23,12 @@
     </p>
 </div>
 
-![preview](https://github.com/MatiasTK/WizAPP/blob/main/img/preview.gif?raw=true)
+<img width="917" height="593" alt="image" src="https://github.com/user-attachments/assets/aa2f7307-3a78-4c89-a646-8c779f4d0f44" />
 
 ## Features 🌟
 
 - Discover your bulbs automatically.
+- Multiple Bulb support.
 - Turn on/off your bulbs.
 - Change the scene of your bulbs.
 - Change the brightness of your bulbs.
@@ -56,10 +57,7 @@ If you want to build the app yourself, you can do it by following these steps:
 
 ## Roadmap 🚀
 
-- [/] Add support for more bulb models
-- [ ] Light/Dark mode
-- [ ] Custom bulb temperature scene
-- [ ] Reduce bundle size
+- [ ] Light Mode
 
 ## Stack 🛠️
 

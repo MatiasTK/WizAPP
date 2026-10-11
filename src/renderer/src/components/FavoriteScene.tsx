@@ -16,7 +16,7 @@ import { Scene, scenes } from 'src/renderer/utils/scenesInfo'
 import SortableSceneItem from './SortableSceneItem'
 
 export default function FavoriteScene() {
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const { t } = useTranslation()
   const setFavoriteColorsOrder = useBulbStore((state) => state.setFavoriteColorsOrder)
   const sensors = useSensors(useSensor(PointerSensor))

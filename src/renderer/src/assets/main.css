@@ -30,18 +30,48 @@
   --color-text-primary: #f4f4f5;
   --color-text-secondary: #a1a1aa;
 
-  --color-accent-primary: #FD52A5;
-  --color-accent-secondary: #52FDBA;
+  --color-accent-primary: #fd52a5;
+  --color-accent-secondary: #52fdba;
 
   --color-sidebar-bg: #2d2d2e;
   --color-main-bg: #1e1e1e;
 
   --color-alert: #e51e31;
-  --color-warning: #FACC15;
-  --color-success: #22C55E;
+  --color-warning: #facc15;
+  --color-success: #22c55e;
 }
 
-@import "tailwind-animations";
+@import 'tailwind-animations';
+
+/* Toast slide-in animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Active card ring pulse */
+@keyframes pulse-ring {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--color-primary), 0 0 12px rgba(55, 114, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--color-primary), 0 0 20px rgba(55, 114, 255, 0.7);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-in-out infinite;
+}
 
 body {
   font-family: 'Inter Variable', sans-serif;

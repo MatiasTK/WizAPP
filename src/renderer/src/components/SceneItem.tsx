@@ -8,7 +8,7 @@ type SceneItemProps = {
 }
 
 export default function SceneItem({ id, name, icon }: SceneItemProps) {
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const setScene = useBulbStore((state) => state.setScene)
   const toggleFavoriteColor = useBulbStore((state) => state.toggleFavoriteColor)
 

@@ -3,7 +3,7 @@ import { Bulb } from "./bulb";
 import { DEFAULT_DISCOVER_WAIT_MS, WIZ_BULB_LISTEN_PORT } from "./constants";
 import { checkType } from "./type-checker";
 import { GetPilotMsg, getPilotResponseTemplate } from "./types";
-import { sleep } from "./utils";
+import { getBroadcastAddresses, sleep } from "./utils";
 
 /**
  * Discovers bulbs on a network.
@@ -21,10 +21,14 @@ import { sleep } from "./utils";
  * @returns an array of {@link Bulb} instances corresponding to discovered bulbs
  */
 export async function discover({
-	addr = "192.168.1.255",
+	addr,
 	port = WIZ_BULB_LISTEN_PORT,
 	waitMs = DEFAULT_DISCOVER_WAIT_MS,
-}): Promise<Bulb[]> {
+}: {
+	addr?: string;
+	port?: number;
+	waitMs?: number;
+} = {}): Promise<Bulb[]> {
 	const client = dgram.createSocket("udp4");
 	const bulbs: Bulb[] = [];
 	const message: GetPilotMsg = {
@@ -32,19 +36,39 @@ export async function discover({
 		params: {},
 	};
 
-	if (addr.split(".").includes("255")) {
-		client.once("listening", function () {
-			client.setBroadcast(true);
-		});
+	const targets = addr ? [addr] : getBroadcastAddresses();
+
+	if (targets.length === 0 && !addr) {
+		targets.push("255.255.255.255");
 	}
 
-	client.send(JSON.stringify(message), port, addr);
+	client.on("listening", function () {
+		client.setBroadcast(true);
+	});
+
+	// Bind to a random port to allow sending
+	client.bind(() => {
+		for (const target of targets) {
+			try {
+				client.send(JSON.stringify(message), port, target);
+			} catch (e) {
+				// Ignore send errors for specific interfaces
+			}
+		}
+	});
 
 	const listener = (msg: Buffer, rinfo: dgram.RemoteInfo) => {
-		const response = JSON.parse(msg.toString());
+		try {
+			const response = JSON.parse(msg.toString());
 
-		if (checkType(getPilotResponseTemplate, response)) {
-			bulbs.push(new Bulb(rinfo.address, { port }));
+			if (checkType(getPilotResponseTemplate, response)) {
+				// Avoid duplicates
+				if (!bulbs.some(b => b.address === rinfo.address)) {
+					bulbs.push(new Bulb(rinfo.address, { port }));
+				}
+			}
+		} catch (e) {
+			// Ignore invalid JSON or malformed packets
 		}
 	};
 

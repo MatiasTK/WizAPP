@@ -1,9 +1,9 @@
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { useTranslation } from 'react-i18next'
-import { LuLightbulb } from 'react-icons/lu'
+import { LuCpu } from 'react-icons/lu'
 
 export default function Information() {
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const { t } = useTranslation()
 
   const renderLabel = (name: string, value: string | number) => (
@@ -16,7 +16,7 @@ export default function Information() {
   const renderCardInfo = () => (
     <article className="mt-14 flex bg-secondary-700 rounded-xl px-6 py-5 flex-col w-fit shadow-lg">
       <div className="flex items-center gap-2">
-        <LuLightbulb size={32} strokeWidth={1} />
+        <LuCpu size={28} strokeWidth={1} />
         <h2 className="text-2xl lg:text-2xl font-semibold">{bulb.name}</h2>
       </div>
 
@@ -44,7 +44,9 @@ export default function Information() {
         renderCardInfo()
       ) : (
         <div className="flex flex-col gap-4 mt-14 rounded-xl py-5 w-fit text-neutral-400">
-          <p>{t('information.missing')}</p>
+          <p className="my-12 text-center text-neutral-500 font-bold text-sm">
+            {t('information.missing')}
+          </p>
         </div>
       )}
     </section>

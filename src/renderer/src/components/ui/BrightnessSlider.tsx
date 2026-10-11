@@ -1,14 +1,21 @@
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export default function BrightnessSlider() {
   const { t } = useTranslation()
-  const bulb = useBulbStore((state) => state.bulb)
+  const bulb = useBulbStore((state) => state.activeBulb)
   const setBrightness = useBulbStore((state) => state.setBrightness)
 
   const [isDragging, setIsDragging] = useState(false)
-  const [currentBrightness, setCurrentBrightness] = useState(bulb.dimming)
+  const [currentBrightness, setCurrentBrightness] = useState(bulb?.dimming ?? 50)
+
+  // Sync brightness when active bulb changes
+  useEffect(() => {
+    if (bulb) {
+      setCurrentBrightness(bulb.dimming)
+    }
+  }, [bulb?.ip, bulb?.dimming])
 
   const handleMouseUp = () => {
     if (isDragging && currentBrightness) {
@@ -26,7 +33,7 @@ export default function BrightnessSlider() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col my-2 gap-2">
       <label className="text-xs text-neutral-400/75 subpixel-antialiased">
         {t('sidebar.brightness')}: {currentBrightness}%
       </label>
@@ -38,7 +45,7 @@ export default function BrightnessSlider() {
         onMouseUp={handleMouseUp}
         onMouseDown={handleMouseDown}
         onChange={handleChangeBrightness}
-        defaultValue={currentBrightness}
+        value={currentBrightness}
         step={10}
         className="w-full"
         role="slider"

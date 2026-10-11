@@ -6,6 +6,8 @@ type CardProps = {
   rounded?: 'small' | 'medium' | 'large'
   className?: string
   hoverable?: boolean
+  active?: boolean
+  onClick?: () => void
 }
 
 export default function Card({
@@ -15,7 +17,9 @@ export default function Card({
   shadow = 'medium',
   rounded = 'medium',
   className = '',
-  hoverable = false
+  hoverable = false,
+  active = false,
+  onClick
 }: CardProps) {
   const baseStyles = 'transition-all duration-300'
 
@@ -46,6 +50,9 @@ export default function Card({
     ? 'transform transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg'
     : ''
 
+  const activeClass = active ? 'ring-3 ring-offset-4 ring-offset-main-bg ring-primary' : ''
+  const cursorClass = onClick ? 'cursor-pointer' : ''
+
   return (
     <div
       className={`
@@ -55,8 +62,11 @@ export default function Card({
         ${shadows[shadow]}
         ${roundeds[rounded]}
         ${hoverEffect}
+        ${activeClass}
+        ${cursorClass}
         ${className}
       `}
+      onClick={onClick}
     >
       {children}
     </div>

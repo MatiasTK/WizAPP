@@ -19,7 +19,7 @@ const createTray = (mainWindow: BrowserWindow, app: Electron.App, bulbHelper: Bu
     {
       label: i18n.t('tray.toggle'),
       click: () => {
-        log.debug('Toggling bulb from tray...')
+        log.debug('Toggling active bulb from tray...')
         bulbHelper.toggleBulb()
       }
     },

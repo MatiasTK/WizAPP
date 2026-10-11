@@ -1,9 +1,10 @@
 {
   "home": {
-    "title": "Home",
+    "title": "Bulbs",
     "subtitle": "Manage your bulbs",
     "search": "Searching bulbs",
     "toggle": "Toggle",
+    "selectedBulb": "Selected bulb",
     "edit": {
       "entry": "Edit name",
       "title": "Edit bulb name",
@@ -141,7 +142,7 @@
   },
   "sidebar": {
     "menu": "Menu",
-    "home": "Home",
+    "home": "Bulbs",
     "scenes": "Scenes",
     "information": "Information",
     "settings": "Settings",
@@ -167,5 +168,12 @@
     "show": "Show",
     "quit": "Quit",
     "toggle": "Toggle Bulb"
+  },
+  "toast": {
+    "discoveryFailed": "No bulbs found on the network",
+    "retry": "Retry",
+    "addSuccess": "Bulb added successfully",
+    "addFailed": "Could not connect to the bulb",
+    "addDuplicate": "This bulb is already added"
   }
 }

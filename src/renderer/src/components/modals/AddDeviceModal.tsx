@@ -45,7 +45,7 @@ export default function AddDeviceModal({ isOpen, onClose }: EditNameModalProps) 
       return
     }
 
-    window.api.setIp(event.target.ip.value)
+    window.api.addBulbByIp(event.target.ip.value)
 
     onClose()
   }
