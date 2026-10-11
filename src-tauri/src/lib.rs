@@ -4,12 +4,13 @@ pub mod error;
 pub mod i18n;
 pub mod manager;
 pub mod models;
+pub mod tray;
 pub mod wiz;
 
 use std::sync::Arc;
 use std::time::Duration;
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 
 use commands::{AppState, TauriFrontend};
@@ -27,16 +28,31 @@ pub fn show_main_window(app: &AppHandle) {
     }
 }
 
+/// Brings the window back (tray, second instance) and re-polls the bulbs, since their
+/// state may have changed while the app was hidden.
+pub fn restore_main_window(app: &AppHandle) {
+    show_main_window(app);
+    if let Some(state) = app.try_state::<AppState>() {
+        state.manager.refresh_all();
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         // Must be the first plugin.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            show_main_window(app);
-            if let Some(state) = app.try_state::<AppState>() {
-                state.manager.refresh_all();
-            }
+            restore_main_window(app);
         }))
         .plugin(tauri_plugin_opener::init())
+        .on_window_event(|window, event| {
+            // The X hides to the tray; quitting is only available from the tray menu.
+            if window.label() == MAIN_WINDOW {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             // Debug builds can point at a scratch directory (end-to-end tests).
             let dir = match std::env::var_os("WIZAPP_DATA_DIR").filter(|_| cfg!(debug_assertions)) {
@@ -70,11 +86,9 @@ pub fn run() {
             let (manager, actor) =
                 ManagerHandle::build(frontend, store, outcome, ManagerOptions::default());
             tauri::async_runtime::spawn(actor.run());
-            app.manage(AppState {
-                manager,
-                data_dir: dir.clone(),
-                language: i18n::system_language(),
-            });
+            let language = i18n::system_language();
+            app.manage(AppState { manager, data_dir: dir.clone(), language });
+            tray::setup(app.handle(), language)?;
 
             // The window starts hidden and the renderer shows it once it painted. If the JS
             // never gets there, show it anyway instead of leaving an invisible app.

@@ -365,3 +365,12 @@ Hallazgos del M4 que cambian el plan:
 - **`requestAnimationFrame` no corre con la ventana oculta en WebView2**: con el `show_window` colgado de un rAF, la red de seguridad de 5 s era la que mostraba la ventana. Ahora `Home.tsx` usa `fonts.ready` + `setTimeout(50)`. Cierra el spike de ventana en lo funcional; el "sin parpadeo blanco" sigue pendiente de ojo humano (el `backgroundColor` nativo es `#1e1e1e`).
 - **Tauri ignora la variable `APPDATA`**: `app_config_dir()` usa la API de carpetas conocidas. Para poder aislar tests se agregó `WIZAPP_DATA_DIR`, que solo se respeta en builds debug (`cfg!(debug_assertions)`). Una primera corrida sin ese override usó el `%APPDATA%` real: importó el `config.json` de Electron (confirma la importación legacy con un archivo real) y no envió comandos; los archivos creados se borraron.
 - `check_for_updates` e `install_update` son stubs hasta M6. Falta verificar a mano el drag and drop de favoritos en la UI (el comando `set_favorite_colors_order` sí está probado).
+
+**M5 — hecho salvo el tray (2026-10-10).** `tray.rs`, cierre a bandeja, `restore_main_window` (muestra + `RefreshAll`) compartido por tray y segunda instancia. Verificado sobre el exe real:
+- La X (WM_CLOSE) oculta la ventana y el proceso sigue vivo; una segunda instancia la restaura y termina sola; minimizar es un minimizado normal y la segunda instancia también lo deshace.
+- Build **release** (`cargo build --release --features tauri/custom-protocol`, que sirve `dist/` desde `http://tauri.localhost`): UI completa en español con el idioma de Windows, versión `3.0.0` real, CSP aplicada (un `fetch` a un origen externo y otro al propio origen son bloqueados por `connect-src`), `open_url` rechaza `http://` y abre `https://`. Sin errores de CSP al cargar (la UI renderiza con estilos y fuentes).
+- Un clic real en el botón de encendido de la UI llega al emulador, y las líneas `[RENDERER]` del store aparecen en `wiz-app.log` junto a las de Rust.
+
+**No verificado (requiere clic humano en el tray):** mostrar / alternar / salir desde el icono de la bandeja y el clic izquierdo. El código está y el mapeo de errores a toast tiene test, pero no hay forma de accionar el icono desde un script sin automatización de UI de escritorio. Pendiente en la verificación manual de §4.C-14 y §4.B-13.
+
+Nota de proceso: la verificación del build release usa el `%APPDATA%` real porque `WIZAPP_DATA_DIR` es solo debug; importó tu `config.json` de Electron (sin enviar comandos) y la carpeta `com.matiastk.wizapp` se borró después.
