@@ -36,5 +36,6 @@ export const api = {
   openAppFolder: vi.fn(() => Promise.resolve()),
   openAppsSettings: vi.fn(() => Promise.resolve()),
   hasLegacyInstall: vi.fn(() => Promise.resolve(false)),
-  showWindow: vi.fn(() => Promise.resolve())
+  showWindow: vi.fn(() => Promise.resolve()),
+  dismissToast: vi.fn(() => Promise.resolve())
 }

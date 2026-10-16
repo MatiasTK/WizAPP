@@ -12,7 +12,7 @@ pub mod wiz;
 use std::sync::Arc;
 use std::time::Duration;
 
-use tauri::{AppHandle, Manager, WindowEvent};
+use tauri::{AppHandle, Manager, RunEvent, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 
 use commands::{AppState, TauriFrontend};
@@ -34,12 +34,54 @@ pub fn show_main_window(app: &AppHandle) {
 }
 
 /// Brings the window back (tray, second instance) and re-polls the bulbs, since their
-/// state may have changed while the app was hidden.
+/// state may have changed while the app was hidden. The X destroys the window to free
+/// the WebView2 memory, so it is created again here; like at startup it is born hidden
+/// and the renderer shows it once it painted.
 pub fn restore_main_window(app: &AppHandle) {
-    show_main_window(app);
+    if app.get_webview_window(MAIN_WINDOW).is_some() {
+        show_main_window(app);
+    } else {
+        // Building a webview from a menu/tray handler can deadlock on Windows (wry#583).
+        let handle = app.clone();
+        tauri::async_runtime::spawn(async move {
+            if let Err(e) = create_main_window(&handle) {
+                log::error!("could not create the main window: {e}");
+            }
+        });
+    }
     if let Some(state) = app.try_state::<AppState>() {
         state.manager.refresh_all();
     }
+}
+
+fn create_main_window(app: &AppHandle) -> tauri::Result<()> {
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == MAIN_WINDOW)
+        .expect("tauri.conf.json defines the main window");
+    WebviewWindowBuilder::from_config(app, config)?.build()?;
+    show_if_renderer_stalls(app);
+    Ok(())
+}
+
+/// The window starts hidden and the renderer shows it once it painted. If the JS never
+/// gets there, show it anyway instead of leaving an invisible app.
+fn show_if_renderer_stalls(app: &AppHandle) {
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(5)).await;
+        let hidden = handle
+            .get_webview_window(MAIN_WINDOW)
+            .and_then(|w| w.is_visible().ok())
+            .is_some_and(|visible| !visible);
+        if hidden {
+            log::warn!("renderer did not show the window in 5 s; showing it");
+            show_main_window(&handle);
+        }
+    });
 }
 
 pub fn run() {
@@ -51,11 +93,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|window, event| {
-            // The X hides to the tray; quitting is only available from the tray menu.
-            if window.label() == MAIN_WINDOW {
-                if let WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    let _ = window.hide();
+            // The X closes the window but the app stays in the tray (see `run` below);
+            // quitting is only available from the tray menu.
+            if window.label() == MAIN_WINDOW && matches!(event, WindowEvent::Destroyed) {
+                if let Some(state) = window.try_state::<AppState>() {
+                    state.frontend.renderer_gone();
                 }
             }
         })
@@ -107,21 +149,7 @@ pub fn run() {
             app.manage(AppState { manager, frontend, data_dir: dir.clone() });
             tray::setup(app.handle(), language)?;
             tauri::async_runtime::spawn(updater::check_on_startup(app.handle().clone()));
-
-            // The window starts hidden and the renderer shows it once it painted. If the JS
-            // never gets there, show it anyway instead of leaving an invisible app.
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(Duration::from_secs(5)).await;
-                let hidden = handle
-                    .get_webview_window(MAIN_WINDOW)
-                    .and_then(|w| w.is_visible().ok())
-                    .is_some_and(|visible| !visible);
-                if hidden {
-                    log::warn!("renderer did not show the window in 5 s; showing it");
-                    show_main_window(&handle);
-                }
-            });
+            show_if_renderer_stalls(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -155,7 +183,15 @@ pub fn run() {
             commands::has_legacy_install,
             commands::check_for_updates,
             commands::install_update,
+            commands::dismiss_toast,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running WiZ APP");
+        .build(tauri::generate_context!())
+        .expect("error while building WiZ APP")
+        .run(|_app, event| {
+            // Closing the last window must not end the app: it lives on in the tray.
+            // `app.exit` (tray "Quit", updater) carries a code and goes through.
+            if let RunEvent::ExitRequested { code: None, api, .. } = event {
+                api.prevent_exit();
+            }
+        });
 }

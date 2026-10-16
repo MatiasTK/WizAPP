@@ -3,11 +3,13 @@
 
 use std::time::Duration;
 
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Manager};
 use tauri_plugin_updater::{Update, UpdaterExt};
 use uuid::Uuid;
 
+use crate::commands::AppState;
 use crate::error::AppError;
+use crate::manager::Frontend;
 use crate::models::{RetryAction, ToastKind, ToastMessage};
 
 fn updater_error(e: impl std::fmt::Display) -> AppError {
@@ -27,8 +29,10 @@ fn announce(app: &AppHandle, version: &str) {
         auto_dismiss: false,
         retry_action: Some(RetryAction::InstallUpdate),
     };
-    if let Err(e) = app.emit("on-show-toast", toast) {
-        log::warn!("could not emit the update toast: {e}");
+    // Through the frontend so it waits for (and survives) a window closed to the tray.
+    match app.try_state::<AppState>() {
+        Some(state) => state.frontend.toast(toast),
+        None => log::warn!("could not show the update toast: no app state"),
     }
 }
 

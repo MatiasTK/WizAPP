@@ -72,5 +72,7 @@ export const api = {
   /** Never rejects: a failed lookup just means "no notice". */
   hasLegacyInstall: (): Promise<boolean> =>
     invoke<boolean>('has_legacy_install').catch(() => false),
-  showWindow: () => invoke<void>('show_window')
+  showWindow: () => invoke<void>('show_window'),
+  /** So a window reopened from the tray does not show a pinned toast again. */
+  dismissToast: (id: string) => invoke<void>('dismiss_toast', { id })
 }

@@ -18,29 +18,76 @@ pub struct AppState {
     pub data_dir: std::path::PathBuf,
 }
 
+#[derive(Default, PartialEq)]
+enum Renderer {
+    /// Not subscribed yet (startup, or a window being created again).
+    #[default]
+    Starting,
+    Listening,
+    /// The window was closed to the tray.
+    Gone,
+}
+
+#[derive(Default)]
+struct GateState {
+    renderer: Renderer,
+    /// Waiting for the first renderer to subscribe.
+    queued: Vec<ToastMessage>,
+    /// Toasts without auto-dismiss that the user has not closed yet; a new window shows
+    /// them again. One per message key.
+    pinned: Vec<ToastMessage>,
+}
+
 /// Holds toasts until the renderer has subscribed; events sent earlier are lost.
 #[derive(Default)]
 pub struct ToastGate {
-    inner: Mutex<(bool, Vec<ToastMessage>)>,
+    inner: Mutex<GateState>,
 }
 
 impl ToastGate {
-    /// `Some(toast)` when it can be delivered now, `None` when it was queued.
+    /// `Some(toast)` when it can be delivered now, `None` when it was held back.
     pub fn push(&self, toast: ToastMessage) -> Option<ToastMessage> {
         let mut g = self.inner.lock().unwrap();
-        if g.0 {
-            Some(toast)
-        } else {
-            g.1.push(toast);
-            None
+        if !toast.auto_dismiss {
+            g.pinned.retain(|t| t.message != toast.message);
+            g.pinned.push(toast.clone());
+        }
+        match g.renderer {
+            Renderer::Listening => Some(toast),
+            // Pinned ones are kept above; a passing toast nobody would see is dropped,
+            // as it was when the hidden window still existed.
+            Renderer::Gone => None,
+            Renderer::Starting => {
+                if toast.auto_dismiss {
+                    g.queued.push(toast);
+                }
+                None
+            }
         }
     }
 
-    /// Marks the renderer as listening and returns what was queued, in order.
+    /// Marks the renderer as listening and returns what it has to show, in order.
     pub fn open(&self) -> Vec<ToastMessage> {
         let mut g = self.inner.lock().unwrap();
-        g.0 = true;
-        std::mem::take(&mut g.1)
+        if g.renderer == Renderer::Listening {
+            return Vec::new();
+        }
+        g.renderer = Renderer::Listening;
+        let mut out = std::mem::take(&mut g.queued);
+        out.extend(g.pinned.iter().cloned());
+        out
+    }
+
+    /// The window is gone; the next one gets the pinned toasts again.
+    pub fn close(&self) {
+        let mut g = self.inner.lock().unwrap();
+        g.renderer = Renderer::Gone;
+        g.queued.clear();
+    }
+
+    /// The user closed a toast (or used its action).
+    pub fn dismiss(&self, id: &str) {
+        self.inner.lock().unwrap().pinned.retain(|t| t.id != id);
     }
 }
 
@@ -109,6 +156,15 @@ impl TauriFrontend {
         for toast in self.gate.open() {
             self.emit_toast(toast);
         }
+    }
+
+    /// Called when the window was destroyed (closed to the tray).
+    pub fn renderer_gone(&self) {
+        self.gate.close();
+    }
+
+    pub fn dismiss_toast(&self, id: &str) {
+        self.gate.dismiss(id);
     }
 }
 
@@ -324,6 +380,12 @@ pub async fn install_update(app: AppHandle) -> Res<()> {
     crate::updater::install_update(&app).await
 }
 
+/// The user closed a toast, so a recreated window must not show it again.
+#[tauri::command]
+pub fn dismiss_toast(state: State<'_, AppState>, id: String) {
+    state.frontend.dismiss_toast(&id);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -351,5 +413,40 @@ mod tests {
         // Once open, toasts pass straight through and nothing is queued.
         assert_eq!(gate.push(toast(3)).map(|t| t.id), Some("3".to_owned()));
         assert!(gate.open().is_empty());
+    }
+
+    fn pinned(n: u32, message: &str) -> ToastMessage {
+        ToastMessage { message: message.into(), auto_dismiss: false, ..toast(n) }
+    }
+
+    fn ids(toasts: &[ToastMessage]) -> Vec<&str> {
+        toasts.iter().map(|t| t.id.as_str()).collect()
+    }
+
+    #[test]
+    fn a_window_reopened_from_the_tray_gets_the_pinned_toasts_again() {
+        let gate = ToastGate::default();
+        assert!(gate.push(pinned(1, "toast.legacy")).is_none());
+        assert_eq!(ids(&gate.open()), ["1"]);
+        assert!(gate.push(pinned(2, "toast.update")).is_some());
+
+        gate.close();
+        // Nobody would see a passing toast; a pinned one waits for the next window.
+        assert!(gate.push(toast(3)).is_none());
+        assert!(gate.push(pinned(4, "toast.other")).is_none());
+        assert_eq!(ids(&gate.open()), ["1", "2", "4"]);
+    }
+
+    #[test]
+    fn dismissed_and_repeated_pinned_toasts_are_not_shown_twice() {
+        let gate = ToastGate::default();
+        gate.open();
+        gate.push(pinned(1, "toast.update"));
+        gate.push(pinned(2, "toast.update"));
+        gate.push(pinned(3, "toast.legacy"));
+        gate.dismiss("3");
+
+        gate.close();
+        assert_eq!(ids(&gate.open()), ["2"]);
     }
 }

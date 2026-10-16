@@ -259,7 +259,13 @@ export const useBulbStore = create<BulbStore>((set, get) => ({
   addToast: (t) => set((s) => ({ toasts: [...s.toasts, t] })),
   pushToast: (message, type, params, autoDismiss = true) =>
     get().addToast(toast(message, type, params, autoDismiss)),
-  dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  dismissToast: (id) => {
+    // The backend keeps pinned toasts to show them again in a window reopened from the tray.
+    if (get().toasts.some((t) => t.id === id && !t.autoDismiss)) {
+      void api.dismissToast(id).catch(() => undefined)
+    }
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
+  },
 
   toggleBulb: async (ip) => {
     const target = ip ?? activeIp()
