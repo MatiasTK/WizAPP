@@ -38,3 +38,12 @@ name = "probe"
 
 [dev-dependencies]
 tempfile = "3"
+
+# Smaller exe and installer (https://v2.tauri.app/concept/size/). The app waits on the
+# network, not the CPU, so optimizing for size costs nothing noticeable.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
