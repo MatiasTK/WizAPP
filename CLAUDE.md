@@ -89,7 +89,7 @@ Scene IDs below `MAX_DEFAULT_COLORS` (33, in `src/renderer/src/constants.ts` and
 
 - The window starts hidden; `Layout.tsx` calls `show_window` after the first state and `fonts.ready` (+50 ms timer — `requestAnimationFrame` does not run in a hidden WebView2). Rust shows it anyway after 5 s.
 - The X **destroys** the window so WebView2 frees its memory (~190 MB → ~7 MB in the tray); the app stays alive because `RunEvent::ExitRequested { code: None }` is prevented. Minimize is normal, "Quit" lives in the tray menu (`app.exit(0)`). The tray and a second instance recreate the window from the `tauri.conf.json` config (~1.3 s until it shows). Pinned toasts (`autoDismiss: false`) are kept in `ToastGate` and shown again in the new window until the user closes them (`dismiss_toast`).
-- Updater: GitHub releases, signed with minisign. `updater.rs` checks 8 s after start (release builds only) and pins a toast with "update now"; nothing is installed without the user asking.
+- Updater: GitHub releases, signed with minisign. `updater.rs` checks 8 s after start (release builds only) and pins a toast with "update now"; nothing is installed without the user asking. The endpoint is the fixed `releases/download/updater/latest.json`, **not** `releases/latest` (that stays the Electron 3.x release, whose users must not be moved to 4.x, and it skips prereleases). `publish-updater.yml` copies `latest.json` there when a release is published.
 - `legacy.rs` looks for the still-installed Electron app in `HKCU\...\Uninstall` (`DisplayName` starting with `WiZ APP`, uninstaller not ours) and shows a notice.
 
 ### Other notes

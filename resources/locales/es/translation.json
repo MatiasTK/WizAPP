@@ -261,7 +261,7 @@
       "bulbUnreachable": "No se pudo conectar con la bombilla. Revisa que esté encendida y en la misma red.",
       "invalidArgument": "Ese valor no es válido.",
       "io": "Algo salió mal. Inténtalo de nuevo; si sigue pasando, revisa el registro en la carpeta de datos.",
-      "updater": "No se pudo buscar actualizaciones. Revisa tu conexión a internet."
+      "updater": "No se pudo buscar actualizaciones. Inténtalo de nuevo más tarde."
     }
   }
 }

@@ -51,7 +51,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Builds the NSIS installer, signs the updater artifact and uploads latest.json.
-      # `-beta` tags are published as prereleases (the updater endpoint ignores them).
+      # `-beta` tags are published as prereleases. Publishing the draft copies latest.json to the
+      # fixed `updater` release that installed apps check (publish-updater.yml).
       - name: Build and draft the release
         uses: tauri-apps/tauri-action@v0
         env:

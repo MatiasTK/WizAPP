@@ -261,7 +261,7 @@
       "bulbUnreachable": "Could not connect to the bulb. Check that it is on and on the same network.",
       "invalidArgument": "That value is not valid.",
       "io": "Something went wrong. Try again; if it keeps happening, check the log in the data folder.",
-      "updater": "Could not check for updates. Check your internet connection."
+      "updater": "Could not check for updates. Try again later."
     }
   }
 }

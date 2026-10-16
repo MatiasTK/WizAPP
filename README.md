@@ -71,6 +71,7 @@ Releases are built by the **Release** workflow ([.github/workflows/release.yml](
    ```
 
 4. Check the run in the **Actions** tab, then open the draft under **Releases**, review the assets (`.exe` and `latest.json`) and publish it.
+5. Publishing triggers the **Publish updater manifest** workflow ([.github/workflows/publish-updater.yml](.github/workflows/publish-updater.yml)), which copies that `latest.json` to the `updater` release. That is the fixed URL installed apps check, so betas update too, and the 3.x release can stay **Latest** without 3.x users being moved to 4.x. Do not delete the `updater` release.
 
 Requirements, set once in the repo: the `release` environment must hold the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and they must match the `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`. If the secrets are replaced, the public key has to be replaced too, or the auto-updater rejects the new builds.
 
