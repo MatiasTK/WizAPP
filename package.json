@@ -1,7 +1,7 @@
 {
   "name": "wiz_app",
   "productName": "WiZ APP",
-  "version": "4.0.0-beta.1",
+  "version": "4.0.0-beta.2",
   "description": "💡 Simple desktop app to connect and control WiZ Bulbs",
   "author": {
     "name": "MatiasTK",
