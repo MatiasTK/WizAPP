@@ -30,20 +30,20 @@ function AlertBody({
       <RadixAlert.Overlay className="fixed inset-0 z-(--z-dialog) bg-scrim" />
       <RadixAlert.Content
         onCloseAutoFocus={onCloseAutoFocus}
-        className="fixed top-1/2 left-1/2 z-(--z-dialog) w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg bg-surface p-6 text-fg shadow-xl"
+        className="fixed top-1/2 left-1/2 z-(--z-dialog) w-[calc(100vw-3rem)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface px-6 py-[22px] text-fg shadow-[0_24px_64px_rgb(0_0_0/0.28)]"
       >
-        <RadixAlert.Title className="text-xl font-semibold">{title}</RadixAlert.Title>
-        <RadixAlert.Description className="mt-2 text-sm text-muted">
+        <RadixAlert.Title className="text-lg font-bold">{title}</RadixAlert.Title>
+        <RadixAlert.Description className="mt-[18px] text-muted">
           {description}
         </RadixAlert.Description>
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-[18px] flex justify-end gap-2">
           {/* Radix puts the initial focus on Cancel, the safe choice. */}
-          <RadixAlert.Cancel className={buttonClasses('secondary', 'normal')}>
+          <RadixAlert.Cancel className={buttonClasses('secondary', 'large')}>
             {t('common.cancel')}
           </RadixAlert.Cancel>
           <RadixAlert.Action
             onClick={onConfirm}
-            className={cn(buttonClasses(destructive ? 'destructive' : 'primary', 'normal'))}
+            className={cn(buttonClasses(destructive ? 'destructive' : 'primary', 'large'))}
           >
             {confirmLabel}
           </RadixAlert.Action>

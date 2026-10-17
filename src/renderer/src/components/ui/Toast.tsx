@@ -1,11 +1,9 @@
-import Button from '@components/ui/Button'
-import IconButton from '@components/ui/IconButton'
 import { useBulbStore, type AppToast } from '@renderer/context/BulbStore'
-import { cn } from '@renderer/lib/cn'
+import { cn, focusRing } from '@renderer/lib/cn'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { LuCircleAlert, LuCircleCheck, LuInfo, LuX } from 'react-icons/lu'
+import { LuBell, LuCheck, LuCircleAlert, LuX } from 'react-icons/lu'
 
 const AUTO_DISMISS_MS = 6000
 
@@ -15,15 +13,17 @@ const ACTION_LABELS = {
   'open-apps-settings': 'toast.openSettings'
 } as const
 
-const TONES = {
-  success: {
-    icon: <LuCircleCheck size={18} />,
-    color: 'text-success-text',
-    edge: 'border-l-success'
-  },
-  error: { icon: <LuCircleAlert size={18} />, color: 'text-danger-text', edge: 'border-l-danger' },
-  info: { icon: <LuInfo size={18} />, color: 'text-primary-text', edge: 'border-l-primary' }
+const ICONS = {
+  success: <LuCheck size={16} strokeWidth={2.4} />,
+  error: <LuCircleAlert size={16} />,
+  info: <LuBell size={16} />
 } as const
+
+// A pill in the inverse colors (dark in light mode, light in dark mode).
+const pillButton = cn(
+  'inline-flex h-7 shrink-0 cursor-pointer items-center justify-center rounded-sm transition-colors hover:bg-on-toast/15',
+  focusRing
+)
 
 function Toast({ toast }: { toast: AppToast }) {
   const { t } = useTranslation()
@@ -45,8 +45,6 @@ function Toast({ toast }: { toast: AppToast }) {
     }
   }, [toast.id, toast.autoDismiss, paused, dismissToast])
 
-  const tone = TONES[toast.type]
-
   const handleAction = () => {
     dismissToast(toast.id)
     if (toast.retryAction === 'retry-discovery') void retryDiscovery()
@@ -61,30 +59,29 @@ function Toast({ toast }: { toast: AppToast }) {
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className={cn(
-        'pointer-events-auto flex w-96 items-start gap-3 rounded-lg border-l-4 bg-sidebar p-4 text-fg shadow-xl',
-        tone.edge
-      )}
+      className="pointer-events-auto flex max-w-[min(560px,calc(100vw-2rem))] items-center gap-2.5 rounded-[12px] bg-toast py-2 pr-2 pl-4 font-medium text-on-toast shadow-[0_10px_30px_rgb(0_0_0/0.25)]"
     >
-      <span aria-hidden className={cn('mt-0.5 shrink-0', tone.color)}>
-        {tone.icon}
+      <span aria-hidden className="shrink-0">
+        {ICONS[toast.type]}
       </span>
-      <div className="flex min-w-0 grow flex-col gap-2">
-        <p className="text-sm">{t(toast.message, toast.params)}</p>
-        {toast.retryAction && (
-          <Button size="dense" variant="secondary" className="w-fit" onClick={handleAction}>
-            {t(ACTION_LABELS[toast.retryAction])}
-          </Button>
-        )}
-      </div>
-      <IconButton
-        label={t('common.close')}
-        tooltip={false}
+      <p className="min-w-0 grow py-1">{t(toast.message, toast.params)}</p>
+      {toast.retryAction && (
+        <button
+          type="button"
+          onClick={handleAction}
+          className={cn(pillButton, 'border border-on-toast/40 px-2.5 text-[13px] font-semibold')}
+        >
+          {t(ACTION_LABELS[toast.retryAction])}
+        </button>
+      )}
+      <button
+        type="button"
+        aria-label={t('common.close')}
         onClick={() => dismissToast(toast.id)}
-        className="-mt-1 -mr-1"
+        className={cn(pillButton, 'w-7 opacity-80 hover:opacity-100')}
       >
         <LuX size={14} aria-hidden />
-      </IconButton>
+      </button>
     </div>
   )
 }
@@ -99,7 +96,7 @@ export function ToastContainer() {
       // so toasts stay announced above dialogs.
       aria-live="polite"
       aria-label={t('toast.region')}
-      className="pointer-events-none fixed right-4 bottom-4 z-(--z-toast) flex flex-col gap-2"
+      className="pointer-events-none fixed inset-x-0 bottom-5 z-(--z-toast) flex flex-col items-center gap-2 px-4"
     >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} />

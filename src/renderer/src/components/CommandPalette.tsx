@@ -1,11 +1,12 @@
+import BulbDot from '@components/BulbDot'
 import Dialog from '@components/ui/Dialog'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { useCatalog } from '@renderer/lib/catalog'
-import { cn, focusRing } from '@renderer/lib/cn'
+import { cn } from '@renderer/lib/cn'
 import { matches } from '@renderer/lib/search'
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuLightbulb, LuPalette, LuPower, LuPowerOff, LuSearch } from 'react-icons/lu'
+import { LuPower, LuPowerOff, LuSearch } from 'react-icons/lu'
 
 type CommandPaletteProps = {
   open: boolean
@@ -16,11 +17,21 @@ type Command = {
   id: string
   label: string
   hint: string
-  icon: React.ReactNode
+  /** Swatch, bulb dot or action icon, 28 px. */
+  visual: React.ReactNode
   run: () => void
 }
 
 const MAX_RESULTS = 30
+
+const actionIcon = (icon: React.ReactNode) => (
+  <span
+    aria-hidden
+    className="flex size-7 shrink-0 items-center justify-center rounded-sm border border-border bg-sunken text-muted"
+  >
+    {icon}
+  </span>
+)
 const LIST_ID = 'command-palette-list'
 
 function Palette({ onClose }: { onClose: () => void }) {
@@ -41,7 +52,13 @@ function Palette({ onClose }: { onClose: () => void }) {
       id: `scene-${entry.id}`,
       label: entry.name,
       hint: t('palette.applyScene', { name: activeBulb?.name ?? '' }),
-      icon: <LuPalette size={16} aria-hidden />,
+      visual: (
+        <span
+          aria-hidden
+          className="size-7 shrink-0 rounded-sm border border-border"
+          style={{ background: entry.swatch }}
+        />
+      ),
       run: () => void setScene(entry.id, activeBulb?.ip)
     })
 
@@ -52,14 +69,14 @@ function Palette({ onClose }: { onClose: () => void }) {
         id: `select-${b.ip}`,
         label: b.name,
         hint: t('palette.selectBulb'),
-        icon: <LuLightbulb size={16} aria-hidden />,
+        visual: <BulbDot bulb={b} size={28} />,
         run: () => void setActiveBulb(b.ip)
       },
       {
         id: `toggle-${b.ip}`,
         label: b.name,
         hint: b.state ? t('palette.turnOff') : t('palette.turnOn'),
-        icon: b.state ? <LuPowerOff size={16} aria-hidden /> : <LuPower size={16} aria-hidden />,
+        visual: actionIcon(b.state ? <LuPowerOff size={15} /> : <LuPower size={15} />),
         run: () => void toggleBulb(b.ip)
       }
     ])
@@ -69,14 +86,14 @@ function Palette({ onClose }: { onClose: () => void }) {
         id: 'all-on',
         label: t('home.allOn'),
         hint: t('palette.everyBulb'),
-        icon: <LuPower size={16} aria-hidden />,
+        visual: actionIcon(<LuPower size={15} />),
         run: () => void setAllBulbs(true)
       },
       {
         id: 'all-off',
         label: t('home.allOff'),
         hint: t('palette.everyBulb'),
-        icon: <LuPowerOff size={16} aria-hidden />,
+        visual: actionIcon(<LuPowerOff size={15} />),
         run: () => void setAllBulbs(false)
       }
     ]
@@ -129,9 +146,9 @@ function Palette({ onClose }: { onClose: () => void }) {
   const activeId = commands[current] ? `palette-option-${commands[current].id}` : undefined
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-lg bg-raised px-4 focus-within:ring-2 focus-within:ring-ring">
-        <LuSearch size={18} aria-hidden className="text-muted" />
+    <div className="flex flex-col gap-3">
+      <div className="flex h-11 items-center gap-2.5 rounded-[12px] border-[1.5px] border-primary bg-surface px-3.5 text-muted focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-surface">
+        <LuSearch size={16} aria-hidden />
         <input
           role="combobox"
           aria-label={t('palette.label')}
@@ -148,26 +165,21 @@ function Palette({ onClose }: { onClose: () => void }) {
             setIndex(0)
           }}
           onKeyDown={handleKeyDown}
-          className="h-12 w-full bg-transparent text-base text-fg outline-none placeholder:text-muted"
+          className="h-full w-full bg-transparent text-[15px] text-fg outline-none placeholder:text-muted"
         />
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('common.close')}
-          className={cn(
-            'flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md bg-sidebar px-2 text-xs font-medium text-fg transition-colors hover:bg-border',
-            focusRing
-          )}
-        >
-          Esc
-        </button>
       </div>
+
+      <p role="status" className="text-xs text-muted">
+        {commands.length === 0
+          ? t('palette.noResults')
+          : t('palette.count', { count: commands.length })}
+      </p>
 
       <ul
         id={LIST_ID}
         role="listbox"
         aria-label={t('palette.results')}
-        className="max-h-72 overflow-y-auto"
+        className="flex max-h-80 flex-col gap-0.5 overflow-y-auto"
       >
         {commands.map((command, i) => (
           <li
@@ -178,26 +190,16 @@ function Palette({ onClose }: { onClose: () => void }) {
             onMouseMove={() => setIndex(i)}
             onClick={() => execute(command)}
             className={cn(
-              'flex h-11 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm',
-              i === current && 'bg-primary text-on-primary'
+              'flex cursor-pointer items-center gap-3 rounded-md px-2.5 py-2',
+              i === current && 'bg-primary-soft'
             )}
           >
-            {command.icon}
-            <span className="min-w-0 grow truncate">{command.label}</span>
-            <span
-              className={cn('shrink-0 text-xs', i === current ? 'text-on-primary' : 'text-muted')}
-            >
-              {command.hint}
-            </span>
+            {command.visual}
+            <span className="min-w-0 grow truncate font-semibold">{command.label}</span>
+            <span className="shrink-0 text-xs text-muted">{command.hint}</span>
           </li>
         ))}
       </ul>
-
-      <p role="status" className={cn('text-sm text-muted', commands.length > 0 && 'sr-only')}>
-        {commands.length === 0
-          ? t('palette.noResults')
-          : t('palette.count', { count: commands.length })}
-      </p>
     </div>
   )
 }
@@ -209,8 +211,7 @@ export default function CommandPalette({ open, onOpenChange }: CommandPalettePro
       open={open}
       onOpenChange={onOpenChange}
       title={t('palette.title')}
-      hideTitle
-      className="top-24 max-w-lg translate-y-0"
+      className="top-24 max-w-[560px] translate-y-0"
     >
       <Palette onClose={() => onOpenChange(false)} />
     </Dialog>

@@ -19,13 +19,13 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center gap-3 rounded-lg bg-surface px-8 py-12 text-center',
+        'flex flex-col items-center gap-3 rounded-lg border border-dashed border-control bg-surface p-12 text-center',
         className
       )}
     >
       {icon && <div className="text-muted">{icon}</div>}
-      <h2 className="text-lg font-semibold text-fg">{title}</h2>
-      {description && <div className="max-w-md text-sm text-muted">{description}</div>}
+      <h2 className="text-lg font-bold text-fg">{title}</h2>
+      {description && <div className="max-w-md text-muted">{description}</div>}
       {actions && <div className="mt-3 flex flex-wrap justify-center gap-3">{actions}</div>}
     </div>
   )

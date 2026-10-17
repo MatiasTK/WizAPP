@@ -1,12 +1,13 @@
 import AlertDialog from '@components/ui/AlertDialog'
 import Button from '@components/ui/Button'
 import Dialog from '@components/ui/Dialog'
-import Select from '@components/ui/Select'
+import SegmentedControl from '@components/ui/SegmentedControl'
 import type { LanguagePref } from '@renderer/bindings/LanguagePref'
 import type { Theme } from '@renderer/bindings/Theme'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LuTrash2 } from 'react-icons/lu'
 
 type SettingsModalProps = {
   open: boolean
@@ -33,13 +34,22 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     void deleteProfile()
   }
 
-  const row = (id: string, label: string, hint: string | null, control: React.ReactNode) => (
-    <div className="flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <p id={id} className="text-sm font-medium">
+  const choice = (id: string, label: string, control: ReactNode) => (
+    <div className="flex flex-col gap-2">
+      <span id={id} className="font-semibold">
+        {label}
+      </span>
+      {control}
+    </div>
+  )
+
+  const action = (id: string, label: string, hint: string, control: ReactNode) => (
+    <div className="flex items-center gap-4 border-t border-border pt-3.5">
+      <div className="min-w-0 grow">
+        <p id={id} className="font-semibold">
           {label}
         </p>
-        {hint && <p className="text-xs text-muted">{hint}</p>}
+        <p className="text-[13px] text-muted">{hint}</p>
       </div>
       {control}
     </div>
@@ -48,54 +58,51 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange} title={t('settings.title')}>
-        <div className="flex flex-col gap-5">
-          {row(
+        <div className="flex flex-col gap-[18px]">
+          {choice(
             'setting-theme',
             t('settings.theme.title'),
-            null,
-            <Select
+            <SegmentedControl<Theme>
+              fill
               aria-labelledby="setting-theme"
               value={settings.theme}
-              onValueChange={(v) => void setTheme(v as Theme)}
-              options={[
+              onValueChange={(v) => void setTheme(v)}
+              segments={[
                 { value: 'system', label: t('settings.theme.system') },
                 { value: 'light', label: t('settings.theme.light') },
                 { value: 'dark', label: t('settings.theme.dark') }
               ]}
             />
           )}
-          {row(
+          {choice(
             'setting-language',
             t('settings.language.title'),
-            null,
-            <Select
+            <SegmentedControl<LanguagePref>
+              fill
               aria-labelledby="setting-language"
               value={settings.language}
-              onValueChange={(v) => void setLanguage(v as LanguagePref)}
-              options={[
+              onValueChange={(v) => void setLanguage(v)}
+              segments={[
                 { value: 'auto', label: t('settings.language.auto') },
-                { value: 'en', label: t('settings.language.english') },
-                { value: 'es', label: t('settings.language.spanish') }
+                { value: 'es', label: t('settings.language.spanish') },
+                { value: 'en', label: t('settings.language.english') }
               ]}
             />
           )}
-          {row(
+          {action(
             'setting-search',
             t('settings.search.title'),
             t('settings.search.hint'),
-            <Button aria-labelledby="setting-search" onClick={handleSearchAgain}>
+            <Button aria-describedby="setting-search" onClick={handleSearchAgain}>
               {t('settings.search.button')}
             </Button>
           )}
-          {row(
+          {action(
             'setting-delete',
             t('settings.deleteProfile.title'),
             t('settings.deleteProfile.hint'),
-            <Button
-              variant="destructive"
-              aria-labelledby="setting-delete"
-              onClick={() => setConfirmDelete(true)}
-            >
+            <Button variant="danger-soft" onClick={() => setConfirmDelete(true)}>
+              <LuTrash2 size={15} aria-hidden />
               {t('settings.deleteProfile.button')}
             </Button>
           )}

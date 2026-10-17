@@ -78,7 +78,7 @@ describe('Color dialog', () => {
 
     const field = screen.getByLabelText('Name')
     await user.type(field, 'rosa')
-    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await user.click(screen.getByRole('button', { name: 'Create color' }))
 
     expect(screen.getByText('You already have a color with that name.')).toBeInTheDocument()
     expect(field).toHaveAttribute('aria-invalid', 'true')
@@ -93,9 +93,24 @@ describe('Color dialog', () => {
     renderApp(<CustomColorModal open onOpenChange={onOpenChange} />)
 
     await user.type(screen.getByLabelText('Name'), 'Sunset')
-    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await user.click(screen.getByRole('button', { name: 'Create color' }))
 
-    expect(api.addCustomColor).toHaveBeenCalledWith('Sunset', '#3772ff')
+    expect(api.addCustomColor).toHaveBeenCalledWith('Sunset', '#38c6c9')
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('offers a palette and remembers the picked color', async () => {
+    const user = userEvent.setup()
+    seedStore(makeState([makeBulb()]))
+    renderApp(<CustomColorModal open onOpenChange={() => undefined} />)
+
+    const pink = screen.getByRole('button', { name: '#e2477a' })
+    await user.click(pink)
+    expect(pink).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '#38c6c9' })).toHaveAttribute('aria-pressed', 'false')
+
+    await user.type(screen.getByLabelText('Name'), 'Pink')
+    await user.click(screen.getByRole('button', { name: 'Create color' }))
+    expect(api.addCustomColor).toHaveBeenCalledWith('Pink', '#e2477a')
   })
 })

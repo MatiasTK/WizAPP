@@ -54,7 +54,7 @@ cargo test            # also regenerates src/renderer/src/bindings/*.ts
 
 ### State flow (the manager actor is the single source of truth)
 
-1. The renderer calls an action on the Zustand store (`context/BulbStore.tsx`), which wraps `api.*` (`lib/api.ts`, thin `invoke`/`listen`) in `call()`. Brightness, power, scene and color commands are **optimistic** (DESIGN.md §2.1): the store keeps an overlay per bulb (`state`, `dimming`, `sceneId`) on top of the backend state, drops it when the next `on-update-bulb` arrives or the command rejects, and the control goes back to the real value. A rejected command becomes a `toast.error.<code>` toast, except `bulbOffline`, which the bulb's row already shows. Backend state remains the only source of truth.
+1. The renderer calls an action on the Zustand store (`context/BulbStore.tsx`), which wraps `api.*` (`lib/api.ts`, thin `invoke`/`listen`) in `call()`. Brightness, power, scene and color commands are **optimistic**: the store keeps an overlay per bulb (`state`, `dimming`, `sceneId`) on top of the backend state, drops it when the next `on-update-bulb` arrives or the command rejects, and the control goes back to the real value. A rejected command becomes a `toast.error.<code>` toast, except `bulbOffline`, which the bulb's card already shows. Backend state remains the only source of truth.
 2. `commands.rs` translates the command into a call on `ManagerHandle`.
 3. `manager/actor.rs` (one task) owns `ConfigStore` and the bulb list. **It never awaits the network**: it forwards work to a per-bulb `worker` and handles the result as `ManagerMsg::WorkerDone`. Distinct bulbs run in parallel; commands to one bulb run in FIFO order.
 4. After each change the actor emits the full `MultiBulbState` (`on-update-bulb`) through the `Frontend` trait. Toasts go over `on-show-toast` with an i18n **key**; `TauriFrontend` queues them until the renderer's first `get_bulbs` (events sent earlier are lost).
@@ -97,12 +97,13 @@ Scene IDs below `MAX_DEFAULT_COLORS` (33, in `src/renderer/src/constants.ts` and
 - `wizapp-tauri/` (untracked) holds only an old build output; deleting it is waiting on the maintainer's confirmation (`MIGRATION.md` §6).
 - `testing/`, `.vscode/` and `.cursor/` are gitignored.
 
-## UI (see `DESIGN.md`)
+## UI (see `docs/redesign-a3.md`)
 
 - Colors, radii, z-index and durations are tokens in `assets/main.css` (light/dark, `data-theme` on `<html>`). Components use only the semantic classes (`bg-surface`, `text-muted`, `border-control`, `bg-primary`...), never Tailwind's default palette or arbitrary color values. Run `pnpm check:contrast` after touching a token.
-- Primitives live in `components/ui/` (Radix UI underneath): `Button`, `IconButton`, `TextField`, `Select`, `Slider`, `Dialog`, `AlertDialog`, `Menu`, `Tooltip`, `Spinner`, `EmptyState`, `InlineAlert`. Use `cn` from `lib/cn.ts` to merge classes and `focusRing` for the one focus style.
+- Primitives live in `components/ui/` (Radix UI underneath): `Button`, `IconButton`, `Switch`, `TextField`, `Slider` (+ `BrightnessSlider`, send-on-release), `SegmentedControl`, `Dialog`, `AlertDialog`, `Menu`, `Tooltip`, `Spinner`, `EmptyState`, `InlineAlert`, `Toast`. Use `cn` from `lib/cn.ts` to merge classes and `focusRing` for the one focus style.
 - Dialogs open from state, so `useReturnFocus` (in `Dialog.tsx`) gives focus back to whatever opened them; modals register in `OverlayStore` (Ctrl+K does not open over another dialog); the toast region is an `aria-live` region, which Radix does not hide, and its toasts set `pointer-events-auto`.
-- Scenes and custom colors share one `SceneTile`; names come from `lib/catalog.ts`. Search ignores case and accents (`lib/search.ts`).
+- Scenes and custom colors share one `SceneTile`; names and swatch colors come from `lib/catalog.ts`. Search ignores case and accents (`lib/search.ts`).
+- Bulbs are expandable `BulbCard`s (one open at a time; opening one makes it the active bulb). Reordering bulbs and favorites happens only in the "Sort" mode (`SortList`: dnd-kit drag + up/down buttons, moves announced as toasts). Icons come from `react-icons/lu`, one icon per meaning (table in `docs/redesign-a3.md`). Fonts are bundled: Instrument Sans for the UI, Fredoka only for the `Logo`.
 
 ## Code style
 

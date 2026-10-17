@@ -25,7 +25,7 @@ export default function Menu({ trigger, items, align = 'end' }: MenuProps) {
         <RadixMenu.Content
           align={align}
           sideOffset={4}
-          className="z-(--z-menu) min-w-48 rounded-lg border border-border bg-surface p-1.5 shadow-xl"
+          className="z-(--z-menu) min-w-44 rounded-[12px] border border-border bg-surface p-1 shadow-[0_12px_32px_rgb(0_0_0/0.2)]"
         >
           {items.map((item) => (
             <RadixMenu.Item
@@ -33,7 +33,7 @@ export default function Menu({ trigger, items, align = 'end' }: MenuProps) {
               disabled={item.disabled}
               onSelect={item.onSelect}
               className={cn(
-                'flex h-9 cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm outline-none',
+                'flex h-9 cursor-pointer items-center gap-2.5 rounded-sm px-2.5 text-sm outline-none',
                 'data-disabled:cursor-not-allowed data-disabled:opacity-50',
                 item.destructive
                   ? 'text-danger-text data-highlighted:bg-danger-soft'

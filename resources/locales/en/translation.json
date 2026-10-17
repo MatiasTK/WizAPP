@@ -5,7 +5,8 @@
     "save": "Save",
     "add": "Add",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "done": "Done"
   },
   "sidebar": {
     "menu": "Main menu",
@@ -15,34 +16,34 @@
     "settings": "Settings",
     "help": "Help",
     "search": "Search",
-    "activeBulb": "Active bulb"
+    "activeBulb": "Active bulb",
+    "chooseActiveBulb": "Choose the active bulb"
   },
   "bulb": {
-    "reorder": "Reorder bulb {{name}}",
-    "dragInstructions": "Press space to pick up this bulb, use the arrow keys to move it and press space again to drop it.",
     "power": "Power for {{name}}",
     "brightness": "Brightness of {{name}}",
     "on": "On",
     "off": "Off",
-    "connected": "Connected",
-    "offlineLabel": "Not responding",
+    "offlineLabel": "Offline",
     "offline": "{{name}} is not responding. Check that it is plugged in and on the same Wi-Fi network.",
     "retry": "Retry",
     "retryFor": "Retry connecting to {{name}}",
-    "select": "Select {{name}}",
-    "chooseScene": "Scene of {{name}}: {{scene}}. Change scene",
-    "noScene": "No scene",
-    "options": "Options for {{name}}",
     "rename": "Rename",
-    "details": "View details",
-    "delete": "Delete",
-    "sceneFor": "Scene for {{name}}",
-    "renameTitle": "Rename bulb",
-    "newName": "New name",
+    "details": "Details",
+    "renameTitle": "Rename {{name}}",
+    "newName": "Name",
     "namePlaceholder": "e.g. Living room",
-    "deleteTitle": "Delete bulb",
-    "deleteMessage": "\"{{name}}\" will be removed from your list. You can add it again later.",
-    "deleteConfirm": "Delete bulb"
+    "brightnessLabel": "Brightness",
+    "brightnessPreset": "Set {{name}} to {{value}} %",
+    "statusOn": "{{scene}} · {{value}} %",
+    "open": "Open {{name}}",
+    "close": "Close {{name}}",
+    "applyTo": "Apply {{scene}} to {{name}}",
+    "allScenes": "All scenes",
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}",
+    "removeMessage": "\"{{name}}\" will no longer appear in the app. You can add it again by searching for bulbs.",
+    "removeConfirm": "Remove bulb"
   },
   "home": {
     "title": "Bulbs",
@@ -61,7 +62,6 @@
     "tipFirewall": "Allow WiZ APP through the Windows firewall on private networks.",
     "retrySearch": "Search again",
     "addByIp": "Add by IP",
-    "favoritesFor": "Applied to {{name}}",
     "add": {
       "entry": "Add bulb",
       "title": "Add a bulb",
@@ -70,11 +70,15 @@
       "example": "192.168.1.34",
       "hint": "Four numbers between 0 and 255, separated by dots.",
       "connecting": "Connecting…"
-    }
+    },
+    "sort": "Sort",
+    "sortTitle": "Sort bulbs",
+    "sortHint": "Drag a row or use the arrows. This order is used across the app.",
+    "sortLabel": "Bulb order",
+    "subtitleCount": "{{online}} of {{total}} online · open a card to adjust it"
   },
   "scenes": {
     "title": "Scenes",
-    "subtitle": "Choose how your bulbs light up.",
     "subtitleFor": "Applied to {{name}}.",
     "favorites": "Favorites",
     "missingFavorites": "You have no favorites yet. Mark a scene with the heart to find it here.",
@@ -94,9 +98,7 @@
     },
     "favorite": {
       "add": "Add {{name}} to favorites",
-      "remove": "Remove {{name}} from favorites",
-      "reorder": "Reorder {{name}}",
-      "dragInstructions": "Press space to pick up this favorite, use the arrow keys to move it and press space again to drop it."
+      "remove": "Remove {{name}} from favorites"
     },
     "color": {
       "new": "New color",
@@ -110,7 +112,9 @@
       "emptyDescription": "Create a color and it will show up here and in quick search.",
       "deleteTitle": "Delete color",
       "deleteMessage": "\"{{name}}\" will be deleted, and removed from your favorites.",
-      "deleteConfirm": "Delete color"
+      "deleteConfirm": "Delete color",
+      "other": "Other color",
+      "create": "Create color"
     },
     "names": {
       "warmWhite": "Warm white",
@@ -145,34 +149,43 @@
       "halloween": "Halloween",
       "bedtime": "Bedtime",
       "wakeUp": "Wake up"
-    }
+    },
+    "sort": "Sort",
+    "sortHint": "Drag a row or use the arrows. Bulbs show their favorites in this order.",
+    "sortLabel": "Favorites order",
+    "dynamic": "Dynamic",
+    "results": "Results",
+    "allScenes": "All scenes",
+    "target": "Bulb they are applied to"
   },
   "information": {
     "title": "Information",
-    "subtitle": "Technical details of your bulbs.",
+    "subtitle": "Details of every bulb, in case you need them for your router or for support.",
     "caption": "Details of every bulb",
     "refresh": "Refresh",
     "missingTitle": "No bulbs to show",
     "missing": "Add a bulb from the Bulbs page and its details will appear here.",
-    "lastKnown": "Last known data",
     "copyIp": "Copy IP address of {{name}}",
     "copyMac": "Copy MAC address of {{name}}",
     "copiedIp": "IP address copied",
     "copiedMac": "MAC address copied",
     "copyFailed": "Could not copy to the clipboard",
-    "columns": {
-      "name": "Name",
+    "offlineStatus": "Offline · last known data",
+    "fields": {
       "status": "Status",
-      "addresses": "IP and MAC address",
-      "modelFirmware": "Model and firmware",
-      "ip": "IP",
+      "ip": "IP address",
       "mac": "MAC",
       "model": "Model",
       "firmware": "Firmware",
-      "signal": "Signal (dBm)",
-      "brightness": "Brightness",
-      "scene": "Scene"
-    }
+      "signal": "Signal"
+    },
+    "signal": {
+      "good": "Good",
+      "fair": "Fair",
+      "weak": "Weak",
+      "unknown": "Unknown"
+    },
+    "signalOf": "Signal: {{level}}"
   },
   "settings": {
     "title": "Settings",
@@ -202,13 +215,16 @@
     }
   },
   "help": {
-    "version": "Version",
+    "version": "Version {{version}}",
     "source": "Source code",
-    "author": "Author",
+    "author": "Author:",
     "checkUpdates": "Check for updates",
     "checkingUpdates": "Checking…",
     "openFolder": "Open data folder",
-    "noUpdates": "You are on the latest version."
+    "noUpdates": "You are on the latest version.",
+    "shortcuts": "Shortcuts",
+    "shortcutSearch": "Quick search",
+    "shortcutClose": "Close a dialog"
   },
   "palette": {
     "title": "Quick search",
@@ -262,6 +278,12 @@
       "invalidArgument": "That value is not valid.",
       "io": "Something went wrong. Try again; if it keeps happening, check the log in the data folder.",
       "updater": "Could not check for updates. Try again later."
-    }
+    },
+    "orderSaved": "Order saved"
+  },
+  "sort": {
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "movedTo": "{{name}} moved to position {{position}}"
   }
 }

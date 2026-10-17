@@ -1,4 +1,5 @@
-import '@fontsource-variable/inter'
+import '@fontsource-variable/instrument-sans'
+import '@fontsource/fredoka/latin-700.css'
 import './assets/main.css'
 
 import i18n from '@i18n/index'

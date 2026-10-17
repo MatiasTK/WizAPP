@@ -58,11 +58,13 @@ export default function EditNameModal({ bulb, onOpenChange }: EditNameModalProps
     <Dialog
       open={bulb !== null}
       onOpenChange={onOpenChange}
-      title={t('bulb.renameTitle')}
+      title={t('bulb.renameTitle', { name: bulb?.name ?? '' })}
       footer={
         <>
-          <Button onClick={close}>{t('common.cancel')}</Button>
-          <Button type="submit" form={FORM_ID} variant="primary">
+          <Button size="large" onClick={close}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" form={FORM_ID} variant="primary" size="large">
             {t('common.save')}
           </Button>
         </>

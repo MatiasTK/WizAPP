@@ -15,7 +15,7 @@ import { create } from 'zustand'
 /** A toast; `params` fill the `{{placeholders}}` of the translated message. */
 export type AppToast = ToastMessage & { params?: Record<string, string | number> }
 
-/** What the UI expects a bulb to look like while a command is in flight (see DESIGN 2.1). */
+/** What the UI expects a bulb to look like while a command is in flight. */
 type Expected = Partial<Pick<BulbState, 'state' | 'dimming' | 'sceneId'>>
 
 type Overlay = {

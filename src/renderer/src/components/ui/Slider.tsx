@@ -10,7 +10,8 @@ type SliderProps = {
   max?: number
   step?: number
   disabled?: boolean
-  'aria-label': string
+  'aria-label'?: string
+  'aria-labelledby'?: string
   className?: string
 }
 
@@ -23,7 +24,7 @@ export default function Slider({
   step = 1,
   disabled,
   className,
-  'aria-label': ariaLabel
+  ...aria
 }: SliderProps) {
   return (
     <RadixSlider.Root
@@ -35,18 +36,18 @@ export default function Slider({
       onValueChange={([v]) => onValueChange(v)}
       onValueCommit={([v]) => onValueCommit?.(v)}
       className={cn(
-        'relative flex h-6 w-full touch-none items-center select-none',
+        'relative flex h-5 w-full touch-none items-center select-none',
         disabled && 'cursor-not-allowed opacity-50',
         className
       )}
     >
-      <RadixSlider.Track className="relative h-2 grow rounded-full bg-control/40">
+      <RadixSlider.Track className="relative h-2 grow cursor-pointer rounded-full bg-track">
         <RadixSlider.Range className="absolute h-full rounded-full bg-primary" />
       </RadixSlider.Track>
       <RadixSlider.Thumb
-        aria-label={ariaLabel}
+        {...aria}
         className={cn(
-          'block size-5 cursor-pointer rounded-full border-2 border-primary bg-on-primary shadow-md',
+          'block size-5 cursor-pointer rounded-full bg-knob shadow-[0_0_0_1px_rgb(0_0_0/0.14),0_2px_6px_rgb(0_0_0/0.28)]',
           'disabled:cursor-not-allowed',
           focusRing
         )}

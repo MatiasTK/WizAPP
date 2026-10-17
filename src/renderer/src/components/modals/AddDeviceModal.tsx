@@ -70,7 +70,7 @@ function AddForm({
         }}
       />
       {connecting && (
-        <p role="status" className="flex items-center gap-2 text-sm text-muted">
+        <p role="status" className="flex items-center gap-2 text-[13px] text-muted">
           <Spinner />
           {t('home.add.connecting')}
         </p>
@@ -92,10 +92,10 @@ export default function AddDeviceModal({ open, onOpenChange }: AddDeviceModalPro
       description={t('home.add.description')}
       footer={
         <>
-          <Button disabled={busy} onClick={() => onOpenChange(false)}>
+          <Button size="large" disabled={busy} onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" form={FORM_ID} variant="primary" disabled={busy}>
+          <Button type="submit" form={FORM_ID} variant="primary" size="large" disabled={busy}>
             {busy ? t('home.add.connecting') : t('common.add')}
           </Button>
         </>

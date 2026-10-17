@@ -1,6 +1,6 @@
 import { cn } from '@renderer/lib/cn'
 import type { ReactNode } from 'react'
-import { LuCircleAlert, LuCircleCheck, LuInfo, LuTriangleAlert } from 'react-icons/lu'
+import { LuBell, LuCheck, LuCircleAlert, LuTriangleAlert } from 'react-icons/lu'
 
 type Tone = 'info' | 'success' | 'warning' | 'danger'
 
@@ -13,8 +13,8 @@ type InlineAlertProps = {
 }
 
 const tones: Record<Tone, { box: string; icon: ReactNode }> = {
-  info: { box: 'bg-primary-soft border-primary', icon: <LuInfo size={16} /> },
-  success: { box: 'bg-success-soft border-success', icon: <LuCircleCheck size={16} /> },
+  info: { box: 'bg-primary-soft border-primary', icon: <LuBell size={16} /> },
+  success: { box: 'bg-success-soft border-success', icon: <LuCheck size={16} /> },
   warning: { box: 'bg-warning-soft border-warning', icon: <LuTriangleAlert size={16} /> },
   danger: { box: 'bg-danger-soft border-danger', icon: <LuCircleAlert size={16} /> }
 }
@@ -30,7 +30,7 @@ export default function InlineAlert({
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
       className={cn(
-        'flex flex-wrap items-center gap-x-3 gap-y-3 rounded-lg border px-4 py-3 text-sm text-fg',
+        'flex flex-wrap items-center gap-x-3 gap-y-3 rounded-md border px-4 py-3 text-fg',
         box,
         className
       )}

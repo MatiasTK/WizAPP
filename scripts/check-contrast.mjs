@@ -60,7 +60,14 @@ const pairs = [
   ['success-text', 'success-soft', 4.5],
   ['fg', 'warning-soft', 4.5],
   ['warning-text', 'warning-soft', 4.5],
-  ['ring', 'primary', 1]
+  ['ring', 'primary', 1],
+  ['fg', 'segment', 4.5],
+  ['on-toast', 'toast', 4.5],
+  // Text fields and the off track of a switch are told apart from the card by this color.
+  ['control', 'segment', 3],
+  // The heart sits on a white disc in both themes.
+  ['knob-fg', 'knob', 4.5],
+  ['heart', 'knob', 3]
 ]
 
 let failures = 0

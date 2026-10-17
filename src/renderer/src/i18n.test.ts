@@ -38,7 +38,7 @@ const RUST_KEYS = [
   /^scenes\.names\./
 ]
 // Keys built at runtime from a known prefix.
-const DYNAMIC_PREFIXES = ['scenes.names.', 'information.columns.', 'toast.error.', 'scenes.tags.']
+const DYNAMIC_PREFIXES = ['scenes.names.', 'toast.error.']
 
 const base = (key: string) => key.replace(/_(one|other)$/, '')
 

@@ -66,35 +66,43 @@ function DialogBody({
     <RadixDialog.Portal>
       <RadixDialog.Overlay className="fixed inset-0 z-(--z-dialog) bg-scrim" />
       <RadixDialog.Content
-        aria-describedby={description ? undefined : undefined}
         onCloseAutoFocus={onCloseAutoFocus}
         className={cn(
-          'fixed top-1/2 left-1/2 z-(--z-dialog) flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg bg-surface text-fg shadow-xl',
+          'fixed top-1/2 left-1/2 z-(--z-dialog) flex max-h-[calc(100vh-3rem)] w-[calc(100vw-3rem)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface text-fg shadow-[0_24px_64px_rgb(0_0_0/0.28)]',
           className
         )}
       >
         {hideTitle && <RadixDialog.Title className="sr-only">{title}</RadixDialog.Title>}
         <header
-          className={cn('flex items-start justify-between gap-4 px-6 pt-6', hideTitle && 'hidden')}
+          className={cn(
+            'flex items-start justify-between gap-3 px-6 pt-[22px]',
+            hideTitle && 'hidden'
+          )}
         >
           <div className="min-w-0">
             {!hideTitle && (
-              <RadixDialog.Title className="text-xl font-semibold">{title}</RadixDialog.Title>
+              <RadixDialog.Title className="text-lg font-bold">{title}</RadixDialog.Title>
             )}
             {description && (
-              <RadixDialog.Description className="mt-1.5 text-sm text-muted">
+              <RadixDialog.Description className="mt-1.5 text-muted">
                 {description}
               </RadixDialog.Description>
             )}
           </div>
           <RadixDialog.Close asChild>
-            <IconButton label={t('common.close')} tooltip={false} className="-mt-1 -mr-2">
-              <LuX size={16} aria-hidden />
+            <IconButton
+              label={t('common.close')}
+              tooltip={false}
+              className="-mt-1 -mr-2 size-[34px]"
+            >
+              <LuX size={18} aria-hidden />
             </IconButton>
           </RadixDialog.Close>
         </header>
-        <div className="min-h-0 grow overflow-y-auto px-6 py-5">{children}</div>
-        {footer && <footer className="flex justify-end gap-3 px-6 pt-1 pb-6">{footer}</footer>}
+        <div className="min-h-0 grow overflow-y-auto px-6 pt-[18px] pb-[22px]">{children}</div>
+        {footer && (
+          <footer className="-mt-1 flex justify-end gap-2 px-6 pb-[22px]">{footer}</footer>
+        )}
       </RadixDialog.Content>
     </RadixDialog.Portal>
   )

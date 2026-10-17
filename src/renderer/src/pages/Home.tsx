@@ -1,76 +1,76 @@
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent
-} from '@dnd-kit/core'
-import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable'
-import BulbRow from '@components/BulbRow'
-import FavoriteScene from '@components/FavoriteScene'
+import BulbCard from '@components/BulbCard'
+import BulbDot from '@components/BulbDot'
+import { useBulbStatus } from '@components/BulbShortcut'
 import AddDeviceModal from '@components/modals/AddDeviceModal'
+import BulbDetailsModal from '@components/modals/BulbDetailsModal'
 import EditNameModal from '@components/modals/EditNameModal'
-import SceneChooser from '@components/modals/SceneChooser'
+import Page from '@components/Page'
+import SortList from '@components/SortList'
 import AlertDialog from '@components/ui/AlertDialog'
 import Button from '@components/ui/Button'
 import EmptyState from '@components/ui/EmptyState'
 import Spinner from '@components/ui/Spinner'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { cn } from '@renderer/lib/cn'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuLightbulb, LuLightbulbOff, LuPlus, LuPower, LuPowerOff } from 'react-icons/lu'
+import { LuArrowDownUp, LuCheck, LuPlus, LuPower, LuPowerOff } from 'react-icons/lu'
 import { useNavigate } from 'react-router'
 
 export default function Home() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const bulbs = useBulbStore((s) => s.bulbs)
-  const activeBulb = useBulbStore((s) => s.activeBulb)
+  const activeIp = useBulbStore((s) => s.activeBulb?.ip ?? null)
   const isDiscovering = useBulbStore((s) => s.isDiscovering)
   const discoveryFailed = useBulbStore((s) => s.discoveryFailed)
   const setActiveBulb = useBulbStore((s) => s.setActiveBulb)
-  const toggleBulb = useBulbStore((s) => s.toggleBulb)
-  const probeBulb = useBulbStore((s) => s.probeBulb)
   const deleteBulb = useBulbStore((s) => s.deleteBulb)
   const setAllBulbs = useBulbStore((s) => s.setAllBulbs)
   const retryDiscovery = useBulbStore((s) => s.retryDiscovery)
   const setBulbsOrder = useBulbStore((s) => s.setBulbsOrder)
+  const pushToast = useBulbStore((s) => s.pushToast)
+  const status = useBulbStatus()
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
-
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return
-    const ips = bulbs.map((b) => b.ip)
-    const from = ips.indexOf(String(active.id))
-    const to = ips.indexOf(String(over.id))
-    if (from < 0 || to < 0) return
-    void setBulbsOrder(arrayMove(ips, from, to))
+  const [sorting, setSorting] = useState(false)
+  // By default the active bulb's card is open. Closing it (or opening another one) holds
+  // until the active bulb changes, e.g. from the sidebar or by opening a card.
+  const [choice, setChoice] = useState<{ ip: string | null } | null>(null)
+  const [seenActiveIp, setSeenActiveIp] = useState(activeIp)
+  if (seenActiveIp !== activeIp) {
+    setSeenActiveIp(activeIp)
+    setChoice(null)
   }
-
+  const openIp = choice ? choice.ip : activeIp
   const [addOpen, setAddOpen] = useState(false)
-  const [sceneIp, setSceneIp] = useState<string | null>(null)
   const [renameIp, setRenameIp] = useState<string | null>(null)
+  const [detailsIp, setDetailsIp] = useState<string | null>(null)
   const [deleteIp, setDeleteIp] = useState<string | null>(null)
 
-  const sceneBulb = bulbs.find((b) => b.ip === sceneIp) ?? null
-  const renameBulb = bulbs.find((b) => b.ip === renameIp) ?? null
-  const deleteTarget = bulbs.find((b) => b.ip === deleteIp)
+  const find = (ip: string | null) => bulbs.find((b) => b.ip === ip) ?? null
+  const deleteTarget = find(deleteIp)
   const anyOnline = bulbs.some((b) => b.online)
+  const onlineCount = bulbs.filter((b) => b.online).length
 
-  const handleDetails = (ip: string) => {
+  // Opening a card also makes that bulb the active one (sidebar, Scenes page).
+  const handleExpandedChange = (ip: string, expanded: boolean) => {
+    setChoice({ ip: expanded ? ip : null })
+    if (expanded) void setActiveBulb(ip)
+  }
+
+  const handleAllScenes = (ip: string) => {
     void setActiveBulb(ip)
-    navigate('/information')
+    navigate('/scenes')
+  }
+
+  const handleStartSorting = () => {
+    setSorting(true)
+  }
+
+  const handleDoneSorting = () => {
+    setSorting(false)
+    setChoice(null)
+    pushToast('toast.orderSaved', 'success')
   }
 
   const renderEmpty = () => {
@@ -85,7 +85,6 @@ export default function Home() {
     }
     return (
       <EmptyState
-        icon={<LuLightbulbOff size={28} aria-hidden />}
         title={discoveryFailed ? t('home.notFoundTitle') : t('home.emptyTitle')}
         description={
           <>
@@ -99,24 +98,87 @@ export default function Home() {
         }
         actions={
           <>
-            <Button variant="primary" onClick={() => void retryDiscovery()}>
+            <Button variant="primary" size="large" onClick={() => void retryDiscovery()}>
               {t('home.retrySearch')}
             </Button>
-            <Button onClick={() => setAddOpen(true)}>{t('home.addByIp')}</Button>
+            <Button size="large" onClick={() => setAddOpen(true)}>
+              {t('home.addByIp')}
+            </Button>
           </>
         }
       />
     )
   }
 
+  const dialogs = (
+    <>
+      <AddDeviceModal open={addOpen} onOpenChange={setAddOpen} />
+      <EditNameModal bulb={find(renameIp)} onOpenChange={(open) => !open && setRenameIp(null)} />
+      <BulbDetailsModal
+        bulb={find(detailsIp)}
+        onOpenChange={(open) => !open && setDetailsIp(null)}
+      />
+      <AlertDialog
+        open={deleteIp !== null}
+        onOpenChange={(open) => !open && setDeleteIp(null)}
+        title={t('bulb.removeTitle', { name: deleteTarget?.name ?? '' })}
+        description={t('bulb.removeMessage', { name: deleteTarget?.name ?? '' })}
+        confirmLabel={t('bulb.removeConfirm')}
+        onConfirm={() => {
+          if (deleteIp) void deleteBulb(deleteIp)
+          setDeleteIp(null)
+        }}
+      />
+    </>
+  )
+
+  if (sorting) {
+    return (
+      <Page
+        title={t('home.sortTitle')}
+        subtitle={t('home.sortHint')}
+        actions={
+          <Button variant="primary" className="px-[18px]" onClick={handleDoneSorting}>
+            <LuCheck size={16} strokeWidth={2.4} aria-hidden />
+            {t('common.done')}
+          </Button>
+        }
+      >
+        <SortList
+          aria-label={t('home.sortLabel')}
+          className="max-w-[640px]"
+          onReorder={(ips) => void setBulbsOrder(ips)}
+          items={bulbs.map((bulb) => ({
+            id: bulb.ip,
+            name: bulb.name,
+            visual: <BulbDot bulb={bulb} size={30} />,
+            detail: (
+              <span className={cn('text-xs', bulb.online ? 'text-muted' : 'text-danger-text')}>
+                {status(bulb)}
+              </span>
+            )
+          }))}
+        />
+      </Page>
+    )
+  }
+
   return (
-    <div className="flex flex-col gap-8 p-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">{t('home.title')}</h1>
-          <p className="mt-1 text-base text-muted">{t('home.subtitle')}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <Page
+      title={t('home.title')}
+      subtitle={
+        bulbs.length > 0
+          ? t('home.subtitleCount', { online: onlineCount, total: bulbs.length })
+          : t('home.subtitle')
+      }
+      actions={
+        <>
+          {bulbs.length > 1 && (
+            <Button onClick={handleStartSorting}>
+              <LuArrowDownUp size={16} aria-hidden />
+              {t('home.sort')}
+            </Button>
+          )}
           <Button disabled={!anyOnline} onClick={() => void setAllBulbs(true)}>
             <LuPower size={16} aria-hidden />
             {t('home.allOn')}
@@ -126,82 +188,41 @@ export default function Home() {
             {t('home.allOff')}
           </Button>
           <Button variant="primary" onClick={() => setAddOpen(true)}>
-            <LuPlus size={16} aria-hidden />
+            <LuPlus size={16} strokeWidth={2.2} aria-hidden />
             {t('home.add.entry')}
           </Button>
-        </div>
-      </header>
-
+        </>
+      }
+    >
       {bulbs.length === 0 ? (
         renderEmpty()
       ) : (
-        <section aria-label={t('home.listLabel')}>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-            onDragEnd={handleDragEnd}
-            accessibility={{ screenReaderInstructions: { draggable: t('bulb.dragInstructions') } }}
-          >
-            <SortableContext items={bulbs.map((b) => b.ip)} strategy={verticalListSortingStrategy}>
-              <ul className="flex flex-col gap-3">
-                {bulbs.map((bulb) => (
-                  <BulbRow
-                    key={bulb.ip}
-                    bulb={bulb}
-                    isActive={bulb.ip === activeBulb?.ip}
-                    onSelect={() => void setActiveBulb(bulb.ip)}
-                    onToggle={() => void toggleBulb(bulb.ip)}
-                    onRetry={() => void probeBulb(bulb.ip)}
-                    onOpenScenes={() => setSceneIp(bulb.ip)}
-                    onRename={() => setRenameIp(bulb.ip)}
-                    onDetails={() => handleDetails(bulb.ip)}
-                    onDelete={() => setDeleteIp(bulb.ip)}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
-          {isDiscovering && (
-            <p role="status" className="mt-3 flex items-center gap-2 text-sm text-muted">
-              <Spinner />
-              {t('home.searching')}
-            </p>
-          )}
+        <section
+          aria-label={t('home.listLabel')}
+          className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3.5"
+        >
+          {bulbs.map((bulb) => (
+            <BulbCard
+              key={bulb.ip}
+              bulb={bulb}
+              expanded={openIp === bulb.ip}
+              onExpandedChange={(expanded) => handleExpandedChange(bulb.ip, expanded)}
+              onRename={() => setRenameIp(bulb.ip)}
+              onDetails={() => setDetailsIp(bulb.ip)}
+              onRemove={() => setDeleteIp(bulb.ip)}
+              onAllScenes={() => handleAllScenes(bulb.ip)}
+            />
+          ))}
         </section>
       )}
-
-      {bulbs.length > 0 && (
-        <section aria-labelledby="home-favorites" className="flex flex-col gap-3">
-          <div>
-            <h2 id="home-favorites" className="flex items-center gap-2 text-lg font-semibold">
-              <LuLightbulb size={16} aria-hidden />
-              {t('scenes.favorites')}
-            </h2>
-            {activeBulb && (
-              <p className="mt-0.5 text-sm text-muted">
-                {t('home.favoritesFor', { name: activeBulb.name })}
-              </p>
-            )}
-          </div>
-          <FavoriteScene bulb={activeBulb} />
-        </section>
+      {bulbs.length > 0 && isDiscovering && (
+        <p role="status" className="flex items-center gap-2 text-[13px] text-muted">
+          <Spinner />
+          {t('home.searching')}
+        </p>
       )}
 
-      <AddDeviceModal open={addOpen} onOpenChange={setAddOpen} />
-      <SceneChooser bulb={sceneBulb} onOpenChange={(open) => !open && setSceneIp(null)} />
-      <EditNameModal bulb={renameBulb} onOpenChange={(open) => !open && setRenameIp(null)} />
-      <AlertDialog
-        open={deleteIp !== null}
-        onOpenChange={(open) => !open && setDeleteIp(null)}
-        title={t('bulb.deleteTitle')}
-        description={t('bulb.deleteMessage', { name: deleteTarget?.name ?? '' })}
-        confirmLabel={t('bulb.deleteConfirm')}
-        onConfirm={() => {
-          if (deleteIp) void deleteBulb(deleteIp)
-          setDeleteIp(null)
-        }}
-      />
-    </div>
+      {dialogs}
+    </Page>
   )
 }

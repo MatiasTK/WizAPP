@@ -1,8 +1,7 @@
-import FavoriteScene, { reorderFavorites } from '@components/FavoriteScene'
 import Scenes from '@pages/Scenes'
 import { makeBulb, makeState, renderApp, resetStore, seedStore } from '@renderer/test/fixtures'
 import { api } from '@renderer/test/mockApi'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -21,16 +20,18 @@ beforeEach(() => {
 })
 
 describe('Scenes page', () => {
-  it('filters every section and ignores case and accents', async () => {
+  it('filters the grid and ignores case and accents', async () => {
     const user = userEvent.setup()
     seedStore(makeState([withColors()]))
     renderApp(<Scenes />)
 
     await user.type(screen.getByRole('searchbox', { name: 'Filter scenes' }), 'COZY')
 
-    expect(screen.getAllByRole('button', { name: 'Cozy' }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Results' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cozy' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Warm white' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Dynamic' })).not.toBeInTheDocument()
+    // Favorites step aside while filtering.
+    expect(screen.queryByRole('heading', { name: 'Favorites' })).not.toBeInTheDocument()
   })
 
   it('says there are no results even when custom colors exist', async () => {
@@ -41,23 +42,24 @@ describe('Scenes page', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Filter scenes' }), 'zzzz')
 
     expect(screen.getByText('No results. Try a different name.')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Custom' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Rosa' })).not.toBeInTheDocument()
   })
 
-  it('shows an empty custom section with a New color action', () => {
+  it('shows an empty custom group with a New color action', async () => {
+    const user = userEvent.setup()
     seedStore(makeState([makeBulb({ customColors: [] })]))
     renderApp(<Scenes />)
 
+    await user.click(screen.getByRole('button', { name: 'Custom' }))
     expect(screen.getByText('No custom colors yet')).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'New color' }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'New color' }).length).toBeGreaterThan(1)
   })
 
   it('disables the tiles and explains why when there is no bulb', () => {
     renderApp(<Scenes />)
 
-    expect(screen.getByText('Add a bulb to apply scenes.')).toBeInTheDocument()
-    const tiles = screen.getAllByRole('button', { name: 'Cozy' })
-    for (const tile of tiles) expect(tile).toBeDisabled()
+    expect(screen.getAllByText('Add a bulb to apply scenes.').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Cozy' })).toBeDisabled()
   })
 
   it('offers Retry above the grid when the active bulb is offline', async () => {
@@ -66,9 +68,7 @@ describe('Scenes page', () => {
     renderApp(<Scenes />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Living is not responding')
-    for (const tile of screen.getAllByRole('button', { name: 'Cozy' })) {
-      expect(tile).toBeDisabled()
-    }
+    expect(screen.getByRole('button', { name: 'Cozy' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'Retry' }))
     expect(api.probeBulb).toHaveBeenCalledWith('127.0.0.1')
   })
@@ -99,47 +99,65 @@ describe('Scenes page', () => {
     await user.click(screen.getByRole('button', { name: 'Add Ocean to favorites' }))
     expect(api.toggleFavoriteColor).toHaveBeenCalledWith(1)
   })
+
+  it('picks the target bulb from the pills; offline ones cannot be picked', async () => {
+    const user = userEvent.setup()
+    seedStore(
+      makeState([
+        makeBulb(),
+        makeBulb({ ip: '127.0.0.2', name: 'Desk' }),
+        makeBulb({ ip: '127.0.0.3', name: 'Hall', online: false })
+      ])
+    )
+    renderApp(<Scenes />)
+
+    const pills = within(screen.getByRole('group', { name: 'Bulb they are applied to' }))
+    expect(pills.getByRole('button', { name: 'Living' })).toHaveAttribute('aria-pressed', 'true')
+    expect(pills.getByRole('button', { name: 'Hall' })).toBeDisabled()
+
+    await user.click(pills.getByRole('button', { name: 'Desk' }))
+    expect(api.setActiveBulb).toHaveBeenCalledWith('127.0.0.2')
+  })
 })
 
 describe('Scene groups', () => {
-  it('starts on All and narrows the sections when a group is chosen', async () => {
+  it('starts on All and narrows the grid when a group is chosen', async () => {
     const user = userEvent.setup()
     seedStore(makeState([withColors()]))
     renderApp(<Scenes />)
 
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('heading', { name: 'Favorites' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Dynamic' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'All scenes' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Static' }))
     expect(screen.getByRole('button', { name: 'Static' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('heading', { name: 'Static' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Dynamic' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ocean' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Favorites' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Custom' }))
     expect(screen.getByRole('button', { name: 'Rosa' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Static' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cozy' })).not.toBeInTheDocument()
   })
 })
 
 describe('Favorites', () => {
-  it('exposes a keyboard handle for every favorite', async () => {
+  it('are sorted in a list with up/down buttons, without drag handles in the grid', async () => {
     const user = userEvent.setup()
     seedStore(makeState([makeBulb({ favoriteColors: [11, 12, 14] })]))
-    renderApp(<FavoriteScene bulb={makeBulb()} />)
+    renderApp(<Scenes />)
 
-    const handles = screen.getAllByRole('button', { name: /^Reorder / })
-    expect(handles).toHaveLength(3)
+    expect(screen.queryByRole('button', { name: /^Move / })).not.toBeInTheDocument()
 
-    await user.tab()
-    expect(handles[0]).toHaveFocus()
-  })
+    await user.click(screen.getByRole('button', { name: 'Sort' }))
+    const list = within(screen.getByRole('list', { name: 'Favorites order' }))
+    expect(list.getAllByRole('listitem')).toHaveLength(3)
 
-  it('moves a favorite to the position of another one', () => {
-    expect(reorderFavorites([11, 12, 14], 11, 14)).toEqual([12, 14, 11])
-    expect(reorderFavorites([11, 12, 14], 14, 11)).toEqual([14, 11, 12])
-    expect(reorderFavorites([11, 12, 14], 12, 12)).toBeNull()
-    expect(reorderFavorites([11, 12, 14], 99, 12)).toBeNull()
+    await user.click(list.getByRole('button', { name: 'Move Night light up' }))
+    expect(api.setFavoriteColorsOrder).toHaveBeenCalledWith([11, 14, 12])
+
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByRole('list', { name: 'Favorites order' })).not.toBeInTheDocument()
   })
 })

@@ -33,10 +33,10 @@ export default function TextField({
   const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ')
 
   return (
-    <div className={cn('flex flex-col gap-2', wrapperClassName)}>
+    <div className={cn('flex flex-col gap-1.5', wrapperClassName)}>
       <label
         htmlFor={inputId}
-        className={cn('text-sm font-medium text-fg', hideLabel && 'sr-only')}
+        className={cn('text-sm font-semibold text-fg', hideLabel && 'sr-only')}
       >
         {label}
       </label>
@@ -44,7 +44,7 @@ export default function TextField({
         {icon && (
           <span
             aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted"
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
           >
             {icon}
           </span>
@@ -54,10 +54,11 @@ export default function TextField({
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
           className={cn(
-            'h-10 w-full rounded-lg border bg-raised px-3.5 text-sm text-fg placeholder:text-muted',
+            'h-10 w-full rounded-md border-[1.5px] bg-surface px-3 text-sm text-fg placeholder:text-muted',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            icon && 'pl-10',
-            error ? 'border-danger-text' : 'border-transparent hover:border-control',
+            icon && 'pl-9',
+            // `control` keeps the field edge at 3:1 against the surface (WCAG 1.4.11).
+            error ? 'border-danger-text' : 'border-control',
             focusRing,
             // One outline only: the ring replaces the border while focused.
             'focus-visible:border-transparent focus-visible:ring-offset-0',
@@ -67,12 +68,12 @@ export default function TextField({
         />
       </div>
       {hint && !error && (
-        <p id={hintId} className="text-xs text-muted">
+        <p id={hintId} className="text-[13px] text-muted">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-xs font-medium text-danger-text">
+        <p id={errorId} className="text-[13px] font-medium text-danger-text">
           {error}
         </p>
       )}

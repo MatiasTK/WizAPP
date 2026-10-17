@@ -1,24 +1,25 @@
+import Logo from '@components/Logo'
 import Button from '@components/ui/Button'
 import Dialog from '@components/ui/Dialog'
 import InlineAlert from '@components/ui/InlineAlert'
 import Spinner from '@components/ui/Spinner'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { api } from '@renderer/lib/api'
+import { cn, focusRing } from '@renderer/lib/cn'
 import { getVersion } from '@tauri-apps/api/app'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuDownload, LuFolder } from 'react-icons/lu'
 
 type HelpModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-const LINKS = [
-  { href: 'https://github.com/MatiasTK/WizAPP', key: 'help.source', label: 'GitHub' },
-  { href: 'https://github.com/MatiasTK', key: 'help.author', label: 'MatiasTK' }
-] as const
+const SOURCE_URL = 'https://github.com/MatiasTK/WizAPP'
+const AUTHOR_URL = 'https://github.com/MatiasTK'
+
+const kbd = 'rounded-[6px] border border-border px-1.5 py-px font-sans text-xs text-fg'
 
 export default function HelpModal({ open, onOpenChange }: HelpModalProps) {
   const { t } = useTranslation()
@@ -57,13 +58,22 @@ export default function HelpModal({ open, onOpenChange }: HelpModalProps) {
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="WiZ APP"
-      description={`${t('help.version')} ${version ?? '-'}`}
-    >
-      <div className="flex flex-col gap-4">
+    <Dialog open={open} onOpenChange={onOpenChange} title={t('sidebar.help')}>
+      <div className="flex flex-col gap-[18px]">
+        <div className="flex items-center gap-3.5">
+          <Logo size={44} className="pt-2" />
+          <p className="text-muted">
+            {t('help.version', { version: version ?? '-' })} · {t('help.author')}{' '}
+            <a
+              href={AUTHOR_URL}
+              onClick={handleOpenLink}
+              className={cn('rounded-sm text-primary-text hover:underline', focusRing)}
+            >
+              MatiasTK
+            </a>
+          </p>
+        </div>
+
         {hasLegacy && (
           <InlineAlert
             tone="warning"
@@ -77,30 +87,42 @@ export default function HelpModal({ open, onOpenChange }: HelpModalProps) {
           </InlineAlert>
         )}
 
-        <ul className="flex flex-col gap-1 text-sm">
-          {LINKS.map((link) => (
-            <li key={link.href}>
-              {t(link.key)}:{' '}
-              <a
-                href={link.href}
-                onClick={handleOpenLink}
-                className="font-medium text-primary-text underline underline-offset-2"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <section aria-labelledby="help-shortcuts" className="flex flex-col gap-1.5">
+          <h3 id="help-shortcuts" className="font-semibold">
+            {t('help.shortcuts')}
+          </h3>
+          <dl className="flex flex-col gap-1.5 text-muted">
+            <div className="flex justify-between">
+              <dt>{t('help.shortcutSearch')}</dt>
+              <dd>
+                <kbd className={kbd}>Ctrl K</kbd>
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>{t('help.shortcutClose')}</dt>
+              <dd>
+                <kbd className={kbd}>Esc</kbd>
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => void api.openAppFolder()}>
-            <LuFolder size={16} aria-hidden />
-            {t('help.openFolder')}
-          </Button>
-          <Button disabled={isChecking} onClick={handleCheckForUpdates}>
-            {isChecking ? <Spinner /> : <LuDownload size={16} aria-hidden />}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="primary" disabled={isChecking} onClick={handleCheckForUpdates}>
+            {isChecking && <Spinner />}
             {isChecking ? t('help.checkingUpdates') : t('help.checkUpdates')}
           </Button>
+          <Button onClick={() => void api.openAppFolder()}>{t('help.openFolder')}</Button>
+          <a
+            href={SOURCE_URL}
+            onClick={handleOpenLink}
+            className={cn(
+              'flex h-9 items-center rounded-sm px-2 font-semibold text-primary-text hover:underline',
+              focusRing
+            )}
+          >
+            {t('help.source')}
+          </a>
         </div>
       </div>
     </Dialog>
