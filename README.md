@@ -39,20 +39,48 @@
 
 ## Download 📥
 
-You can download the latest release from [here](https://github.com/MatiasTK/WizAPP/releases/latest).
+You can download the latest release from [here](https://github.com/MatiasTK/WizAPP/releases/latest). The app is Windows-only and installs per user (no administrator rights needed). It needs the WebView2 runtime, which the installer downloads if it is missing.
+
+### Coming from 3.x (Electron)
+
+Version 4 is a new build of the app and **does not update from 3.x automatically**: download the 4.x installer and run it. On first start it imports your bulbs, names, custom colors and favorites from the old version (the old config file is left untouched), and it will tell you that the old version is still installed so you can remove it from *Installed apps*. From 4.x on, the app updates itself (you choose when).
 
 ## Building 📦
 
-If you want to build the app yourself, you can do it by following these steps:
+If you want to build the app yourself, you need [Node.js](https://nodejs.org/) 22.19+, [pnpm](https://pnpm.io/) 10, the stable [Rust toolchain](https://rustup.rs/) and the [Tauri prerequisites for Windows](https://tauri.app/start/prerequisites/):
 
 - Clone the repo.
-- Install the dependencies with `npm install`.
-- Run `npm run build:win` to build the app for Windows (or `npm run build:mac` / `npm run build:linux`).
-- The executable will be in the `dist` folder.
+- Install the dependencies with `pnpm install`.
+- `pnpm dev` runs the app with hot reload.
+- `pnpm build` builds the NSIS installer in `src-tauri/target/release/bundle/nsis`. It is signed for the auto-updater, so set `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) first, or run `pnpm build:signed` (reads `~\.tauri\wizapp.key` and asks for the password), or use `pnpm build:unsigned`.
+- `pnpm test` runs the backend tests (they use a fake bulb, no hardware needed).
+
+To try the app without a bulb, run `PYTHONIOENCODING=utf-8 python scripts/wiz_emulator.py` and add `127.0.0.1`, `127.0.0.2` and `127.0.0.3` from the *Add device* dialog.
+
+## Releasing 🚀
+
+Releases are built by the **Release** workflow ([.github/workflows/release.yml](.github/workflows/release.yml)) when a `v*.*.*` tag is pushed. It builds the installer, signs it with the updater key, uploads `latest.json` and creates a **draft** release (prerelease if the tag contains `-beta`).
+
+1. Bump the version in `package.json` and `src-tauri/Cargo.toml` (they must match the tag, the workflow checks it).
+2. Commit and push to the branch.
+3. Tag and push the tag:
+
+   ```bash
+   git tag v4.0.0-beta.1
+   git push origin v4.0.0-beta.1
+   ```
+
+4. Check the run in the **Actions** tab, then open the draft under **Releases**, review the assets (`.exe` and `latest.json`) and publish it.
+5. Publishing triggers the **Publish updater manifest** workflow ([.github/workflows/publish-updater.yml](.github/workflows/publish-updater.yml)), which copies that `latest.json` to the `updater` release. That is the fixed URL installed apps check, so betas update too, and the 3.x release can stay **Latest** without 3.x users being moved to 4.x. Do not delete the `updater` release.
+
+Requirements, set once in the repo: the `release` environment must hold the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and they must match the `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`. If the secrets are replaced, the public key has to be replaced too, or the auto-updater rejects the new builds.
+
+To redo a tag after a failed run: `git push origin :refs/tags/v4.0.0-beta.1` and `git tag -d v4.0.0-beta.1`, then tag again.
 
 ## Troubleshooting 🔨
 
 - The app can't discover the bulb automatically.
+  - Windows may have asked to allow the app through the firewall the first time it ran; if that prompt was cancelled, allow *WiZ APP* on private networks in *Windows Security > Firewall > Allow an app*.
   - Set the bulb ip manually. You can find the bulb ip in the [WiZ Mobile APP](https://play.google.com/store/apps/details?id=com.wizconnected.wiz2&pcampaignid=web_share),go to settings > Lights > Your bulb > Device Info > Detailed information.
 
 ## Roadmap 🚀
@@ -61,7 +89,8 @@ If you want to build the app yourself, you can do it by following these steps:
 
 ## Stack 🛠️
 
-- [![ElectronJS](https://img.shields.io/badge/Electron-2B2E3A?style=for-the-badge&logo=electron&logoColor=9FEAF9)](https://www.electronjs.org/) - Desktop Framework used.
+- [![Tauri](https://img.shields.io/badge/Tauri-24C8D8?style=for-the-badge&logo=tauri&logoColor=white)](https://tauri.app/) - Desktop Framework used.
+- [![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/) - Backend language (bulb protocol, discovery, config).
 - [![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/) - Frontend Tooling used.
 - [![ReactJS](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/) - Frontend Library used.
 - [![Typescript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) - Language used.

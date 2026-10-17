@@ -1,0 +1,41 @@
+name: Publish updater manifest
+
+# The app's updater reads a fixed URL (`plugins.updater.endpoints` in tauri.conf.json):
+#   https://github.com/MatiasTK/WizAPP/releases/download/updater/latest.json
+# It cannot use `releases/latest`: that is still the Electron 3.x release (whose own
+# updater reads `latest.yml` from it), and 4.x betas are prereleases, which `latest`
+# skips. So when a release that carries a `latest.json` is published (prerelease or not),
+# its manifest is copied to the `updater` release. Drafts do not trigger this: their asset
+# URLs are not public yet.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Copy latest.json to the updater release
+        shell: bash
+        run: |
+          if ! gh release download "$TAG" --pattern latest.json --dir manifest; then
+            echo "$TAG has no latest.json (not a Tauri release); nothing to do."
+            exit 0
+          fi
+          cat manifest/latest.json
+
+          # A prerelease that is never marked latest, so it does not replace 3.x as
+          # "Latest" on the releases page.
+          if ! gh release view updater > /dev/null 2>&1; then
+            gh release create updater --prerelease --latest=false \
+              --title 'Updater manifest' \
+              --notes 'Holds the latest.json the 4.x app checks for updates. Updated automatically when a release is published; do not delete.'
+          fi
+          gh release upload updater manifest/latest.json --clobber

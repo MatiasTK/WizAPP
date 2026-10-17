@@ -1,109 +1,130 @@
-import Modal from '@components/ui/Modal'
-import Separator from '@components/ui/Separator'
-import { useState } from 'react'
+import Logo from '@components/Logo'
+import Button from '@components/ui/Button'
+import Dialog from '@components/ui/Dialog'
+import InlineAlert from '@components/ui/InlineAlert'
+import Spinner from '@components/ui/Spinner'
+import { useBulbStore } from '@renderer/context/BulbStore'
+import { api } from '@renderer/lib/api'
+import { cn, focusRing } from '@renderer/lib/cn'
+import { getVersion } from '@tauri-apps/api/app'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuDownload, LuFolder, LuGithub, LuLoaderCircle, LuUser } from 'react-icons/lu'
 
-type AboutModalProps = {
-  isOpen: boolean
-  onClose: () => void
+type HelpModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export default function HelpModal({ isOpen, onClose }: AboutModalProps) {
+const SOURCE_URL = 'https://github.com/MatiasTK/WizAPP'
+const AUTHOR_URL = 'https://github.com/MatiasTK'
+
+const kbd = 'rounded-[6px] border border-border px-1.5 py-px font-sans text-xs text-fg'
+
+export default function HelpModal({ open, onOpenChange }: HelpModalProps) {
   const { t } = useTranslation()
-  const [updateMsg, setUpdateMsg] = useState<string | null>(null)
+  const pushToast = useBulbStore((s) => s.pushToast)
+  const [version, setVersion] = useState<string | null>(null)
+  const [hasLegacy, setHasLegacy] = useState(false)
   const [isChecking, setIsChecking] = useState(false)
 
-  const handleOpenAppFolder = () => {
-    window.api.openAppFolder()
+  useEffect(() => {
+    getVersion()
+      .then(setVersion)
+      .catch(() => setVersion(null))
+  }, [])
+
+  // Re-checked whenever the dialog opens, so the notice goes away after uninstalling.
+  useEffect(() => {
+    if (open) void api.hasLegacyInstall().then(setHasLegacy)
+  }, [open])
+
+  // The webview would navigate in place; hand links to the system browser.
+  const handleOpenLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    void openUrl(event.currentTarget.href)
   }
 
   const handleCheckForUpdates = () => {
     setIsChecking(true)
-    window.api.checkForUpdates().then((updateFound) => {
-      if (!updateFound) {
-        setUpdateMsg(t('help.noUpdates'))
-
-        setTimeout(() => {
-          setUpdateMsg(null)
-        }, 5000)
-      }
-
-      setIsChecking(false)
-    })
+    api
+      .checkForUpdates()
+      // When there is an update the backend pins a toast with "update now".
+      .then((found) => {
+        if (!found) pushToast('help.noUpdates', 'info')
+      })
+      .catch(() => pushToast('toast.error.updater', 'error'))
+      .finally(() => setIsChecking(false))
   }
 
-  const updateToast = (msg) => (
-    <div className="fixed -bottom-14 left-1/2 transform -translate-x-1/2 bg-neutral-800 text-white px-4 py-2 font-medium rounded-lg shadow-lg animated animate-fade-in whitespace-nowrap">
-      {msg}
-    </div>
-  )
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="WiZ App" maxWidth="max-w-sm">
-      <p className="text-sm text-neutral-500 font-medium -mt-6">
-        {t('help.version')}: 3.0.0 (Windows)
-      </p>
-
-      <Separator />
-
-      <article className="flex flex-col gap-1 mt-8">
-        <div className="flex items-center gap-2">
-          <LuGithub size={24} />
-          <p>{t('help.source')}:</p>
-          <a
-            href="https://github.com/MatiasTK/WizAPP"
-            rel="noreferrer"
-            target="_blank"
-            className="text-primary underline"
-          >
-            Github
-          </a>
-        </div>
-
-        <div className="flex items-center gap-2 mt-4">
-          <LuUser size={24} />
-          <p>{t('help.author')}:</p>
-          <p>
-            Matias Vallejos (
+    <Dialog open={open} onOpenChange={onOpenChange} title={t('sidebar.help')}>
+      <div className="flex flex-col gap-[18px]">
+        <div className="flex items-center gap-3.5">
+          <Logo size={44} className="pt-2" />
+          <p className="text-muted">
+            {t('help.version', { version: version ?? '-' })} · {t('help.author')}{' '}
             <a
-              href="https://github.com/MatiasTK"
-              rel="noreferrer"
-              target="_blank"
-              className="text-primary underline"
+              href={AUTHOR_URL}
+              onClick={handleOpenLink}
+              className={cn('rounded-sm text-primary-text hover:underline', focusRing)}
             >
               MatiasTK
             </a>
-            )
           </p>
         </div>
 
-        <button
-          className="flex items-center gap-2 mt-4 bg-primary text-white px-4 py-2 rounded-lg w-fit font-medium cursor-pointer hover:bg-primary-600"
-          onClick={handleOpenAppFolder}
-        >
-          <LuFolder size={20} />
-          <p>{t('help.openFolder')}</p>
-        </button>
+        {hasLegacy && (
+          <InlineAlert
+            tone="warning"
+            action={
+              <Button size="dense" onClick={() => void api.openAppsSettings()}>
+                {t('toast.openSettings')}
+              </Button>
+            }
+          >
+            {t('toast.legacyInstallFound')}
+          </InlineAlert>
+        )}
 
-        <button
-          className="flex items-center gap-2 mt-4 bg-primary text-white px-4 py-2 rounded-lg w-fit font-medium cursor-pointer hover:bg-primary-600 disabled:cursor-not-allowed"
-          onClick={handleCheckForUpdates}
-          disabled={isChecking}
-        >
-          {isChecking ? (
-            <LuLoaderCircle
-              size={20}
-              className="animated animate-spin-clockwise animate-iteration-count-infinite animate-duration-700"
-            />
-          ) : (
-            <LuDownload size={20} />
-          )}
-          {isChecking ? <p>{t('help.checkingUpdates')}</p> : <p>{t('help.checkUpdates')}</p>}
-        </button>
+        <section aria-labelledby="help-shortcuts" className="flex flex-col gap-1.5">
+          <h3 id="help-shortcuts" className="font-semibold">
+            {t('help.shortcuts')}
+          </h3>
+          <dl className="flex flex-col gap-1.5 text-muted">
+            <div className="flex justify-between">
+              <dt>{t('help.shortcutSearch')}</dt>
+              <dd>
+                <kbd className={kbd}>Ctrl K</kbd>
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>{t('help.shortcutClose')}</dt>
+              <dd>
+                <kbd className={kbd}>Esc</kbd>
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-        {updateMsg && updateToast(updateMsg)}
-      </article>
-    </Modal>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="primary" disabled={isChecking} onClick={handleCheckForUpdates}>
+            {isChecking && <Spinner />}
+            {isChecking ? t('help.checkingUpdates') : t('help.checkUpdates')}
+          </Button>
+          <Button onClick={() => void api.openAppFolder()}>{t('help.openFolder')}</Button>
+          <a
+            href={SOURCE_URL}
+            onClick={handleOpenLink}
+            className={cn(
+              'flex h-9 items-center rounded-sm px-2 font-semibold text-primary-text hover:underline',
+              focusRing
+            )}
+          >
+            {t('help.source')}
+          </a>
+        </div>
+      </div>
+    </Dialog>
   )
 }

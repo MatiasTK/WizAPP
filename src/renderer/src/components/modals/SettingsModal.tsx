@@ -1,83 +1,122 @@
-import Modal from '@components/ui/Modal'
-import Separator from '@components/ui/Separator'
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import DeleteDialog from '@renderer/components/modals/DeleteDialog'
+import AlertDialog from '@components/ui/AlertDialog'
+import Button from '@components/ui/Button'
+import Dialog from '@components/ui/Dialog'
+import SegmentedControl from '@components/ui/SegmentedControl'
+import type { LanguagePref } from '@renderer/bindings/LanguagePref'
+import type { Theme } from '@renderer/bindings/Theme'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { LuTrash2 } from 'react-icons/lu'
 
 type SettingsModalProps = {
-  isOpen: boolean
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { t, i18n } = useTranslation()
-  const { deleteProfile } = useBulbStore()
+export default function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
+  const { t } = useTranslation()
+  const settings = useBulbStore((s) => s.settings)
+  const setTheme = useBulbStore((s) => s.setTheme)
+  const setLanguage = useBulbStore((s) => s.setLanguage)
+  const retryDiscovery = useBulbStore((s) => s.retryDiscovery)
+  const deleteProfile = useBulbStore((s) => s.deleteProfile)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const [deleteDialog, setDeleteDialog] = useState(false)
-  const handleChangeLanguage = (lang: string) => {
-    if (lang === 'auto') {
-      const systemLanguage = navigator.language || 'en'
-      i18n.changeLanguage(systemLanguage)
-    } else {
-      i18n.changeLanguage(lang)
-    }
+  const handleSearchAgain = () => {
+    onOpenChange(false)
+    void retryDiscovery()
   }
 
-  const handleDeleteProfile = async () => {
-    setDeleteDialog(false)
-    await deleteProfile()
-    onClose()
+  const handleDeleteProfile = () => {
+    setConfirmDelete(false)
+    onOpenChange(false)
+    void deleteProfile()
   }
+
+  const choice = (id: string, label: string, control: ReactNode) => (
+    <div className="flex flex-col gap-2">
+      <span id={id} className="font-semibold">
+        {label}
+      </span>
+      {control}
+    </div>
+  )
+
+  const action = (id: string, label: string, hint: string, control: ReactNode) => (
+    <div className="flex items-center gap-4 border-t border-border pt-3.5">
+      <div className="min-w-0 grow">
+        <p id={id} className="font-semibold">
+          {label}
+        </p>
+        <p className="text-[13px] text-muted">{hint}</p>
+      </div>
+      {control}
+    </div>
+  )
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('settings.title')} maxWidth="max-w-sm">
-      <div className="-mt-8">
-        <Separator />
-      </div>
-
-      <article className="flex flex-col gap-4 mt-4">
-        <div className="flex items-center justify-between">
-          <p>{t('settings.theme.title')}</p>
-          <select className="text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary transition duration-200 bg-secondary-800">
-            <option>{t('settings.theme.system')}</option>
-            <option>{t('settings.theme.light')}</option>
-            <option>{t('settings.theme.dark')}</option>
-          </select>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange} title={t('settings.title')}>
+        <div className="flex flex-col gap-[18px]">
+          {choice(
+            'setting-theme',
+            t('settings.theme.title'),
+            <SegmentedControl<Theme>
+              fill
+              aria-labelledby="setting-theme"
+              value={settings.theme}
+              onValueChange={(v) => void setTheme(v)}
+              segments={[
+                { value: 'system', label: t('settings.theme.system') },
+                { value: 'light', label: t('settings.theme.light') },
+                { value: 'dark', label: t('settings.theme.dark') }
+              ]}
+            />
+          )}
+          {choice(
+            'setting-language',
+            t('settings.language.title'),
+            <SegmentedControl<LanguagePref>
+              fill
+              aria-labelledby="setting-language"
+              value={settings.language}
+              onValueChange={(v) => void setLanguage(v)}
+              segments={[
+                { value: 'auto', label: t('settings.language.auto') },
+                { value: 'es', label: t('settings.language.spanish') },
+                { value: 'en', label: t('settings.language.english') }
+              ]}
+            />
+          )}
+          {action(
+            'setting-search',
+            t('settings.search.title'),
+            t('settings.search.hint'),
+            <Button aria-describedby="setting-search" onClick={handleSearchAgain}>
+              {t('settings.search.button')}
+            </Button>
+          )}
+          {action(
+            'setting-delete',
+            t('settings.deleteProfile.title'),
+            t('settings.deleteProfile.hint'),
+            <Button variant="danger-soft" onClick={() => setConfirmDelete(true)}>
+              <LuTrash2 size={15} aria-hidden />
+              {t('settings.deleteProfile.button')}
+            </Button>
+          )}
         </div>
+      </Dialog>
 
-        <div className="flex items-center justify-between">
-          <p>{t('settings.language.title')}</p>
-          <select
-            className="text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary transition duration-200 bg-secondary-800"
-            onChange={(e) => handleChangeLanguage(e.target.value)}
-          >
-            <option value={'auto'}>{t('settings.language.auto')}</option>
-            <option value={'en'}>{t('settings.language.english')}</option>
-            <option value={'es'}>{t('settings.language.spanish')}</option>
-          </select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <p>{t('settings.deleteProfile.title')}</p>
-          <button
-            className="text-white bg-alert font-medium rounded-lg px-8 py-2 cursor-pointer hover:bg-alert/80"
-            onClick={() => setDeleteDialog(true)}
-          >
-            {t('settings.deleteProfile.button')}
-          </button>
-        </div>
-      </article>
-
-      {deleteDialog && (
-        <DeleteDialog
-          isOpen={deleteDialog}
-          onClose={() => setDeleteDialog(false)}
-          title={t('settings.deleteProfile.title')}
-          description={t('settings.deleteProfile.description')}
-          onConfirm={handleDeleteProfile}
-        />
-      )}
-    </Modal>
+      <AlertDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={t('settings.deleteProfile.title')}
+        description={t('settings.deleteProfile.description')}
+        confirmLabel={t('settings.deleteProfile.confirm')}
+        onConfirm={handleDeleteProfile}
+      />
+    </>
   )
 }

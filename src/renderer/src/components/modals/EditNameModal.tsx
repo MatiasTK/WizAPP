@@ -1,102 +1,76 @@
-import Modal from '@components/ui/Modal'
+import Button from '@components/ui/Button'
+import Dialog from '@components/ui/Dialog'
+import TextField from '@components/ui/TextField'
+import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { BulbState } from '@shared/types/bulbState'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
+const MAX_NAME_LENGTH = 15
+const FORM_ID = 'rename-bulb-form'
+
 type EditNameModalProps = {
-  isOpen: boolean
-  onClose: () => void
-  targetBulb?: BulbState | null
+  /** The bulb being renamed; `null` keeps the dialog closed. */
+  bulb: BulbState | null
+  onOpenChange: (open: boolean) => void
 }
 
-export default function EditNameModal({ isOpen, onClose, targetBulb }: EditNameModalProps) {
-  const activeBulb = useBulbStore((state) => state.activeBulb)
+function NameForm({ bulb, onDone }: { bulb: BulbState; onDone: () => void }) {
   const { t } = useTranslation()
-
-  // Use the explicitly passed target bulb, or fall back to active
-  const bulb = targetBulb ?? activeBulb
-
+  const setBulbName = useBulbStore((s) => s.setBulbName)
+  const [name, setName] = useState(bulb.name)
   const [error, setError] = useState<string | null>(null)
 
-  const validateName = (name: string) => {
-    if (name.length <= 0) {
-      setError(t('errors.emptyName'))
-      return false
-    }
-
-    if (name.length > 15) {
-      setError(t('errors.longName'))
-      return false
-    }
-
-    if (bulb && name === bulb.name) {
-      setError(t('errors.sameName'))
-      return false
-    }
-
-    resetError()
-    return true
-  }
-
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    const name = event.target.name.value
+    const trimmed = name.trim()
+    if (trimmed === '') return setError(t('errors.emptyName'))
+    if (trimmed.length > MAX_NAME_LENGTH) return setError(t('errors.longName'))
+    if (trimmed === bulb.name) return setError(t('errors.sameName'))
 
-    if (!validateName(name)) {
-      return
-    }
-
-    // Pass the target bulb's IP so the backend renames the right bulb
-    window.api.setBulbName(name, bulb?.ip)
-
-    onClose()
+    void setBulbName(trimmed, bulb.ip)
+    onDone()
   }
-
-  const areErrors = error !== null
-
-  const resetError = () => {
-    if (areErrors) {
-      setError(null)
-    }
-  }
-
-  if (!bulb) return null
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('home.edit.title')}>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="name" className="text-neutral-400 block mb-2">
-          {t('home.edit.label')}
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          defaultValue={bulb.name}
-          key={bulb.ip}
-          onChange={resetError}
-          placeholder='e.g. "Living room"'
-          className={`w-full bg-secondary-700 text-white p-2 rounded-lg border border-neutral-600 focus:outline-none focus:border-primary focus:border-2  ${areErrors ? 'border-red-500' : 'border-neutral-600'}`}
-        />
-        {areErrors && <p className="text-red-500 text-sm mt-1 ms-1 font-medium">{error}</p>}
+    <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+      <TextField
+        label={t('bulb.newName')}
+        placeholder={t('bulb.namePlaceholder')}
+        value={name}
+        error={error}
+        autoFocus
+        onFocus={(e) => e.currentTarget.select()}
+        onChange={(e) => {
+          setName(e.target.value)
+          setError(null)
+        }}
+      />
+    </form>
+  )
+}
 
-        <footer className="flex items-center justify-end gap-2 mt-6">
-          <button
-            className="text-white mt-4 mr-2 cursor-pointer transition-colors bg-secondary hover:bg-secondary-600 py-2 px-4 rounded-lg"
-            type="button"
-            onClick={onClose}
-          >
-            {t('modals.cancel')}
-          </button>
-          <button
-            type="submit"
-            className="mt-4 px-4 bg-primary rounded-lg text-white py-2 transition-colors cursor-pointer font-medium hover:bg-primary-600"
-          >
-            {t('modals.save')}
-          </button>
-        </footer>
-      </form>
-    </Modal>
+export default function EditNameModal({ bulb, onOpenChange }: EditNameModalProps) {
+  const { t } = useTranslation()
+  const close = () => onOpenChange(false)
+
+  return (
+    <Dialog
+      open={bulb !== null}
+      onOpenChange={onOpenChange}
+      title={t('bulb.renameTitle', { name: bulb?.name ?? '' })}
+      footer={
+        <>
+          <Button size="large" onClick={close}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" form={FORM_ID} variant="primary" size="large">
+            {t('common.save')}
+          </Button>
+        </>
+      }
+    >
+      {bulb && <NameForm key={bulb.ip} bulb={bulb} onDone={close} />}
+    </Dialog>
   )
 }

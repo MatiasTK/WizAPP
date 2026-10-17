@@ -88,10 +88,8 @@ typings/
 # Vite
 .vite/
 
-# Electron-Forge
-out/
 dist
-electron.vite.config.*
+out/
 
 # Others
 testing/
@@ -99,3 +97,5 @@ testing/
 .cursor
 .env
 out/
+src-tauri/target
+src-tauri/gen

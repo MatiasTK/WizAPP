@@ -1,179 +1,289 @@
 {
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "done": "Done"
+  },
+  "sidebar": {
+    "menu": "Main menu",
+    "home": "Bulbs",
+    "scenes": "Scenes",
+    "information": "Information",
+    "settings": "Settings",
+    "help": "Help",
+    "search": "Search",
+    "activeBulb": "Active bulb",
+    "chooseActiveBulb": "Choose the active bulb"
+  },
+  "bulb": {
+    "power": "Power for {{name}}",
+    "brightness": "Brightness of {{name}}",
+    "on": "On",
+    "off": "Off",
+    "offlineLabel": "Offline",
+    "offline": "{{name}} is not responding. Check that it is plugged in and on the same Wi-Fi network.",
+    "retry": "Retry",
+    "retryFor": "Retry connecting to {{name}}",
+    "rename": "Rename",
+    "details": "Details",
+    "renameTitle": "Rename {{name}}",
+    "newName": "Name",
+    "namePlaceholder": "e.g. Living room",
+    "brightnessLabel": "Brightness",
+    "brightnessPreset": "Set {{name}} to {{value}} %",
+    "statusOn": "{{scene}} · {{value}} %",
+    "open": "Open {{name}}",
+    "close": "Close {{name}}",
+    "applyTo": "Apply {{scene}} to {{name}}",
+    "allScenes": "All scenes",
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}",
+    "removeMessage": "\"{{name}}\" will no longer appear in the app. You can add it again by searching for bulbs.",
+    "removeConfirm": "Remove bulb"
+  },
   "home": {
     "title": "Bulbs",
-    "subtitle": "Manage your bulbs",
-    "search": "Searching bulbs",
-    "toggle": "Toggle",
-    "selectedBulb": "Selected bulb",
-    "edit": {
-      "entry": "Edit name",
-      "title": "Edit bulb name",
-      "label": "New name",
-      "example": "e.g. Living Room"
-    },
-    "delete": {
-      "entry": "Delete",
-      "title": "Delete bulb",
-      "message": "Are you sure you want to delete the bulb"
-    },
+    "subtitle": "Turn your bulbs on and off and adjust them.",
+    "listLabel": "Your bulbs",
+    "allOn": "Turn all on",
+    "allOff": "Turn all off",
+    "searching": "Looking for bulbs…",
+    "searchingHint": "This usually takes a few seconds.",
+    "notFoundTitle": "We could not find any bulbs",
+    "notFoundDescription": "Try these things and search again:",
+    "emptyTitle": "You have no bulbs yet",
+    "emptyDescription": "Search for bulbs on your network or add one by its IP address.",
+    "tipNetwork": "Make sure this computer and your bulbs are on the same Wi-Fi network.",
+    "tipPower": "Check that the bulbs are plugged in and turned on.",
+    "tipFirewall": "Allow WiZ APP through the Windows firewall on private networks.",
+    "retrySearch": "Search again",
+    "addByIp": "Add by IP",
     "add": {
-      "entry": "Add device",
-      "title": "Add device",
-      "example": "e.g. 192.168.1.34"
-    }
+      "entry": "Add bulb",
+      "title": "Add a bulb",
+      "description": "Enter the IP address of the bulb. You can find it in your router or in the WiZ app.",
+      "ipLabel": "IP address",
+      "example": "192.168.1.34",
+      "hint": "Four numbers between 0 and 255, separated by dots.",
+      "connecting": "Connecting…"
+    },
+    "sort": "Sort",
+    "sortTitle": "Sort bulbs",
+    "sortHint": "Drag a row or use the arrows. This order is used across the app.",
+    "sortLabel": "Bulb order",
+    "subtitleCount": "{{online}} of {{total}} online · open a card to adjust it"
   },
   "scenes": {
     "title": "Scenes",
-    "subtitle": "Customize your lighting",
+    "subtitleFor": "Applied to {{name}}.",
     "favorites": "Favorites",
-    "missingFavorites": "You haven't selected any favorites yet. Try selecting one.",
-    "available": "Available",
+    "missingFavorites": "You have no favorites yet. Mark a scene with the heart to find it here.",
+    "filter": "Filter scenes",
+    "filterPlaceholder": "Search by name",
+    "notFound": "No results. Try a different name.",
+    "noBulbs": "Add a bulb to apply scenes.",
+    "goToBulbs": "Go to Bulbs",
+    "applyToAll": "Apply \"{{name}}\" to all",
+    "applyToAllEmpty": "Apply to all",
+    "groups": "Filter by type",
     "tags": {
       "all": "All",
       "static": "Static",
       "dynamic": "Dynamic",
       "custom": "Custom"
     },
-    "notFound": "No scenes found, try another search term",
-    "search": "Search scenes",
-    "custom": {
-      "fav": "Favorite",
-      "unfav": "Unfavorite",
-      "add": {
-        "entry": "Add custom",
-        "title": "Add custom color",
-        "nameLabel": "Name",
-        "nameExample": "e.g. Red",
-        "colorLabel": "Color"
-      },
-      "edit": {
-        "entry": "Edit",
-        "title": "Edit custom color",
-        "label": "New name",
-        "example": "e.g. Living Room"
-      },
-      "delete": {
-        "entry": "Delete",
-        "title": "Delete custom color",
-        "message": "Are you sure you want to delete the custom color"
-      }
+    "favorite": {
+      "add": "Add {{name}} to favorites",
+      "remove": "Remove {{name}} from favorites"
+    },
+    "color": {
+      "new": "New color",
+      "newTitle": "New color",
+      "editTitle": "Edit color",
+      "name": "Name",
+      "namePlaceholder": "e.g. Sunset",
+      "color": "Color",
+      "options": "Options for {{name}}",
+      "emptyTitle": "No custom colors yet",
+      "emptyDescription": "Create a color and it will show up here and in quick search.",
+      "deleteTitle": "Delete color",
+      "deleteMessage": "\"{{name}}\" will be deleted, and removed from your favorites.",
+      "deleteConfirm": "Delete color",
+      "other": "Other color",
+      "create": "Create color"
     },
     "names": {
-      "warmWhite": "Warm White",
-      "dayLight": "Day Light",
-      "coldWhite": "Cool White",
-      "functional": "Functional",
-      "nightLight": "Night Light",
+      "warmWhite": "Warm white",
+      "dayLight": "Daylight",
+      "coldWhite": "Cool white",
+      "nightLight": "Night light",
       "cozy": "Cozy",
-      "trueColors": "True Colors",
+      "trueColors": "True colors",
       "relax": "Relax",
       "focus": "Focus",
-      "tvTime": "TV Time",
-      "plantGrowth": "Plant Growth",
-      "candleLight": "Candle Light",
+      "tvTime": "TV time",
+      "plantGrowth": "Plant growth",
+      "candleLight": "Candlelight",
       "pulse": "Pulse",
-      "goldenWhite": "Golden White",
+      "goldenWhite": "Golden white",
       "steampunk": "Steampunk",
-      "color": "Color",
       "fireplace": "Fireplace",
       "fall": "Fall",
       "club": "Club",
       "sunset": "Sunset",
       "romance": "Romance",
       "party": "Party",
-      "pastelColors": "Pastel Colors",
+      "pastelColors": "Pastel colors",
       "spring": "Spring",
       "summer": "Summer",
       "forest": "Forest",
       "jungle": "Jungle",
       "mojito": "Mojito",
       "ocean": "Ocean",
-      "deepDive": "Deep Dive",
+      "deepDive": "Deep dive",
       "christmas": "Christmas",
       "halloween": "Halloween",
-      "progressive": "Progressive",
       "bedtime": "Bedtime",
-      "wakeUp": "Wake Up"
-    }
+      "wakeUp": "Wake up"
+    },
+    "sort": "Sort",
+    "sortHint": "Drag a row or use the arrows. Bulbs show their favorites in this order.",
+    "sortLabel": "Favorites order",
+    "dynamic": "Dynamic",
+    "results": "Results",
+    "allScenes": "All scenes",
+    "target": "Bulb they are applied to"
   },
   "information": {
     "title": "Information",
-    "subtitle": "Information about your WiZ lighting system",
-    "missing": "No information available. Try connecting to a bulb first.",
-    "moduleName": "Module name",
-    "ip": "IP address",
-    "port": "Port",
-    "mac": "MAC address",
-    "state": "State",
-    "sceneId": "Scene ID",
-    "firmwareVersion": "Firmware version",
-    "homeId": "Home ID",
-    "roomId": "Room ID"
+    "subtitle": "Details of every bulb, in case you need them for your router or for support.",
+    "caption": "Details of every bulb",
+    "refresh": "Refresh",
+    "missingTitle": "No bulbs to show",
+    "missing": "Add a bulb from the Bulbs page and its details will appear here.",
+    "copyIp": "Copy IP address of {{name}}",
+    "copyMac": "Copy MAC address of {{name}}",
+    "copiedIp": "IP address copied",
+    "copiedMac": "MAC address copied",
+    "copyFailed": "Could not copy to the clipboard",
+    "offlineStatus": "Offline · last known data",
+    "fields": {
+      "status": "Status",
+      "ip": "IP address",
+      "mac": "MAC",
+      "model": "Model",
+      "firmware": "Firmware",
+      "signal": "Signal"
+    },
+    "signal": {
+      "good": "Good",
+      "fair": "Fair",
+      "weak": "Weak",
+      "unknown": "Unknown"
+    },
+    "signalOf": "Signal: {{level}}"
   },
   "settings": {
     "title": "Settings",
     "theme": {
       "title": "Theme",
+      "system": "Same as system",
       "light": "Light",
-      "dark": "Dark",
-      "system": "System"
+      "dark": "Dark"
     },
     "language": {
       "title": "Language",
-      "auto": "Auto-Detect",
+      "auto": "Same as system",
       "english": "English",
       "spanish": "Spanish"
     },
+    "search": {
+      "title": "Look for bulbs again",
+      "hint": "Searches your network for new bulbs.",
+      "button": "Search"
+    },
     "deleteProfile": {
       "title": "Delete profile",
-      "button": "Delete",
-      "description": "Are you sure you want to delete your profile? This will delete all your configuration, custom scenes and favorites."
+      "hint": "Removes your bulbs, colors and favorites.",
+      "button": "Delete profile",
+      "description": "This deletes your bulb list, custom colors and favorites. This cannot be undone.",
+      "confirm": "Delete profile"
     }
   },
   "help": {
-    "title": "Help",
-    "version": "Version",
+    "version": "Version {{version}}",
     "source": "Source code",
-    "author": "Author",
+    "author": "Author:",
     "checkUpdates": "Check for updates",
-    "checkingUpdates": "Checking for updates...",
-    "openFolder": "Open program folder",
-    "noUpdates": "No updates available"
+    "checkingUpdates": "Checking…",
+    "openFolder": "Open data folder",
+    "noUpdates": "You are on the latest version.",
+    "shortcuts": "Shortcuts",
+    "shortcutSearch": "Quick search",
+    "shortcutClose": "Close a dialog"
   },
-  "sidebar": {
-    "menu": "Menu",
-    "home": "Bulbs",
-    "scenes": "Scenes",
-    "information": "Information",
-    "settings": "Settings",
-    "help": "Help",
-    "brightness": "Brightness"
-  },
-  "modals": {
-    "add": "Add",
-    "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete"
+  "palette": {
+    "title": "Quick search",
+    "label": "Search scenes, bulbs and actions",
+    "placeholder": "Search scenes, bulbs and actions…",
+    "results": "Results",
+    "noResults": "No results.",
+    "count_one": "{{count}} result",
+    "count_other": "{{count}} results",
+    "applyScene": "Apply to {{name}}",
+    "selectBulb": "Make active",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "everyBulb": "Every bulb"
   },
   "errors": {
-    "emptyName": "Name cannot be empty",
-    "longName": "Name cannot be longer than 15 characters",
-    "customLongName": "Name cannot be longer than 10 characters",
-    "sameName": "Name cannot be the same as the current name",
-    "emptyIp": "IP address cannot be empty",
-    "longIP": "IP address cannot be longer than 15 characters",
-    "invalidIP": "That doesn't look like a valid IP address"
+    "emptyName": "Enter a name.",
+    "longName": "The name can have up to 15 characters.",
+    "customLongName": "The name can have up to 10 characters.",
+    "sameName": "That is already the current name.",
+    "duplicateColor": "You already have a color with that name.",
+    "emptyIp": "Enter the IP address.",
+    "invalidIP": "That is not a valid IP address. Use four numbers from 0 to 255, like 192.168.1.34.",
+    "duplicateBulb": "That bulb is already in your list.",
+    "unreachable": "The bulb did not respond. Check that it is on and on the same network.",
+    "addFailed": "Could not add the bulb. Try again."
   },
   "tray": {
-    "show": "Show",
-    "quit": "Quit",
-    "toggle": "Toggle Bulb"
+    "show": "Show WiZ APP",
+    "toggle": "Turn active bulb on or off",
+    "allOn": "Turn all on",
+    "allOff": "Turn all off",
+    "quit": "Quit"
   },
   "toast": {
-    "discoveryFailed": "No bulbs found on the network",
-    "retry": "Retry",
-    "addSuccess": "Bulb added successfully",
-    "addFailed": "Could not connect to the bulb",
-    "addDuplicate": "This bulb is already added"
+    "region": "Notifications",
+    "retry": "Search again",
+    "updateNow": "Update now",
+    "openSettings": "Open installed apps",
+    "someDidNotRespond": "These bulbs did not respond: {{names}}.",
+    "discoveryFailed": "We could not find any bulbs. Check that they are on and on the same Wi-Fi network.",
+    "updateAvailable": "A new version of WiZ APP is available.",
+    "configImported": "We imported your bulbs and settings from the previous version.",
+    "configReset": "Your settings file could not be read. We saved a backup and started a new one.",
+    "legacyInstallFound": "The previous version of WiZ APP is still installed. You can uninstall it from Installed apps.",
+    "error": {
+      "bulbOffline": "The bulb is not responding. Check that it is on and on the same network.",
+      "bulbRejected": "The bulb did not accept that change. Try again.",
+      "unknownBulb": "That bulb is no longer in your list.",
+      "bulbUnreachable": "Could not connect to the bulb. Check that it is on and on the same network.",
+      "invalidArgument": "That value is not valid.",
+      "io": "Something went wrong. Try again; if it keeps happening, check the log in the data folder.",
+      "updater": "Could not check for updates. Try again later."
+    },
+    "orderSaved": "Order saved"
+  },
+  "sort": {
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "movedTo": "{{name}} moved to position {{position}}"
   }
 }

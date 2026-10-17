@@ -1,0 +1,1 @@
+{"bulbs":[{"bulbIp":"192.168.1.40","bulbName":"Living"},{"bulbIp":"192.168.1.41","bulbName":"Dormitorio"}],"activeBulbIp":"192.168.1.40","customColors":[{"id":33,"name":"Rosa","hex":"#ff66aa"},{"id":34,"name":"Azul","hex":"#3366ff"}],"favoriteColors":[11,12,14,6,33]}

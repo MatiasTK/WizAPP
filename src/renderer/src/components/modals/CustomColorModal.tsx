@@ -1,123 +1,158 @@
-import Modal from '@components/ui/Modal'
+import Button from '@components/ui/Button'
+import Dialog from '@components/ui/Dialog'
+import TextField from '@components/ui/TextField'
+import type { CustomColor } from '@renderer/bindings/CustomColor'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { CustomColor } from '@shared/types/customColor'
-import { useEffect, useRef, useState } from 'react'
+import { useColors } from '@renderer/lib/catalog'
+import { cn, focusRing } from '@renderer/lib/cn'
+import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-type ModalCustomColorProps = {
-  isOpen: boolean
-  onClose: () => void
-  editingColor?: CustomColor
+const MAX_NAME_LENGTH = 10
+const FORM_ID = 'custom-color-form'
+
+/** Suggested colors; any other one can still be picked with the system color picker. */
+export const PALETTE = [
+  '#ff4d4d',
+  '#ff8a4c',
+  '#ffb35c',
+  '#ffd23f',
+  '#a3c94b',
+  '#3f9a52',
+  '#38c6c9',
+  '#2f7fd8',
+  '#1b4fa8',
+  '#5a2fe0',
+  '#8a5cf0',
+  '#c45cff',
+  '#e2477a',
+  '#ff8fb0',
+  '#ffc979',
+  '#eef2ff'
+]
+export const DEFAULT_COLOR = '#38c6c9'
+
+type CustomColorModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** Present when editing; absent for a new color. */
+  editing?: CustomColor
 }
 
-export default function CustomColorModal({ isOpen, onClose, editingColor }: ModalCustomColorProps) {
+function ColorForm({ editing, onDone }: { editing?: CustomColor; onDone: () => void }) {
   const { t } = useTranslation()
-  const addCustomColor = useBulbStore((state) => state.addCustomColor)
-  const editCustomColor = useBulbStore((state) => state.editCustomColor)
+  const colors = useColors()
+  const addCustomColor = useBulbStore((s) => s.addCustomColor)
+  const editCustomColor = useBulbStore((s) => s.editCustomColor)
 
+  const [name, setName] = useState(editing?.name ?? '')
+  const [hex, setHex] = useState(editing?.hex ?? DEFAULT_COLOR)
   const [error, setError] = useState<string | null>(null)
-  const [color, setColor] = useState<string>(editingColor?.hex || '#000000')
-  const colorInputRef = useRef<HTMLInputElement>(null)
-  const areErrors = error !== null
+  const isCustomHex = !PALETTE.includes(hex.toLowerCase())
 
-  useEffect(() => {
-    setColor(editingColor?.hex || '#000000')
-    setError(null)
-  }, [editingColor])
-
-  const resetError = () => {
-    if (areErrors) {
-      setError(null)
-    }
+  const validate = (value: string): string | null => {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) return t('errors.emptyName')
+    if (trimmed.length > MAX_NAME_LENGTH) return t('errors.customLongName')
+    const duplicate = colors.some(
+      (c) => c.id !== editing?.id && c.name.toLowerCase() === trimmed.toLowerCase()
+    )
+    return duplicate ? t('errors.duplicateColor') : null
   }
 
-  const validateName = (name: string) => {
-    if (name.length === 0) {
-      setError(t('errors.emptyName'))
-      return false
-    } else if (name.length > 10) {
-      setError(t('errors.customLongName'))
-      return false
-    }
-
-    return true
-  }
-
-  const handleSubmit = (event) => {
-    const name = event.target.name.value
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+    const problem = validate(name)
+    setError(problem)
+    if (problem) return
 
-    if (!validateName(name)) {
-      return
-    }
-
-    if (editingColor) {
-      editCustomColor(editingColor.id, name, color)
-    } else {
-      addCustomColor(name, color)
-    }
-
-    onClose()
+    const trimmed = name.trim()
+    if (editing) void editCustomColor(editing.id, trimmed, hex)
+    else void addCustomColor(trimmed, hex)
+    onDone()
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={editingColor ? t('scenes.custom.edit.title') : t('scenes.custom.add.title')}
-    >
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="name" className="text-neutral-400 block mb-2">
-          {editingColor ? t('scenes.custom.edit.label') : t('scenes.custom.add.nameLabel')}
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          placeholder={t('scenes.custom.add.nameExample')}
-          defaultValue={editingColor?.name}
-          onChange={resetError}
-          className={`w-full bg-secondary-700 text-white p-2 rounded-lg border ${areErrors ? 'border-red-500' : 'border-neutral-600'} focus:outline-none focus:border-primary focus:border-2 `}
+    <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-[18px]" noValidate>
+      <div className="flex items-center gap-4">
+        <span
+          aria-hidden
+          className="size-[72px] shrink-0 rounded-lg"
+          style={{ backgroundColor: hex, boxShadow: `0 0 32px ${hex}66` }}
         />
-
-        {areErrors && <p className="text-red-500 text-sm mt-1 ms-1 font-medium">{error}</p>}
-
-        <label htmlFor="color" className="text-neutral-400 block mt-4 mb-2">
-          {t('scenes.custom.add.colorLabel')}
-        </label>
-
-        <div
-          className="w-fit px-4 bg-secondary-700 h-12 text-white p-2 rounded-lg border-neutral-600 border flex items-center gap-2 cursor-pointer hover:bg-secondary-600"
-          onClick={() => colorInputRef.current?.click()}
-        >
+        <TextField
+          wrapperClassName="grow"
+          label={t('scenes.color.name')}
+          placeholder={t('scenes.color.namePlaceholder')}
+          value={name}
+          error={error}
+          autoFocus
+          onChange={(e) => {
+            setName(e.target.value)
+            setError(null)
+          }}
+        />
+      </div>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 font-semibold">{t('scenes.color.color')}</legend>
+        <div className="grid grid-cols-8 gap-2">
+          {PALETTE.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-pressed={hex.toLowerCase() === color}
+              aria-label={color}
+              onClick={() => setHex(color)}
+              className={cn(
+                'h-[34px] cursor-pointer rounded-[9px] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.08)]',
+                hex.toLowerCase() === color && 'ring-2 ring-fg ring-offset-2 ring-offset-surface',
+                focusRing
+              )}
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+        <label className="mt-1 flex w-fit cursor-pointer items-center gap-2 text-[13px] text-muted">
           <input
             type="color"
-            id="color"
-            name="color"
-            ref={colorInputRef}
-            value={color}
-            onChange={(event) => setColor(event.target.value)}
-            className="h-8 w-8"
+            value={hex}
+            onChange={(e) => setHex(e.target.value)}
+            className={cn(
+              'h-8 w-11 cursor-pointer rounded-sm border border-control bg-surface p-0.5',
+              isCustomHex && 'ring-2 ring-fg ring-offset-2 ring-offset-surface',
+              focusRing
+            )}
           />
-          <p>{color}</p>
-        </div>
+          {t('scenes.color.other')}
+          <span className="tabular-nums">{hex.toUpperCase()}</span>
+        </label>
+      </fieldset>
+    </form>
+  )
+}
 
-        <footer className="flex items-center justify-end gap-2 mt-6">
-          <button
-            className="text-white mt-4 mr-2 cursor-pointer transition-colors bg-secondary hover:bg-secondary-600 py-2 px-4 rounded-lg"
-            type="button"
-            onClick={onClose}
-          >
-            {t('modals.cancel')}
-          </button>
-          <button
-            type="submit"
-            className="mt-4 px-4 bg-primary rounded-lg text-white py-2 transition-colors cursor-pointer font-medium hover:bg-primary-600"
-          >
-            {editingColor ? t('modals.save') : t('modals.add')}
-          </button>
-        </footer>
-      </form>
-    </Modal>
+export default function CustomColorModal({ open, onOpenChange, editing }: CustomColorModalProps) {
+  const { t } = useTranslation()
+  const close = () => onOpenChange(false)
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editing ? t('scenes.color.editTitle') : t('scenes.color.newTitle')}
+      className="max-w-[480px]"
+      footer={
+        <>
+          <Button size="large" onClick={close}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" form={FORM_ID} variant="primary" size="large">
+            {editing ? t('common.save') : t('scenes.color.create')}
+          </Button>
+        </>
+      }
+    >
+      <ColorForm editing={editing} onDone={close} />
+    </Dialog>
   )
 }
