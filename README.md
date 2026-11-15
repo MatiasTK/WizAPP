@@ -23,6 +23,8 @@
     </p>
 </div>
 
+https://github.com/user-attachments/assets/04107f4a-8351-49fd-8e22-f52db465d6d6
+
 <img width="917" height="593" alt="image" src="https://github.com/user-attachments/assets/aa2f7307-3a78-4c89-a646-8c779f4d0f44" />
 
 ## Features 🌟

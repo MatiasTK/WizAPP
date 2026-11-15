@@ -1,0 +1,1241 @@
+<!doctype html>
+<html
+  lang="es"
+  data-composition-variables='[{"id":"lang","type":"string","label":"Language (es | en)","default":"es"}]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: 'Instrument Sans';
+        src: url('assets/fonts/instrument-sans-latin-wght-normal.woff2') format('woff2');
+        font-weight: 400 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Fredoka';
+        src: url('assets/fonts/fredoka-latin-700-normal.woff2') format('woff2');
+        font-weight: 700;
+        font-display: block;
+      }
+      /* Dark tokens from src/renderer/src/assets/main.css */
+      :root {
+        --ground: #0e0f12;
+        --bg: #17181b;
+        --surface: #222428;
+        --sunken: #1c1d21;
+        --raised: #2c2e33;
+        --fg: #eef0f4;
+        --muted: #a9afbb;
+        --border: #2e3036;
+        --outline: #41444c;
+        --track: #3a3d44;
+        --primary: #3a66f0;
+        --primary-text: #8fb0ff;
+        --primary-soft: #26345c;
+        --font-ui: 'Instrument Sans', system-ui, sans-serif;
+        --font-logo: 'Fredoka', system-ui, sans-serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+        color: var(--fg);
+        font-family: var(--font-ui);
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* Ambient light: two blurred blobs whose color follows the bulb */
+      .blob {
+        position: absolute;
+        width: 1200px;
+        height: 1200px;
+        border-radius: 50%;
+        filter: blur(170px);
+        opacity: 0;
+      }
+      #amb1 {
+        left: -200px;
+        top: -260px;
+        background-color: #ffc979;
+      }
+      #amb2 {
+        right: -260px;
+        bottom: -360px;
+        background-color: #ffc979;
+      }
+      #vignette {
+        background: radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / 0.55) 100%);
+      }
+
+      /* Bulb */
+      #bulb {
+        position: absolute;
+        left: 960px;
+        top: 540px;
+        width: 0;
+        height: 0;
+      }
+      #bulb-inner {
+        position: absolute;
+        left: -150px;
+        top: -225px;
+        width: 300px;
+        height: 450px;
+      }
+      #bulb-glow {
+        position: absolute;
+        left: -350px;
+        top: -420px;
+        width: 700px;
+        height: 700px;
+        border-radius: 50%;
+        background-color: #ffc979;
+        filter: blur(90px);
+        opacity: 0;
+      }
+      #bulb svg {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+      }
+      #glass {
+        fill: #2c2e33;
+        stroke: #41444c;
+        stroke-width: 4;
+      }
+      #filament {
+        fill: none;
+        stroke: #5b6170;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* Copy */
+      .headline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        text-shadow: 0 4px 40px rgb(0 0 0 / 0.6);
+      }
+      #hook-text {
+        top: 850px;
+        font-size: 92px;
+      }
+      #caption {
+        top: 64px;
+        font-size: 76px;
+      }
+      #caption span {
+        position: absolute;
+        left: 0;
+        right: 0;
+      }
+
+      /* Logo */
+      .logo {
+        display: inline-flex;
+        align-items: flex-end;
+        font-family: var(--font-logo);
+        font-weight: 700;
+        line-height: 1;
+        color: var(--fg);
+      }
+      .logo .i {
+        position: relative;
+        display: inline-block;
+      }
+      .logo svg {
+        position: absolute;
+        left: 50%;
+        fill: var(--primary);
+      }
+      #logo-scene {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 36px;
+      }
+      #logo-big {
+        font-size: 300px;
+      }
+      #logo-big svg {
+        width: 126px;
+        height: 126px;
+        top: -60px;
+        margin-left: -63px;
+      }
+      #logo-sub {
+        font-size: 64px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: -0.02em;
+      }
+
+      /* App window mock */
+      #window {
+        position: absolute;
+        left: 820px;
+        top: 230px;
+        width: 1010px;
+        height: 700px;
+        background: var(--bg);
+        border: 1px solid var(--outline);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow:
+          0 40px 120px rgb(0 0 0 / 0.6),
+          0 0 0 1px rgb(255 255 255 / 0.03);
+        display: flex;
+        flex-direction: column;
+      }
+      .titlebar {
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px;
+        font-size: 17px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        background: var(--sunken);
+      }
+      .titlebar .controls {
+        display: flex;
+        gap: 26px;
+        font-size: 18px;
+      }
+      .app {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+      .sidebar {
+        width: 220px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 26px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .sidebar .logo {
+        font-size: 50px;
+        margin: 4px 0 26px 12px;
+      }
+      .sidebar .logo svg {
+        width: 21px;
+        height: 21px;
+        top: -10px;
+        margin-left: -10.5px;
+      }
+      .nav {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 48px;
+        padding: 0 14px;
+        border-radius: 10px;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .nav svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #nav-hl {
+        position: absolute;
+        left: 16px;
+        width: 188px;
+        height: 48px;
+        border-radius: 10px;
+        background: var(--primary-soft);
+        top: 116px;
+      }
+      .main {
+        position: relative;
+        flex: 1;
+      }
+      .page {
+        position: absolute;
+        inset: 0;
+        padding: 30px;
+      }
+      .page h2 {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 22px;
+      }
+      .bulbs {
+        display: flex;
+        gap: 22px;
+        height: calc(100% - 60px);
+      }
+      .list {
+        width: 330px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 76px;
+        padding: 0 16px;
+        border-radius: 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+      }
+      .row.sel {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 1px var(--primary);
+      }
+      .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #c7ccd6;
+        flex: none;
+      }
+      .row .txt {
+        flex: 1;
+        min-width: 0;
+      }
+      .row .name {
+        font-size: 20px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .row .st {
+        position: relative;
+        height: 20px;
+        font-size: 16px;
+        color: var(--muted);
+      }
+      .row .st span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: nowrap;
+      }
+      .switch {
+        position: relative;
+        width: 52px;
+        height: 30px;
+        border-radius: 15px;
+        background: var(--track);
+        flex: none;
+      }
+      .switch.on {
+        background: var(--primary);
+      }
+      .switch i {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      .switch.on i {
+        left: 26px;
+      }
+      .detail {
+        flex: 1;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px;
+      }
+      .detail .dname {
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .detail .dst {
+        position: relative;
+        height: 26px;
+        margin-top: 6px;
+        font-size: 19px;
+        color: var(--muted);
+      }
+      .detail .dst span {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 19px;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 40px 0 16px;
+      }
+      #pct {
+        color: var(--fg);
+        font-variant-numeric: tabular-nums;
+      }
+      .slider {
+        position: relative;
+        height: 12px;
+        border-radius: 6px;
+        background: var(--track);
+      }
+      #fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        transform-origin: 0 50%;
+        transform: scaleX(0.3);
+        border-radius: 6px;
+        background: var(--primary);
+      }
+      #knob {
+        position: absolute;
+        top: 50%;
+        left: 30%;
+        width: 30px;
+        height: 30px;
+        margin: -15px 0 0 -15px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
+      }
+      .favs {
+        display: flex;
+        gap: 14px;
+      }
+      .favs b {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+      .tile {
+        position: relative;
+        height: 170px;
+        border-radius: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .tile .sw {
+        flex: 1;
+        border-radius: 10px;
+      }
+      .tile .tn {
+        font-size: 19px;
+        font-weight: 600;
+        padding: 0 4px 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tile .ring {
+        position: absolute;
+        inset: -4px;
+        border-radius: 19px;
+        border: 3px solid var(--primary-text);
+        opacity: 0;
+      }
+
+      #cursor {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 46px;
+        height: 46px;
+        filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.5));
+        opacity: 0;
+      }
+      #cursor .press {
+        position: absolute;
+        left: -22px;
+        top: -22px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        opacity: 0;
+      }
+
+      /* Features */
+      #features {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 64px;
+      }
+      #feat-title {
+        font-size: 96px;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+      }
+      .chips {
+        display: grid;
+        grid-template-columns: repeat(2, 760px);
+        gap: 26px 32px;
+      }
+      .chip {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        height: 120px;
+        padding: 0 34px;
+        border-radius: 26px;
+        background: rgb(34 36 40 / 0.82);
+        border: 1px solid var(--outline);
+        font-size: 42px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        white-space: nowrap;
+      }
+      .chip .ic {
+        width: 68px;
+        height: 68px;
+        flex: none;
+        border-radius: 18px;
+        background: var(--primary-soft);
+        display: grid;
+        place-items: center;
+      }
+      .chip svg {
+        width: 38px;
+        height: 38px;
+        stroke: var(--primary-text);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* CTA */
+      #cta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      #logo-cta {
+        font-size: 230px;
+      }
+      #logo-cta svg {
+        width: 97px;
+        height: 97px;
+        top: -46px;
+        margin-left: -48.5px;
+      }
+      #cta-title {
+        margin-top: 40px;
+        font-size: 104px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+      #cta-pill {
+        margin-top: 46px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        height: 100px;
+        padding: 0 46px;
+        border-radius: 50px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 46px;
+        font-weight: 600;
+        box-shadow: 0 20px 60px rgb(58 102 240 / 0.45);
+      }
+      #cta-pill svg {
+        width: 46px;
+        height: 46px;
+        stroke: #fff;
+        fill: none;
+        stroke-width: 2.4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="25"
+      data-width="1920"
+      data-height="1080"
+      data-fps="30"
+    >
+      <!-- Original score + SFX, synced to this timeline: python scripts/make_audio.py -->
+      <audio
+        id="soundtrack"
+        data-start="0"
+        data-duration="25"
+        data-volume="1"
+        data-track-index="7"
+        src="assets/audio/soundtrack.wav"
+      ></audio>
+
+      <div id="ambient" class="clip" data-start="0" data-duration="25" data-track-index="0">
+        <div id="amb1" class="blob" data-layout-allow-overflow></div>
+        <div id="amb2" class="blob" data-layout-allow-overflow></div>
+      </div>
+
+      <!-- The bulb: hook, control and scenes -->
+      <div id="bulb-layer" class="clip" data-start="0" data-duration="17.6" data-track-index="1">
+        <div id="bulb">
+          <div id="bulb-glow"></div>
+          <div id="bulb-inner">
+            <svg viewBox="0 0 200 300">
+              <path
+                id="glass"
+                d="M100 8C46 8 8 50 8 104c0 40 22 64 42 90 10 13 15 26 15 40h70c0-14 5-27 15-40 20-26 42-50 42-90C192 50 154 8 100 8Z"
+              />
+              <path
+                id="filament"
+                d="M78 232v-62l-14-40m58 102v-62l14-40M64 130q12-14 18 0t18 0 18 0 18 0"
+              />
+              <rect x="62" y="240" width="76" height="14" rx="6" fill="#3a3d44" />
+              <rect x="64" y="258" width="72" height="14" rx="6" fill="#33363d" />
+              <rect x="70" y="276" width="60" height="12" rx="6" fill="#2c2e33" />
+              <path d="M88 290h24l-6 10h-12Z" fill="#2c2e33" />
+              <path
+                id="shine"
+                d="M48 86c6-24 24-42 48-48"
+                fill="none"
+                stroke="#fff"
+                stroke-width="9"
+                stroke-linecap="round"
+                opacity="0.12"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div id="hook" class="clip" data-start="0" data-duration="3.4" data-track-index="2">
+        <h1 id="hook-text" class="headline" data-s="hook"></h1>
+      </div>
+
+      <div id="logo-scene" class="clip" data-start="3" data-duration="3.3" data-track-index="2">
+        <div id="logo-big" class="logo">
+          <span>w</span
+          ><span class="i"
+            >ı<svg viewBox="0 0 24 24">
+              <path
+                d="M12 1.5c.7 6.4 3.7 9.6 10.5 10.5-6.8.9-9.8 4.1-10.5 10.5C11.3 16.1 8.3 12.9 1.5 12 8.3 11.1 11.3 7.9 12 1.5Z"
+              /></svg></span
+          ><span>z</span>
+        </div>
+        <p id="logo-sub" data-s="logoSub"></p>
+      </div>
+
+      <!-- App window -->
+      <div id="window-layer" class="clip" data-start="6" data-duration="11.6" data-track-index="3">
+        <div id="window" data-layout-ignore>
+          <div class="titlebar">
+            <span>WiZ APP</span>
+            <span class="controls"><span>—</span><span>☐</span><span>✕</span></span>
+          </div>
+          <div class="app">
+            <aside class="sidebar">
+              <div class="logo">
+                <span>w</span
+                ><span class="i"
+                  >ı<svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 1.5c.7 6.4 3.7 9.6 10.5 10.5-6.8.9-9.8 4.1-10.5 10.5C11.3 16.1 8.3 12.9 1.5 12 8.3 11.1 11.3 7.9 12 1.5Z"
+                    /></svg></span
+                ><span>z</span>
+              </div>
+              <div id="nav-hl"></div>
+              <div class="nav" id="nav-bulbs">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+                  />
+                  <path d="M9 18h6M10 22h4" />
+                </svg>
+                <span data-s="navBulbs"></span>
+              </div>
+              <div class="nav" id="nav-scenes">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="13.5" cy="6.5" r=".5" />
+                  <circle cx="17.5" cy="10.5" r=".5" />
+                  <circle cx="8.5" cy="7.5" r=".5" />
+                  <circle cx="6.5" cy="12.5" r=".5" />
+                  <path
+                    d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1a1.6 1.6 0 0 1 1.6-1.6h2c3 0 5.6-2.5 5.6-5.6C22 6 17.5 2 12 2Z"
+                  />
+                </svg>
+                <span data-s="navScenes"></span>
+              </div>
+              <div class="nav">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h0" />
+                </svg>
+                <span data-s="navInfo"></span>
+              </div>
+            </aside>
+            <div class="main">
+              <section id="page-bulbs" class="page">
+                <h2 data-s="navBulbs"></h2>
+                <div class="bulbs">
+                  <div class="list">
+                    <div class="row sel" id="row1">
+                      <span class="dot" id="dot1"></span>
+                      <div class="txt">
+                        <div class="name" data-s="bulb1"></div>
+                        <div class="st">
+                          <span class="off1" data-s="off"></span
+                          ><span class="on1" data-s="on" style="opacity: 0"></span>
+                        </div>
+                      </div>
+                      <span class="switch" id="sw1"><i id="sw1k"></i></span>
+                    </div>
+                    <div class="row">
+                      <span class="dot" style="background: #ffb35c"></span>
+                      <div class="txt">
+                        <div class="name" data-s="bulb2"></div>
+                        <div class="st"><span data-s="on"></span></div>
+                      </div>
+                      <span class="switch on"><i></i></span>
+                    </div>
+                    <div class="row">
+                      <span class="dot"></span>
+                      <div class="txt">
+                        <div class="name" data-s="bulb3"></div>
+                        <div class="st"><span data-s="off"></span></div>
+                      </div>
+                      <span class="switch"><i></i></span>
+                    </div>
+                  </div>
+                  <div class="detail">
+                    <div class="dname" data-s="bulb1"></div>
+                    <div class="dst">
+                      <span class="off1" data-s="off"></span
+                      ><span class="on1" data-s="on" style="opacity: 0"></span>
+                    </div>
+                    <div class="label">
+                      <span data-s="brightness"></span><span id="pct">30%</span>
+                    </div>
+                    <div class="slider">
+                      <div id="fill"></div>
+                      <div id="knob"></div>
+                    </div>
+                    <div class="label"><span data-s="favorites"></span></div>
+                    <div class="favs">
+                      <b style="background: #ffc979"></b
+                      ><b style="background: linear-gradient(135deg, #ff8a4c, #e2477a)"></b
+                      ><b style="background: linear-gradient(135deg, #2f7fd8, #38c6c9)"></b
+                      ><b style="background: linear-gradient(135deg, #d43fd1, #5a2fe0)"></b
+                      ><b style="background: linear-gradient(135deg, #3f9a52, #a3c94b)"></b
+                      ><b style="background: #7d8cff"></b>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section id="page-scenes" class="page" style="opacity: 0">
+                <h2 data-s="allScenes"></h2>
+                <div class="grid" id="grid"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="caption-layer" class="clip" data-start="6" data-duration="11.4" data-track-index="4">
+        <h2 id="caption" class="headline">
+          <span id="cap1" data-s="capControl"></span
+          ><span id="cap2" data-s="capScenes" style="opacity: 0"></span>
+        </h2>
+      </div>
+
+      <div id="cursor-layer" class="clip" data-start="6" data-duration="11" data-track-index="5">
+        <div id="cursor">
+          <div class="press"></div>
+          <svg viewBox="0 0 24 24" width="46" height="46">
+            <path
+              d="M4 2l16 9.5-7 1.6-3.6 6.9Z"
+              fill="#fff"
+              stroke="#14161b"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <div id="features" class="clip" data-start="17" data-duration="4.6" data-track-index="2">
+        <h2 id="feat-title" data-s="featTitle"></h2>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div id="cta" class="clip" data-start="21" data-duration="4" data-track-index="2">
+        <div id="logo-cta" class="logo">
+          <span>w</span
+          ><span class="i"
+            >ı<svg viewBox="0 0 24 24">
+              <path
+                d="M12 1.5c.7 6.4 3.7 9.6 10.5 10.5-6.8.9-9.8 4.1-10.5 10.5C11.3 16.1 8.3 12.9 1.5 12 8.3 11.1 11.3 7.9 12 1.5Z"
+              /></svg></span
+          ><span>z</span>
+        </div>
+        <h2 id="cta-title" data-s="ctaTitle"></h2>
+        <div id="cta-pill">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 15V3M7 10l5 5 5-5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          </svg>
+          <span>github.com/MatiasTK/WizAPP</span>
+        </div>
+      </div>
+
+      <div id="vignette" class="clip" data-start="0" data-duration="25" data-track-index="6"></div>
+    </div>
+
+    <script>
+      /* ---------- Copy (ES uses "tú", like the app) ---------- */
+      const STRINGS = {
+        es: {
+          hook: 'Tus luces, desde tu escritorio.',
+          logoSub: 'Controla tus bombillas WiZ desde Windows',
+          navBulbs: 'Bombillas',
+          navScenes: 'Escenas',
+          navInfo: 'Información',
+          bulb1: 'Sala',
+          bulb2: 'Dormitorio',
+          bulb3: 'Escritorio',
+          on: 'Encendida',
+          off: 'Apagada',
+          brightness: 'Brillo',
+          favorites: 'Favoritas',
+          allScenes: 'Todas las escenas',
+          capControl: 'Enciende, apaga y regula el brillo',
+          capScenes: '32 escenas y tus propios colores',
+          featTitle: 'Y mucho más',
+          features: [
+            'Encuentra tus bombillas solo',
+            'Todas tus bombillas a la vez',
+            'Siempre a mano en la bandeja',
+            'Tus colores favoritos',
+            'En español e inglés',
+            'Gratis y de código abierto'
+          ],
+          ctaTitle: 'Gratis para Windows',
+          scenes: [
+            'Atardecer',
+            'Océano',
+            'Fiesta',
+            'Bosque',
+            'Romance',
+            'Club',
+            'Chimenea',
+            'Verano'
+          ]
+        },
+        en: {
+          hook: 'Your lights, from your desktop.',
+          logoSub: 'Control your WiZ bulbs from Windows',
+          navBulbs: 'Bulbs',
+          navScenes: 'Scenes',
+          navInfo: 'Information',
+          bulb1: 'Living room',
+          bulb2: 'Bedroom',
+          bulb3: 'Desk',
+          on: 'On',
+          off: 'Off',
+          brightness: 'Brightness',
+          favorites: 'Favorites',
+          allScenes: 'All scenes',
+          capControl: 'Turn on, off and dim in one click',
+          capScenes: '32 scenes and your own colors',
+          featTitle: 'And so much more',
+          features: [
+            'Finds your bulbs on its own',
+            'All your bulbs at once',
+            'Always at hand in the tray',
+            'Your favorite colors',
+            'In English and Spanish',
+            'Free and open source'
+          ],
+          ctaTitle: 'Free for Windows',
+          scenes: ['Sunset', 'Ocean', 'Party', 'Forest', 'Romance', 'Club', 'Fireplace', 'Summer']
+        }
+      }
+      const vars =
+        (window.__hyperframes &&
+          window.__hyperframes.getVariables &&
+          window.__hyperframes.getVariables()) ||
+        {}
+      const LANG = STRINGS[vars.lang] ? vars.lang : 'es'
+      const T = STRINGS[LANG]
+      document.documentElement.lang = LANG
+      document.querySelectorAll('[data-s]').forEach((el) => {
+        el.textContent = T[el.dataset.s]
+      })
+
+      /* Scenes grid: colors from src/renderer/utils/scenesInfo.ts */
+      const SCENES = [
+        ['#ff8a4c', '#e2477a'],
+        ['#2f7fd8', '#38c6c9'],
+        ['#d43fd1', '#5a2fe0'],
+        ['#3f9a52', '#a3c94b'],
+        ['#e2477a', '#ff8fb0'],
+        ['#5a2fe0', '#e2477a'],
+        ['#ff6a2b', '#ffb35c'],
+        ['#ffd23f', '#ff8a4c']
+      ]
+      document.getElementById('grid').innerHTML = SCENES.map(
+        ([a, b], i) =>
+          `<div class="tile" id="tile${i}"><div class="sw" style="background:linear-gradient(135deg,${a},${b})"></div><div class="tn">${T.scenes[i]}</div><div class="ring"></div></div>`
+      ).join('')
+
+      /* Feature chips: icons in the style of react-icons/lu */
+      const ICONS = [
+        '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+        '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/>',
+        '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 16h20M17 13h2"/>',
+        '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/>',
+        '<path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>',
+        '<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.1-1.2-.3-2.4-1-3.5.3-1.2.3-2.4 0-3.5 0 0-1 0-3 1.5-2.6-.5-5.4-.5-8 0C6 2 5 2 5 2c-.3 1.1-.3 2.3 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.4.5-.7 1-.8 1.6-.2.6-.3 1.2-.2 1.9v4"/><path d="M9 18c-4.5 2-5-2-7-2"/>'
+      ]
+      document.getElementById('chips').innerHTML = T.features
+        .map(
+          (f, i) =>
+            `<div class="chip" id="chip${i}"><span class="ic"><svg viewBox="0 0 24 24">${ICONS[i]}</svg></span><span>${f}</span></div>`
+        )
+        .join('')
+
+      /* ---------- Timeline ---------- */
+      // Cursor targets measured from the laid-out mock (before any tween moves it).
+      // The cursor tip sits at ~(4,2) of its 46px box.
+      const center = (sel) => {
+        const r = document.querySelector(sel).getBoundingClientRect()
+        return { x: r.left + r.width / 2 - 4, y: r.top + r.height / 2 - 2 }
+      }
+      const trackRect = document.querySelector('.slider').getBoundingClientRect()
+      // Nav highlight sits under "Bulbs" and slides to "Scenes"
+      const navB = document.getElementById('nav-bulbs')
+      const navS = document.getElementById('nav-scenes')
+      const hl = document.getElementById('nav-hl')
+      hl.style.top = navB.offsetTop + 'px'
+      hl.style.left = navB.offsetLeft + 'px'
+      hl.style.width = navB.offsetWidth + 'px'
+      navB.style.color = '#eef0f4'
+      const navStep = navS.offsetTop - navB.offsetTop
+      const P = {
+        sw1: center('#sw1'),
+        knob: center('#knob'),
+        nav: center('#nav-scenes'),
+        tiles: [0, 1, 2, 3].map((i) => center('#tile' + i))
+      }
+      const WARM = '#ffc979'
+      const tl = gsap.timeline({ paused: true })
+      // Mix a hex color with white so the lit glass stands out from its own glow
+      const tint = (hex, k) => {
+        const n = parseInt(hex.slice(1), 16)
+        const ch = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (255 - v) * k))
+        return '#' + ch.map((v) => v.toString(16).padStart(2, '0')).join('')
+      }
+      const light = (t, c1, c2, dur = 0.6, glow = 0.85, amb = 0.5) => {
+        tl.to(
+          '#glass',
+          { fill: tint(c1, 0.55), stroke: tint(c1, 0.8), duration: dur, ease: 'power2.out' },
+          t
+        )
+        tl.to(
+          '#bulb-glow',
+          { backgroundColor: c1, opacity: glow, duration: dur, ease: 'power2.out' },
+          t
+        )
+        tl.to(
+          '#amb1',
+          { backgroundColor: c1, opacity: amb, duration: dur * 1.4, ease: 'power2.out' },
+          t
+        )
+        tl.to(
+          '#amb2',
+          { backgroundColor: c2, opacity: amb, duration: dur * 1.4, ease: 'power2.out' },
+          t
+        )
+        tl.to('#filament', { stroke: '#fff7e0', duration: dur }, t)
+      }
+
+      /* 1. Hook 0–3 s */
+      tl.set('#bulb', { scale: 1.25, y: -40 }, 0)
+      tl.fromTo(
+        '#hook-text',
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' },
+        0.25
+      )
+      // flicker
+      tl.to('#glass', { fill: WARM, duration: 0.04 }, 1.2)
+      tl.to('#glass', { fill: '#2c2e33', duration: 0.04 }, 1.3)
+      tl.to('#glass', { fill: WARM, duration: 0.04 }, 1.42)
+      tl.to('#glass', { fill: '#2c2e33', duration: 0.04 }, 1.5)
+      light(1.62, WARM, '#ff9e45', 0.5, 0.9, 0.55)
+      tl.fromTo('#bulb', { scale: 1.25 }, { scale: 1.32, duration: 1.4, ease: 'power2.out' }, 1.62)
+
+      /* 2. Logo 3–6 s */
+      tl.to('#hook-text', { opacity: 0, y: -20, duration: 0.4, ease: 'power2.in' }, 2.9)
+      tl.to('#bulb', { opacity: 0, scale: 0.85, duration: 0.4, ease: 'power2.in' }, 3.05)
+      tl.to('#amb1', { backgroundColor: '#3a66f0', opacity: 0.45, duration: 0.9 }, 3.0)
+      tl.to('#amb2', { backgroundColor: '#8fb0ff', opacity: 0.3, duration: 0.9 }, 3.0)
+      tl.fromTo(
+        '#logo-big',
+        { opacity: 0, scale: 0.9, y: 20 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.6)' },
+        3.2
+      )
+      tl.fromTo(
+        '#logo-big svg',
+        { scale: 0, rotation: -180, transformOrigin: '50% 50%' },
+        { scale: 1, rotation: 0, duration: 0.8, ease: 'back.out(2.2)' },
+        3.55
+      )
+      tl.to(
+        '#logo-big svg',
+        { scale: 1.25, duration: 0.18, yoyo: true, repeat: 1, ease: 'power1.inOut' },
+        4.4
+      )
+      tl.fromTo(
+        '#logo-sub',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        3.9
+      )
+      tl.to('#logo-scene', { opacity: 0, scale: 1.04, duration: 0.4, ease: 'power2.in' }, 5.75)
+
+      /* 3. Control 6–12 s : bulb off on the left, window slides in */
+      tl.set('#glass', { fill: '#2c2e33', stroke: '#41444c' }, 5.9)
+      tl.set('#filament', { stroke: '#5b6170' }, 5.9)
+      tl.set('#bulb-glow', { opacity: 0 }, 5.9)
+      tl.set('#bulb', { x: -510, y: 70, scale: 1.05 }, 5.9)
+      tl.to('#amb1', { opacity: 0.12, duration: 0.6 }, 5.8)
+      tl.to('#amb2', { opacity: 0.12, duration: 0.6 }, 5.8)
+      tl.to('#bulb', { opacity: 1, duration: 0.5 }, 6.0)
+      tl.fromTo(
+        '#window',
+        { opacity: 0, x: 140 },
+        { opacity: 1, x: 0, duration: 0.8, ease: 'power3.out' },
+        6.05
+      )
+      tl.fromTo(
+        '#cap1',
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        6.3
+      )
+
+      const press = (t) => {
+        tl.fromTo(
+          '#cursor .press',
+          { opacity: 0.9, scale: 0.4 },
+          { opacity: 0, scale: 1.4, duration: 0.45, ease: 'power2.out' },
+          t
+        )
+        tl.to(
+          '#cursor svg',
+          { scale: 0.85, duration: 0.08, yoyo: true, repeat: 1, transformOrigin: '20% 10%' },
+          t
+        )
+      }
+      tl.set('#cursor', { x: 1500, y: 1000 }, 6)
+      tl.to('#cursor', { opacity: 1, duration: 0.3 }, 6.8)
+      tl.to('#cursor', { x: P.sw1.x, y: P.sw1.y, duration: 0.8, ease: 'power3.inOut' }, 6.85)
+      press(7.7)
+      tl.to('#sw1', { backgroundColor: '#3a66f0', duration: 0.2 }, 7.72)
+      tl.to('#sw1k', { x: 22, duration: 0.2, ease: 'power2.out' }, 7.72)
+      tl.to('#dot1', { backgroundColor: WARM, duration: 0.2 }, 7.72)
+      tl.to('.off1', { opacity: 0, duration: 0.15 }, 7.72)
+      tl.to('.on1', { opacity: 1, duration: 0.15 }, 7.8)
+      light(7.75, WARM, '#ff9e45', 0.35, 0.35, 0.18)
+
+      const sliderW = trackRect.width
+      tl.to('#cursor', { x: P.knob.x, y: P.knob.y, duration: 0.8, ease: 'power3.inOut' }, 8.25)
+      press(9.05)
+      const b = { v: 30 }
+      tl.to(
+        b,
+        {
+          v: 100,
+          duration: 1.4,
+          ease: 'power2.inOut',
+          onUpdate: () => {
+            document.getElementById('pct').textContent = Math.round(b.v) + '%'
+          }
+        },
+        9.15
+      )
+      tl.fromTo('#fill', { scaleX: 0.3 }, { scaleX: 1, duration: 1.4, ease: 'power2.inOut' }, 9.15)
+      tl.to('#knob', { x: sliderW * 0.7, duration: 1.4, ease: 'power2.inOut' }, 9.15)
+      tl.to('#cursor', { x: P.knob.x + sliderW * 0.7, duration: 1.4, ease: 'power2.inOut' }, 9.15)
+      tl.to('#bulb-glow', { opacity: 1, duration: 1.4, ease: 'power2.inOut' }, 9.15)
+      tl.to('#amb1', { opacity: 0.55, duration: 1.4, ease: 'power2.inOut' }, 9.15)
+      tl.to('#amb2', { opacity: 0.45, duration: 1.4, ease: 'power2.inOut' }, 9.15)
+      tl.fromTo(
+        '#bulb',
+        { scale: 1.05 },
+        { scale: 1.12, duration: 1.4, ease: 'power2.inOut' },
+        9.15
+      )
+
+      /* 4. Scenes 12–17 s */
+      // cursor goes to the "Scenes" nav item
+      tl.to('#cursor', { x: P.nav.x - 30, y: P.nav.y, duration: 0.7, ease: 'power3.inOut' }, 11.1)
+      press(11.85)
+      tl.to('#nav-hl', { y: navStep, duration: 0.3, ease: 'power3.out' }, 11.88)
+      tl.to('#nav-bulbs', { color: '#a9afbb', duration: 0.2 }, 11.88)
+      tl.to('#nav-scenes', { color: '#eef0f4', duration: 0.2 }, 11.88)
+      tl.to('#page-bulbs', { opacity: 0, x: -30, duration: 0.3 }, 11.9)
+      tl.fromTo(
+        '#page-scenes',
+        { opacity: 0, x: 30 },
+        { opacity: 1, x: 0, duration: 0.4, ease: 'power3.out' },
+        12.05
+      )
+      tl.to('#cap1', { opacity: 0, y: -20, duration: 0.3 }, 11.9)
+      tl.fromTo(
+        '#cap2',
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' },
+        12.1
+      )
+      tl.from(
+        '.tile',
+        { opacity: 0, y: 20, duration: 0.4, stagger: 0.04, ease: 'power3.out' },
+        12.05
+      )
+
+      const picks = [
+        [0, 0, 0, 12.85],
+        [1, 1, 0, 13.95],
+        [2, 2, 0, 15.05],
+        [3, 3, 0, 16.1]
+      ]
+      picks.forEach(([i, c, r, t], k) => {
+        tl.to(
+          '#cursor',
+          { x: P.tiles[i].x, y: P.tiles[i].y - 20, duration: 0.55, ease: 'power3.inOut' },
+          t - 0.6
+        )
+        press(t)
+        tl.to(`#tile${i} .ring`, { opacity: 1, duration: 0.15 }, t)
+        if (k > 0) tl.to(`#tile${picks[k - 1][0]} .ring`, { opacity: 0, duration: 0.15 }, t)
+        tl.fromTo(
+          `#tile${i}`,
+          { scale: 1 },
+          { scale: 0.95, duration: 0.08, yoyo: true, repeat: 1 },
+          t
+        )
+        light(t + 0.02, SCENES[i][0], SCENES[i][1], 0.5, 1, 0.6)
+      })
+
+      /* 5. Features 17–21 s */
+      tl.to('#cursor', { opacity: 0, duration: 0.25 }, 16.6)
+      tl.to('#window', { opacity: 0, y: 40, scale: 0.96, duration: 0.45, ease: 'power2.in' }, 16.75)
+      tl.to('#bulb', { opacity: 0, scale: 0.9, duration: 0.45, ease: 'power2.in' }, 16.75)
+      tl.to('#cap2', { opacity: 0, y: -20, duration: 0.35 }, 16.75)
+      tl.to('#amb1', { backgroundColor: '#3a66f0', opacity: 0.4, duration: 1.2 }, 17)
+      tl.to('#amb2', { backgroundColor: '#d43fd1', opacity: 0.32, duration: 1.2 }, 17)
+      tl.fromTo(
+        '#feat-title',
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        17.15
+      )
+      tl.fromTo(
+        '.chip',
+        { opacity: 0, y: 40, scale: 0.94 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.32, ease: 'back.out(1.5)' },
+        17.55
+      )
+      tl.to('#features', { opacity: 0, scale: 0.97, duration: 0.4, ease: 'power2.in' }, 20.7)
+
+      /* 6. CTA 21–25 s */
+      tl.to('#amb1', { backgroundColor: '#ffc979', opacity: 0.38, duration: 1.2 }, 21)
+      tl.to('#amb2', { backgroundColor: '#3a66f0', opacity: 0.45, duration: 1.2 }, 21)
+      tl.fromTo(
+        '#logo-cta',
+        { opacity: 0, scale: 0.9 },
+        { opacity: 1, scale: 1, duration: 0.7, ease: 'back.out(1.6)' },
+        21.1
+      )
+      tl.fromTo(
+        '#logo-cta svg',
+        { scale: 0, rotation: -180, transformOrigin: '50% 50%' },
+        { scale: 1, rotation: 0, duration: 0.8, ease: 'back.out(2.2)' },
+        21.35
+      )
+      tl.fromTo(
+        '#cta-title',
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        21.6
+      )
+      tl.fromTo(
+        '#cta-pill',
+        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(1.6)' },
+        21.95
+      )
+      tl.to(
+        '#cta-pill',
+        { scale: 1.04, duration: 0.35, yoyo: true, repeat: 1, ease: 'power1.inOut' },
+        22.9
+      )
+      tl.set({}, {}, 25)
+
+      window.__timelines = window.__timelines || {}
+      window.__timelines['main'] = tl
+      tl.seek(0)
+    </script>
+  </body>
+</html>
