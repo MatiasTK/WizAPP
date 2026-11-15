@@ -3,7 +3,7 @@ import Logo from '@components/Logo'
 import { cn, focusRing } from '@renderer/lib/cn'
 import { useTranslation } from 'react-i18next'
 import { LuCircleHelp, LuInfo, LuLightbulb, LuPalette, LuSearch, LuSettings } from 'react-icons/lu'
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 
 type SidebarProps = {
   onOpenSearch: () => void
@@ -28,11 +28,17 @@ const footerButton = cn(
 /** Full-height sidebar; it never scrolls with the page (only `main` does). */
 export default function Sidebar({ onOpenSearch, onOpenSettings, onOpenHelp }: SidebarProps) {
   const { t } = useTranslation()
+  // The Bulbs page already shows the active bulb's controls, so its sidebar card would repeat them.
+  const onBulbsPage = useLocation().pathname === '/'
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col gap-[18px] overflow-y-auto border-r border-border bg-sidebar px-3.5 py-[18px]">
-      <div className="flex shrink-0 px-2.5 pt-3 pb-1">
-        <Logo />
+      {/* The mark lines up with the nav icons on the left and with the page title's baseline. */}
+      <div className="flex shrink-0 items-baseline gap-1.5 px-3 pt-1.5">
+        <Logo size={34} />
+        <span aria-hidden className="text-[13px] font-semibold tracking-[0.14em] text-muted">
+          APP
+        </span>
       </div>
 
       <button
@@ -78,7 +84,7 @@ export default function Sidebar({ onOpenSearch, onOpenSettings, onOpenHelp }: Si
 
       <div className="grow" />
 
-      <BulbShortcut />
+      {!onBulbsPage && <BulbShortcut />}
 
       <div className="flex shrink-0 gap-1 border-t border-border pt-3">
         <button type="button" className={footerButton} onClick={onOpenSettings}>

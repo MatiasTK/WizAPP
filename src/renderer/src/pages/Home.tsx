@@ -1,5 +1,6 @@
-import BulbCard from '@components/BulbCard'
+import BulbDetail from '@components/BulbDetail'
 import BulbDot from '@components/BulbDot'
+import BulbList from '@components/BulbList'
 import { useBulbStatus } from '@components/BulbShortcut'
 import AddDeviceModal from '@components/modals/AddDeviceModal'
 import BulbDetailsModal from '@components/modals/BulbDetailsModal'
@@ -9,6 +10,7 @@ import SortList from '@components/SortList'
 import AlertDialog from '@components/ui/AlertDialog'
 import Button from '@components/ui/Button'
 import EmptyState from '@components/ui/EmptyState'
+import IconButton from '@components/ui/IconButton'
 import Spinner from '@components/ui/Spinner'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { cn } from '@renderer/lib/cn'
@@ -33,29 +35,29 @@ export default function Home() {
   const status = useBulbStatus()
 
   const [sorting, setSorting] = useState(false)
-  // By default the active bulb's card is open. Closing it (or opening another one) holds
-  // until the active bulb changes, e.g. from the sidebar or by opening a card.
-  const [choice, setChoice] = useState<{ ip: string | null } | null>(null)
+  // The selected bulb follows the active one. Picking an offline bulb (which cannot become
+  // active) holds until the active bulb changes, e.g. from the Scenes page.
+  const [choice, setChoice] = useState<string | null>(null)
   const [seenActiveIp, setSeenActiveIp] = useState(activeIp)
   if (seenActiveIp !== activeIp) {
     setSeenActiveIp(activeIp)
     setChoice(null)
   }
-  const openIp = choice ? choice.ip : activeIp
   const [addOpen, setAddOpen] = useState(false)
   const [renameIp, setRenameIp] = useState<string | null>(null)
   const [detailsIp, setDetailsIp] = useState<string | null>(null)
   const [deleteIp, setDeleteIp] = useState<string | null>(null)
 
   const find = (ip: string | null) => bulbs.find((b) => b.ip === ip) ?? null
+  const selected = find(choice) ?? find(activeIp) ?? bulbs[0] ?? null
   const deleteTarget = find(deleteIp)
   const anyOnline = bulbs.some((b) => b.online)
   const onlineCount = bulbs.filter((b) => b.online).length
 
-  // Opening a card also makes that bulb the active one (sidebar, Scenes page).
-  const handleExpandedChange = (ip: string, expanded: boolean) => {
-    setChoice({ ip: expanded ? ip : null })
-    if (expanded) void setActiveBulb(ip)
+  // Selecting a bulb also makes it the active one (sidebar, Scenes page) when it can answer.
+  const handleSelect = (ip: string) => {
+    setChoice(ip)
+    if (ip !== activeIp && find(ip)?.online) void setActiveBulb(ip)
   }
 
   const handleAllScenes = (ip: string) => {
@@ -69,7 +71,6 @@ export default function Home() {
 
   const handleDoneSorting = () => {
     setSorting(false)
-    setChoice(null)
     pushToast('toast.orderSaved', 'success')
   }
 
@@ -163,66 +164,107 @@ export default function Home() {
     )
   }
 
+  if (bulbs.length === 0) {
+    return (
+      <Page title={t('home.title')} subtitle={t('home.subtitle')}>
+        {renderEmpty()}
+        {dialogs}
+      </Page>
+    )
+  }
+
+  // With one bulb the list and the "all" actions would only repeat the detail, so they appear
+  // from the second bulb on.
+  const multiple = bulbs.length > 1
+
+  // Master-detail that fits the window: from the @xl container width the header stays put and
+  // only the list and the favorites scroll, each inside its own pane. Below @xl (narrower than
+  // the app's minimum window) the panes stack and the page scrolls.
   return (
-    <Page
-      title={t('home.title')}
-      subtitle={
-        bulbs.length > 0
-          ? t('home.subtitleCount', { online: onlineCount, total: bulbs.length })
-          : t('home.subtitle')
-      }
-      actions={
-        <>
-          {bulbs.length > 1 && (
-            <Button onClick={handleStartSorting}>
-              <LuArrowDownUp size={16} aria-hidden />
-              {t('home.sort')}
+    <div className="@container min-h-full @xl:h-full">
+      <div
+        className={cn(
+          'flex min-h-full w-full flex-col gap-4 px-6 pt-5 pb-5 @xl:h-full @6xl:px-8',
+          // The header ends where the content does.
+          multiple ? 'max-w-[90rem]' : 'max-w-[72rem]'
+        )}
+      >
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-[-0.02em]">{t('home.title')}</h1>
+            <p
+              role="status"
+              className="mt-0.5 flex items-center gap-2 text-[13px] text-muted tabular-nums"
+            >
+              {t('home.subtitleCount', { online: onlineCount, total: bulbs.length })}
+              {isDiscovering && (
+                <>
+                  <span aria-hidden>·</span>
+                  <Spinner />
+                  {t('home.searching')}
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {multiple && (
+              <>
+                <Button
+                  className="text-[13px]"
+                  disabled={!anyOnline}
+                  onClick={() => void setAllBulbs(true)}
+                >
+                  <LuPower size={15} aria-hidden />
+                  {t('home.allOn')}
+                </Button>
+                <Button
+                  className="text-[13px]"
+                  disabled={!anyOnline}
+                  onClick={() => void setAllBulbs(false)}
+                >
+                  <LuPowerOff size={15} aria-hidden />
+                  {t('home.allOff')}
+                </Button>
+                <IconButton tone="outline" label={t('home.sort')} onClick={handleStartSorting}>
+                  <LuArrowDownUp size={16} aria-hidden />
+                </IconButton>
+              </>
+            )}
+            <Button variant="primary" className="text-[13px]" onClick={() => setAddOpen(true)}>
+              <LuPlus size={16} aria-hidden />
+              {t('home.add.entry')}
             </Button>
+          </div>
+        </header>
+
+        <div
+          className={cn(
+            'grid min-h-0 grow gap-4 @xl:grid-rows-[minmax(0,1fr)] @xl:items-start',
+            multiple
+              ? '@xl:grid-cols-[13rem_minmax(0,1fr)] @4xl:grid-cols-[16rem_minmax(0,1fr)] @6xl:grid-cols-[18rem_minmax(0,68rem)]'
+              : ''
           )}
-          <Button disabled={!anyOnline} onClick={() => void setAllBulbs(true)}>
-            <LuPower size={16} aria-hidden />
-            {t('home.allOn')}
-          </Button>
-          <Button disabled={!anyOnline} onClick={() => void setAllBulbs(false)}>
-            <LuPowerOff size={16} aria-hidden />
-            {t('home.allOff')}
-          </Button>
-          <Button variant="primary" onClick={() => setAddOpen(true)}>
-            <LuPlus size={16} strokeWidth={2.2} aria-hidden />
-            {t('home.add.entry')}
-          </Button>
-        </>
-      }
-    >
-      {bulbs.length === 0 ? (
-        renderEmpty()
-      ) : (
-        <section
-          aria-label={t('home.listLabel')}
-          className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3.5"
         >
-          {bulbs.map((bulb) => (
-            <BulbCard
-              key={bulb.ip}
-              bulb={bulb}
-              expanded={openIp === bulb.ip}
-              onExpandedChange={(expanded) => handleExpandedChange(bulb.ip, expanded)}
-              onRename={() => setRenameIp(bulb.ip)}
-              onDetails={() => setDetailsIp(bulb.ip)}
-              onRemove={() => setDeleteIp(bulb.ip)}
-              onAllScenes={() => handleAllScenes(bulb.ip)}
+          {multiple && (
+            <div className="min-h-0 overflow-y-auto rounded-lg border border-border bg-surface p-1.5 @xl:max-h-full">
+              <BulbList bulbs={bulbs} selectedIp={selected?.ip ?? null} onSelect={handleSelect} />
+            </div>
+          )}
+
+          {selected && (
+            <BulbDetail
+              key={selected.ip}
+              bulb={selected}
+              onRename={() => setRenameIp(selected.ip)}
+              onDetails={() => setDetailsIp(selected.ip)}
+              onRemove={() => setDeleteIp(selected.ip)}
+              onAllScenes={() => handleAllScenes(selected.ip)}
             />
-          ))}
-        </section>
-      )}
-      {bulbs.length > 0 && isDiscovering && (
-        <p role="status" className="flex items-center gap-2 text-[13px] text-muted">
-          <Spinner />
-          {t('home.searching')}
-        </p>
-      )}
+          )}
+        </div>
+      </div>
 
       {dialogs}
-    </Page>
+    </div>
   )
 }

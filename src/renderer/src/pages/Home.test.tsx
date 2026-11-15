@@ -9,30 +9,62 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@renderer/lib/api', () => import('@renderer/test/mockApi'))
 
-const card = (name: string) => within(screen.getByRole('article', { name }))
+const list = () => within(screen.getByRole('list', { name: 'Your bulbs' }))
+const detail = (name: string) => within(screen.getByRole('region', { name }))
+const row = (name: string) => list().getByRole('button', { name: new RegExp(`^${name}`) })
 
 beforeEach(() => {
   vi.clearAllMocks()
   resetStore()
 })
 
-describe('bulb cards', () => {
-  it('shows an offline bulb with Retry and no controls, and it does not open', async () => {
+describe('bulb list and detail', () => {
+  it('shows the active bulb in the detail pane and selects another from the list', async () => {
+    const user = userEvent.setup()
+    seedStore(makeState([makeBulb(), makeBulb({ ip: '127.0.0.2', name: 'Desk' })]))
+    renderApp(<Home />)
+
+    // Living is the active bulb.
+    expect(row('Living')).toHaveAttribute('aria-current', 'true')
+    expect(
+      detail('Living').getByRole('slider', { name: 'Brightness of Living' })
+    ).toBeInTheDocument()
+
+    await user.click(row('Desk'))
+    expect(api.setActiveBulb).toHaveBeenCalledWith('127.0.0.2')
+    expect(row('Desk')).toHaveAttribute('aria-current', 'true')
+    expect(screen.queryByRole('region', { name: 'Living' })).not.toBeInTheDocument()
+  })
+
+  it('follows the active bulb when it changes elsewhere', () => {
+    const living = makeBulb()
+    const desk = makeBulb({ ip: '127.0.0.2', name: 'Desk' })
+    seedStore(makeState([living, desk]))
+    renderApp(<Home />)
+
+    act(() => seedStore(makeState([living, desk], { activeBulb: desk })))
+    expect(detail('Desk').getByRole('slider')).toBeInTheDocument()
+  })
+
+  it('shows an offline bulb with Retry and no controls, without making it active', async () => {
     const user = userEvent.setup()
     seedStore(makeState([makeBulb(), makeBulb({ ip: '127.0.0.2', name: 'Desk', online: false })]))
     renderApp(<Home />)
 
-    const desk = card('Desk')
-    expect(desk.getByText('Offline')).toBeInTheDocument()
-    expect(desk.queryByRole('button', { name: /Power for Desk/ })).not.toBeInTheDocument()
-    expect(desk.queryByRole('button', { name: 'Open Desk' })).not.toBeInTheDocument()
+    expect(list().getByText('Offline')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Power for Desk/ })).not.toBeInTheDocument()
+
+    await user.click(row('Desk'))
+    expect(api.setActiveBulb).not.toHaveBeenCalled()
+    const desk = detail('Desk')
+    expect(desk.queryByRole('slider')).not.toBeInTheDocument()
     expect(desk.queryByRole('button', { name: /Apply .* to Desk/ })).not.toBeInTheDocument()
 
     await user.click(desk.getByRole('button', { name: /Retry connecting to Desk/ }))
     expect(api.probeBulb).toHaveBeenCalledWith('127.0.0.2')
   })
 
-  it('turns a bulb on without making it the active one', async () => {
+  it('turns a bulb on from the list without making it the active one', async () => {
     const user = userEvent.setup()
     seedStore(makeState([makeBulb(), makeBulb({ ip: '127.0.0.2', name: 'Desk', state: false })]))
     renderApp(<Home />)
@@ -45,76 +77,47 @@ describe('bulb cards', () => {
     expect(api.setActiveBulb).not.toHaveBeenCalled()
   })
 
-  it('opens the active bulb by default, and one card at a time', async () => {
+  it('applies a favorite and a brightness preset to the selected bulb only', async () => {
     const user = userEvent.setup()
     seedStore(makeState([makeBulb(), makeBulb({ ip: '127.0.0.2', name: 'Desk' })]))
     renderApp(<Home />)
 
-    // Living is the active bulb.
-    expect(screen.getByRole('button', { name: 'Close Living' })).toHaveAttribute(
-      'aria-expanded',
-      'true'
-    )
-    expect(card('Living').getByRole('slider', { name: 'Brightness of Living' })).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Open Desk' }))
-    expect(api.setActiveBulb).toHaveBeenCalledWith('127.0.0.2')
-    expect(screen.getByRole('button', { name: 'Close Desk' })).toBeInTheDocument()
-    expect(card('Living').queryByRole('slider')).not.toBeInTheDocument()
-  })
-
-  it('keeps the active card closed once closed, until the active bulb changes', async () => {
-    const user = userEvent.setup()
-    const living = makeBulb()
-    const desk = makeBulb({ ip: '127.0.0.2', name: 'Desk' })
-    seedStore(makeState([living, desk]))
-    renderApp(<Home />)
-
-    await user.click(screen.getByRole('button', { name: 'Close Living' }))
-    expect(screen.getByRole('button', { name: 'Open Living' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open Desk' })).toBeInTheDocument()
-
-    // Picked from the sidebar: the new active bulb opens.
-    act(() => seedStore(makeState([living, desk], { activeBulb: desk })))
-    expect(screen.getByRole('button', { name: 'Close Desk' })).toBeInTheDocument()
-  })
-
-  it('does not open an offline active bulb', () => {
-    seedStore(makeState([makeBulb({ online: false })]))
-    renderApp(<Home />)
-
-    expect(card('Living').queryByRole('slider')).not.toBeInTheDocument()
-  })
-
-  it('applies a favorite and a brightness preset to that bulb only', async () => {
-    const user = userEvent.setup()
-    seedStore(makeState([makeBulb(), makeBulb({ ip: '127.0.0.2', name: 'Desk' })]))
-    renderApp(<Home />)
-
-    // Closed card: the favorite swatches.
-    await user.click(screen.getByRole('button', { name: 'Apply Daylight to Desk' }))
+    await user.click(row('Desk'))
+    const desk = detail('Desk')
+    await user.click(desk.getByRole('button', { name: 'Apply Daylight to Desk' }))
     expect(api.setScene).toHaveBeenCalledWith(12, '127.0.0.2')
-
-    await user.click(screen.getByRole('button', { name: 'Open Desk' }))
-    await user.click(card('Desk').getByRole('button', { name: 'Set Desk to 75 %' }))
+    await user.click(desk.getByRole('button', { name: 'Set Desk to 75 %' }))
     expect(api.setBrightness).toHaveBeenCalledWith(75, '127.0.0.2')
   })
 
-  it('renames, shows details and asks before removing from the open card', async () => {
+  it('renames, shows details and asks before removing from the options menu', async () => {
     const user = userEvent.setup()
     seedStore(makeState([makeBulb()]))
     renderApp(<Home />)
 
-    // The active bulb starts open.
-    await user.click(screen.getByRole('button', { name: 'Details' }))
+    await user.click(screen.getByRole('button', { name: 'More options for Living' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Details' }))
     const details = await screen.findByRole('dialog', { name: 'Living' })
     expect(within(details).getByText('127.0.0.1')).toBeInTheDocument()
     await user.keyboard('{Escape}')
 
-    await user.click(screen.getByRole('button', { name: 'Remove' }))
+    await user.click(screen.getByRole('button', { name: 'More options for Living' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
     const confirm = await screen.findByRole('alertdialog', { name: 'Remove Living' })
     await user.click(within(confirm).getByRole('button', { name: 'Remove bulb' }))
     expect(api.deleteBulb).toHaveBeenCalledWith('127.0.0.1')
+  })
+
+  it('shows only the detail with a single bulb', () => {
+    seedStore(makeState([makeBulb()]))
+    renderApp(<Home />)
+
+    expect(detail('Living').getByRole('slider')).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Your bulbs' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Turn all on' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Turn all off' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sort' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add bulb' })).toBeInTheDocument()
   })
 
   it('turns every bulb on or off from the toolbar', async () => {

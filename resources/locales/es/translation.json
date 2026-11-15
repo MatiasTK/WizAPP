@@ -30,14 +30,13 @@
     "retryFor": "Reintentar la conexión con {{name}}",
     "rename": "Renombrar",
     "details": "Detalles",
+    "more": "Más opciones de {{name}}",
     "renameTitle": "Renombrar {{name}}",
     "newName": "Nombre",
     "namePlaceholder": "Por ejemplo, Sala",
     "brightnessLabel": "Brillo",
     "brightnessPreset": "Poner {{name}} al {{value}} %",
     "statusOn": "{{scene}} · {{value}} %",
-    "open": "Abrir {{name}}",
-    "close": "Cerrar {{name}}",
     "applyTo": "Aplicar {{scene}} a {{name}}",
     "allScenes": "Todas las escenas",
     "remove": "Quitar",
@@ -75,7 +74,7 @@
     "sortTitle": "Ordenar bombillas",
     "sortHint": "Arrastra una fila o usa las flechas. Este orden se usa en toda la app.",
     "sortLabel": "Orden de las bombillas",
-    "subtitleCount": "{{online}} de {{total}} en línea · abre una tarjeta para ajustarla"
+    "subtitleCount": "{{online}} de {{total}} en línea"
   },
   "scenes": {
     "title": "Escenas",

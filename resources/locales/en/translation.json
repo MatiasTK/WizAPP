@@ -30,14 +30,13 @@
     "retryFor": "Retry connecting to {{name}}",
     "rename": "Rename",
     "details": "Details",
+    "more": "More options for {{name}}",
     "renameTitle": "Rename {{name}}",
     "newName": "Name",
     "namePlaceholder": "e.g. Living room",
     "brightnessLabel": "Brightness",
     "brightnessPreset": "Set {{name}} to {{value}} %",
     "statusOn": "{{scene}} · {{value}} %",
-    "open": "Open {{name}}",
-    "close": "Close {{name}}",
     "applyTo": "Apply {{scene}} to {{name}}",
     "allScenes": "All scenes",
     "remove": "Remove",
@@ -75,7 +74,7 @@
     "sortTitle": "Sort bulbs",
     "sortHint": "Drag a row or use the arrows. This order is used across the app.",
     "sortLabel": "Bulb order",
-    "subtitleCount": "{{online}} of {{total}} online · open a card to adjust it"
+    "subtitleCount": "{{online}} of {{total}} online"
   },
   "scenes": {
     "title": "Scenes",
