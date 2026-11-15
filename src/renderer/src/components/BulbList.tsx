@@ -40,6 +40,7 @@ export default function BulbList({ bulbs, selectedIp, onSelect }: BulbListProps)
           >
             <button
               type="button"
+              title={bulb.name}
               aria-current={selected}
               onClick={() => onSelect(bulb.ip)}
               className={cn(

@@ -20,6 +20,8 @@ type BrightnessSliderProps = {
   presets?: boolean
   /** `sm` for the sidebar card. */
   size?: 'sm' | 'md'
+  /** Color of the filled track: the bulb's own color while it is lit. */
+  color?: string | null
 }
 
 /**
@@ -32,7 +34,8 @@ export default function BrightnessSlider({
   disabled,
   name,
   presets = false,
-  size = 'md'
+  size = 'md',
+  color
 }: BrightnessSliderProps) {
   const { t } = useTranslation()
   const setBrightness = useBulbStore((s) => s.setBrightness)
@@ -90,6 +93,7 @@ export default function BrightnessSlider({
         max={MAX_BRIGHTNESS}
         step={5}
         disabled={disabled}
+        rangeColor={color ?? undefined}
         onValueChange={handleChange}
         onValueCommit={handleCommit}
       />

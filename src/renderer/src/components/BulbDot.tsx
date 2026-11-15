@@ -24,7 +24,11 @@ export default function BulbDot({ bulb, size, glow = false, className }: BulbDot
   return (
     <span
       aria-hidden
-      className={cn('shrink-0 rounded-full', hex === null && 'bg-bulb-off', className)}
+      className={cn(
+        'shrink-0 rounded-full transition-[background-color,box-shadow,opacity] duration-300 ease-out motion-reduce:transition-none',
+        hex === null && 'bg-bulb-off',
+        className
+      )}
       style={{
         width: size,
         height: size,

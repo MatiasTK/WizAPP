@@ -8,6 +8,8 @@ import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { useCatalog } from '@renderer/lib/catalog'
 import { cn, focusRing } from '@renderer/lib/cn'
+import { TINT } from '@renderer/lib/tint'
+import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   LuChevronRight,
@@ -55,7 +57,6 @@ export default function BulbDetail({
       : t('bulb.off')
 
   const menuItems = [
-    { label: t('bulb.rename'), icon: <LuPencil size={15} />, onSelect: onRename },
     { label: t('bulb.details'), icon: <LuClipboardList size={15} />, onSelect: onDetails },
     { label: t('bulb.remove'), icon: <LuTrash2 size={15} />, onSelect: onRemove, destructive: true }
   ]
@@ -101,13 +102,30 @@ export default function BulbDetail({
       className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-surface @xl:max-h-full"
     >
       <div
-        className="flex shrink-0 items-center gap-3 border-b border-border py-3 pr-2.5 pl-4"
-        // ~8 % of the bulb's color behind the header while it is on.
-        style={{ backgroundColor: lit && hex ? `${hex}14` : undefined }}
+        className={cn(
+          'flex shrink-0 items-center gap-3 border-b border-border py-3 pr-2.5 pl-4',
+          lit && hex && TINT
+        )}
+        // The bulb's color behind the header while it is on.
+        style={lit && hex ? ({ '--tint': hex } as CSSProperties) : undefined}
       >
         <BulbDot bulb={bulb} size={36} glow />
         <div className="flex min-w-0 grow flex-col">
-          <h2 className="truncate text-base font-bold">{bulb.name}</h2>
+          <div className="flex min-w-0 items-start gap-1">
+            <h2
+              title={bulb.name}
+              className="line-clamp-2 text-base leading-tight font-bold break-words"
+            >
+              {bulb.name}
+            </h2>
+            <IconButton
+              label={t('bulb.renameFor', { name: bulb.name })}
+              onClick={onRename}
+              className="size-7 rounded-[7px]"
+            >
+              <LuPencil size={14} aria-hidden />
+            </IconButton>
+          </div>
           <p
             className={cn(
               'flex items-center gap-1.5 truncate text-[13px] tabular-nums',
@@ -150,7 +168,13 @@ export default function BulbDetail({
       ) : (
         <div className="grid min-h-0 grow grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 pt-3.5 pb-4 @5xl:grid-cols-[17.5rem_minmax(0,1fr)] @5xl:grid-rows-1 @5xl:gap-6">
           <div className="self-start">
-            <BrightnessSlider ip={bulb.ip} name={bulb.name} dimming={bulb.dimming} presets />
+            <BrightnessSlider
+              ip={bulb.ip}
+              name={bulb.name}
+              dimming={bulb.dimming}
+              color={lit ? hex : null}
+              presets
+            />
           </div>
 
           <section aria-label={t('scenes.favorites')} className="flex min-h-0 flex-col gap-2">

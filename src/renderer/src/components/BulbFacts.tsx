@@ -108,7 +108,7 @@ export default function BulbFacts({ bulb, copyable = false, status, className }:
     [t('information.fields.firmware'), bulb.fwVersion || NONE],
     [
       t('information.fields.signal'),
-      signalLevel(bulb.rssi) ? (
+      bulb.online && signalLevel(bulb.rssi) ? (
         <>
           {signal} <span className="text-muted">· {bulb.rssi} dBm</span>
         </>

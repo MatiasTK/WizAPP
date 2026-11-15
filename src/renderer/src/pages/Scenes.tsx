@@ -10,10 +10,11 @@ import InlineAlert from '@components/ui/InlineAlert'
 import SegmentedControl, { type Segment } from '@components/ui/SegmentedControl'
 import TextField from '@components/ui/TextField'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useCatalog, type CatalogEntry } from '@renderer/lib/catalog'
+import { bulbHex, useCatalog, type CatalogEntry } from '@renderer/lib/catalog'
 import { cn, focusRing } from '@renderer/lib/cn'
 import { matches } from '@renderer/lib/search'
-import { useState } from 'react'
+import { TINT } from '@renderer/lib/tint'
+import { useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuArrowDownUp, LuCheck, LuPencil, LuPlus, LuSearch, LuTrash2 } from 'react-icons/lu'
 import { Link } from 'react-router'
@@ -33,7 +34,6 @@ export default function Scenes() {
   const { t } = useTranslation()
   const bulbs = useBulbStore((s) => s.bulbs)
   const bulb = useBulbStore((s) => s.activeBulb)
-  const setActiveBulb = useBulbStore((s) => s.setActiveBulb)
   const setScene = useBulbStore((s) => s.setScene)
   const applyToAll = useBulbStore((s) => s.applyToAll)
   const probeBulb = useBulbStore((s) => s.probeBulb)
@@ -49,21 +49,28 @@ export default function Scenes() {
   const [colorDialog, setColorDialog] = useState<{ open: boolean; id?: number }>({ open: false })
   const [deleting, setDeleting] = useState<number | null>(null)
 
+  const nowHex = bulb?.online ? bulbHex(bulb, byId) : null
   const current = bulb && bulb.sceneId > 0 ? byId.get(bulb.sceneId) : undefined
   const editing = colorDialog.id !== undefined ? byId.get(colorDialog.id) : undefined
   const deletingEntry = deleting !== null ? byId.get(deleting) : undefined
   const filtering = query.trim() !== ''
-  const visible = all.filter(
-    (e) => (group === 'all' || e.group === group) && matches(e.name, query)
-  )
   const showFavorites = group === 'all' && !filtering && favorites.length > 0
+  // Favorites have their own section above, so the main grid does not list them again.
+  const visible = all.filter(
+    (e) =>
+      (group === 'all' || e.group === group) &&
+      matches(e.name, query) &&
+      !(showFavorites && favorites.some((f) => f.id === e.id))
+  )
 
   const gridTitle =
     group !== 'all'
       ? t(GROUPS.find((g) => g.value === group)!.label)
       : filtering
         ? t('scenes.results')
-        : t('scenes.allScenes')
+        : showFavorites
+          ? t('scenes.moreScenes')
+          : t('scenes.allScenes')
 
   const handleDoneSorting = () => {
     setSortingFavorites(false)
@@ -74,7 +81,8 @@ export default function Scenes() {
     <li key={entry.id} className="min-w-0">
       <SceneTile
         entry={entry}
-        active={bulb?.sceneId === entry.id}
+        // An offline bulb has no real scene to show, so no stale check.
+        active={!!bulb?.online && bulb.sceneId === entry.id}
         disabled={!bulb?.online}
         favorite={favorites.some((f) => f.id === entry.id)}
         onApply={() => void setScene(entry.id, bulb?.ip)}
@@ -165,49 +173,45 @@ export default function Scenes() {
   return (
     <Page
       title={t('scenes.title')}
-      subtitle={bulb ? t('scenes.subtitleFor', { name: bulb.name }) : t('scenes.noBulbs')}
       actions={
-        <>
-          <Button
-            disabled={!current || !bulb?.online || bulbs.length < 2}
-            onClick={() => current && void applyToAll(current.id)}
-          >
-            {current ? t('scenes.applyToAll', { name: current.name }) : t('scenes.applyToAllEmpty')}
-          </Button>
-          <Button variant="primary" onClick={() => setColorDialog({ open: true })}>
-            <LuPlus size={16} strokeWidth={2.2} aria-hidden />
-            {t('scenes.color.new')}
-          </Button>
-        </>
+        <Button variant="primary" onClick={() => setColorDialog({ open: true })}>
+          <LuPlus size={16} strokeWidth={2.2} aria-hidden />
+          {t('scenes.color.new')}
+        </Button>
       }
     >
       {renderNotice()}
 
-      {bulbs.length > 1 && (
-        <div role="group" aria-label={t('scenes.target')} className="flex flex-wrap gap-2">
-          {bulbs.map((b) => {
-            const selected = b.ip === bulb?.ip
-            return (
-              <button
-                key={b.ip}
-                type="button"
-                aria-pressed={selected}
-                disabled={!b.online && !selected}
-                onClick={() => void setActiveBulb(b.ip)}
-                className={cn(
-                  'flex h-[38px] cursor-pointer items-center gap-2 rounded-full border-[1.5px] pr-3.5 pl-2 text-[13px] font-semibold transition-colors',
-                  selected
-                    ? 'border-primary bg-primary-soft text-primary-text'
-                    : 'border-outline bg-surface text-fg hover:bg-raised',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                  focusRing
-                )}
-              >
-                <BulbDot bulb={b} size={22} />
-                {b.name}
-              </button>
-            )
-          })}
+      {bulb?.online && (
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-surface py-2.5 pr-3 pl-4 transition-colors duration-300',
+            bulb.state && nowHex && TINT
+          )}
+          style={bulb.state && nowHex ? ({ '--tint': nowHex } as CSSProperties) : undefined}
+        >
+          <BulbDot bulb={bulb} size={26} glow />
+          {current && (
+            <span
+              aria-hidden
+              className="size-6 shrink-0 rounded-[6px] border border-border"
+              style={{ background: current.swatch }}
+            />
+          )}
+          <p role="status" className="min-w-0 grow text-[13px] text-muted">
+            <span className="font-bold text-fg">
+              {bulb.state ? (current?.name ?? t('bulb.on')) : t('bulb.off')}
+            </span>
+            {' · '}
+            {bulb.name}
+          </p>
+          <Button
+            size="dense"
+            disabled={!current || bulbs.length < 2}
+            onClick={() => current && void applyToAll(current.id)}
+          >
+            {current ? t('scenes.applyToAll', { name: current.name }) : t('scenes.applyToAllEmpty')}
+          </Button>
         </div>
       )}
 

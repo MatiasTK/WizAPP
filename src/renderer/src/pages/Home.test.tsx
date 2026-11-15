@@ -90,7 +90,16 @@ describe('bulb list and detail', () => {
     expect(api.setBrightness).toHaveBeenCalledWith(75, '127.0.0.2')
   })
 
-  it('renames, shows details and asks before removing from the options menu', async () => {
+  it('opens the rename dialog from the pencil next to the name', async () => {
+    const user = userEvent.setup()
+    seedStore(makeState([makeBulb()]))
+    renderApp(<Home />)
+
+    await user.click(screen.getByRole('button', { name: 'Rename Living' }))
+    expect(await screen.findByRole('dialog', { name: 'Rename Living' })).toBeInTheDocument()
+  })
+
+  it('shows details and asks before removing from the options menu', async () => {
     const user = userEvent.setup()
     seedStore(makeState([makeBulb()]))
     renderApp(<Home />)

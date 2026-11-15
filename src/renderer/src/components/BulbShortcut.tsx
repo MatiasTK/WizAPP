@@ -1,12 +1,13 @@
 import BulbDot from '@components/BulbDot'
 import BrightnessSlider from '@components/ui/BrightnessSlider'
+import Button from '@components/ui/Button'
 import Switch from '@components/ui/Switch'
 import * as RadixSelect from '@radix-ui/react-select'
 import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { cn, focusRing } from '@renderer/lib/cn'
 import { useTranslation } from 'react-i18next'
-import { LuChevronsUpDown } from 'react-icons/lu'
+import { LuChevronsUpDown, LuWifiOff } from 'react-icons/lu'
 
 /** "On" / "Off" / "Not responding" for one bulb. */
 export const useBulbStatus = () => {
@@ -22,6 +23,7 @@ export default function BulbShortcut() {
   const activeBulb = useBulbStore((s) => s.activeBulb)
   const setActiveBulb = useBulbStore((s) => s.setActiveBulb)
   const toggleBulb = useBulbStore((s) => s.toggleBulb)
+  const probeBulb = useBulbStore((s) => s.probeBulb)
   const status = useBulbStatus()
 
   if (bulbs.length === 0 || !activeBulb) return null
@@ -82,25 +84,41 @@ export default function BulbShortcut() {
         </RadixSelect.Portal>
       </RadixSelect.Root>
 
-      <div className="flex items-center justify-between gap-2.5">
-        <span className={cn('text-[13px]', activeBulb.online ? 'text-muted' : 'text-danger-text')}>
-          {status(activeBulb)}
-        </span>
-        <Switch
-          size="sm"
-          label={t('bulb.power', { name: activeBulb.name })}
-          isOn={activeBulb.state && activeBulb.online}
-          disabled={!activeBulb.online}
-          onToggle={() => void toggleBulb(activeBulb.ip)}
-        />
-      </div>
-      <BrightnessSlider
-        size="sm"
-        ip={activeBulb.ip}
-        name={activeBulb.name}
-        dimming={activeBulb.dimming}
-        disabled={!activeBulb.online}
-      />
+      {activeBulb.online ? (
+        <>
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-[13px] text-muted">{status(activeBulb)}</span>
+            <Switch
+              size="sm"
+              label={t('bulb.power', { name: activeBulb.name })}
+              isOn={activeBulb.state}
+              onToggle={() => void toggleBulb(activeBulb.ip)}
+            />
+          </div>
+          <BrightnessSlider
+            size="sm"
+            ip={activeBulb.ip}
+            name={activeBulb.name}
+            dimming={activeBulb.dimming}
+          />
+        </>
+      ) : (
+        // An offline bulb has no real state to show, so no stale switch or brightness value.
+        <div className="flex items-center justify-between gap-2.5">
+          <span className="flex items-center gap-1.5 text-[13px] text-danger-text">
+            <LuWifiOff size={14} aria-hidden />
+            {status(activeBulb)}
+          </span>
+          <Button
+            size="dense"
+            variant="primary"
+            onClick={() => void probeBulb(activeBulb.ip)}
+            aria-label={t('bulb.retryFor', { name: activeBulb.name })}
+          >
+            {t('bulb.retry')}
+          </Button>
+        </div>
+      )}
     </section>
   )
 }

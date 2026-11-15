@@ -62,7 +62,7 @@ export default function Information() {
                         : t('bulb.off')}
                   </span>
                 </div>
-                <SignalBars rssi={bulb.rssi} />
+                <SignalBars rssi={bulb.online ? bulb.rssi : 0} />
               </div>
               <BulbFacts bulb={bulb} copyable />
             </article>

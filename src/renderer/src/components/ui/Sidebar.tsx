@@ -28,8 +28,8 @@ const footerButton = cn(
 /** Full-height sidebar; it never scrolls with the page (only `main` does). */
 export default function Sidebar({ onOpenSearch, onOpenSettings, onOpenHelp }: SidebarProps) {
   const { t } = useTranslation()
-  // The Bulbs page already shows the active bulb's controls, so its sidebar card would repeat them.
-  const onBulbsPage = useLocation().pathname === '/'
+  // The Bulbs page already shows the selected bulb's controls, so its sidebar card would repeat them.
+  const hideBulbCard = useLocation().pathname === '/'
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col gap-[18px] overflow-y-auto border-r border-border bg-sidebar px-3.5 py-[18px]">
@@ -84,7 +84,7 @@ export default function Sidebar({ onOpenSearch, onOpenSettings, onOpenHelp }: Si
 
       <div className="grow" />
 
-      {!onBulbsPage && <BulbShortcut />}
+      {!hideBulbCard && <BulbShortcut />}
 
       <div className="flex shrink-0 gap-1 border-t border-border pt-3">
         <button type="button" className={footerButton} onClick={onOpenSettings}>

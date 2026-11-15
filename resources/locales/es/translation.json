@@ -16,8 +16,8 @@
     "settings": "Ajustes",
     "help": "Ayuda",
     "search": "Buscar",
-    "activeBulb": "Bombilla activa",
-    "chooseActiveBulb": "Elegir bombilla activa"
+    "activeBulb": "Bombilla seleccionada",
+    "chooseActiveBulb": "Elegir la bombilla seleccionada"
   },
   "bulb": {
     "power": "Encendido de {{name}}",
@@ -28,7 +28,7 @@
     "offline": "{{name}} no responde. Revisa que esté enchufada y en la misma red Wi-Fi.",
     "retry": "Reintentar",
     "retryFor": "Reintentar la conexión con {{name}}",
-    "rename": "Renombrar",
+    "renameFor": "Renombrar {{name}}",
     "details": "Detalles",
     "more": "Más opciones de {{name}}",
     "renameTitle": "Renombrar {{name}}",
@@ -56,6 +56,7 @@
     "notFoundDescription": "Prueba estas cosas y vuelve a buscar:",
     "emptyTitle": "Todavía no tienes bombillas",
     "emptyDescription": "Busca bombillas en tu red o agrega una con su dirección IP.",
+    "tipsTitle": "Qué revisar",
     "tipNetwork": "Asegúrate de que este equipo y tus bombillas estén en la misma red Wi-Fi.",
     "tipPower": "Revisa que las bombillas estén enchufadas y encendidas.",
     "tipFirewall": "Permite que WiZ APP pase por el firewall de Windows en redes privadas.",
@@ -78,8 +79,8 @@
   },
   "scenes": {
     "title": "Escenas",
-    "subtitleFor": "Se aplican a {{name}}.",
     "favorites": "Favoritas",
+    "moreScenes": "Más escenas",
     "missingFavorites": "Aún no tienes favoritas. Marca una escena con el corazón y la verás aquí.",
     "filter": "Filtrar escenas",
     "filterPlaceholder": "Buscar por nombre",
@@ -154,8 +155,7 @@
     "sortLabel": "Orden de las favoritas",
     "dynamic": "Dinámica",
     "results": "Resultados",
-    "allScenes": "Todas las escenas",
-    "target": "Bombilla a la que se aplican"
+    "allScenes": "Todas las escenas"
   },
   "information": {
     "title": "Información",

@@ -16,8 +16,8 @@
     "settings": "Settings",
     "help": "Help",
     "search": "Search",
-    "activeBulb": "Active bulb",
-    "chooseActiveBulb": "Choose the active bulb"
+    "activeBulb": "Selected bulb",
+    "chooseActiveBulb": "Choose the selected bulb"
   },
   "bulb": {
     "power": "Power for {{name}}",
@@ -28,7 +28,7 @@
     "offline": "{{name}} is not responding. Check that it is plugged in and on the same Wi-Fi network.",
     "retry": "Retry",
     "retryFor": "Retry connecting to {{name}}",
-    "rename": "Rename",
+    "renameFor": "Rename {{name}}",
     "details": "Details",
     "more": "More options for {{name}}",
     "renameTitle": "Rename {{name}}",
@@ -56,6 +56,7 @@
     "notFoundDescription": "Try these things and search again:",
     "emptyTitle": "You have no bulbs yet",
     "emptyDescription": "Search for bulbs on your network or add one by its IP address.",
+    "tipsTitle": "What to check",
     "tipNetwork": "Make sure this computer and your bulbs are on the same Wi-Fi network.",
     "tipPower": "Check that the bulbs are plugged in and turned on.",
     "tipFirewall": "Allow WiZ APP through the Windows firewall on private networks.",
@@ -78,8 +79,8 @@
   },
   "scenes": {
     "title": "Scenes",
-    "subtitleFor": "Applied to {{name}}.",
     "favorites": "Favorites",
+    "moreScenes": "More scenes",
     "missingFavorites": "You have no favorites yet. Mark a scene with the heart to find it here.",
     "filter": "Filter scenes",
     "filterPlaceholder": "Search by name",
@@ -154,8 +155,7 @@
     "sortLabel": "Favorites order",
     "dynamic": "Dynamic",
     "results": "Results",
-    "allScenes": "All scenes",
-    "target": "Bulb they are applied to"
+    "allScenes": "All scenes"
   },
   "information": {
     "title": "Information",

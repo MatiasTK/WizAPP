@@ -10,13 +10,12 @@ import SortList from '@components/SortList'
 import AlertDialog from '@components/ui/AlertDialog'
 import Button from '@components/ui/Button'
 import EmptyState from '@components/ui/EmptyState'
-import IconButton from '@components/ui/IconButton'
 import Spinner from '@components/ui/Spinner'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { cn } from '@renderer/lib/cn'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuArrowDownUp, LuCheck, LuPlus, LuPower, LuPowerOff } from 'react-icons/lu'
+import { LuArrowDownUp, LuCheck, LuLightbulbOff, LuPlus, LuPower, LuPowerOff } from 'react-icons/lu'
 import { useNavigate } from 'react-router'
 
 export default function Home() {
@@ -86,15 +85,26 @@ export default function Home() {
     }
     return (
       <EmptyState
+        icon={
+          <span className="flex size-16 items-center justify-center rounded-full bg-sunken">
+            <LuLightbulbOff size={30} aria-hidden />
+          </span>
+        }
         title={discoveryFailed ? t('home.notFoundTitle') : t('home.emptyTitle')}
         description={
           <>
             <p>{discoveryFailed ? t('home.notFoundDescription') : t('home.emptyDescription')}</p>
-            <ul className="mt-2 list-disc pl-5 text-left">
-              <li>{t('home.tipNetwork')}</li>
-              <li>{t('home.tipPower')}</li>
-              <li>{t('home.tipFirewall')}</li>
-            </ul>
+            {/* Open when a search just failed, when the checklist is what the user needs. */}
+            <details open={discoveryFailed} className="mt-3 text-left">
+              <summary className="cursor-pointer rounded-sm text-center font-semibold text-primary-text">
+                {t('home.tipsTitle')}
+              </summary>
+              <ul className="mt-2 list-disc pl-5">
+                <li>{t('home.tipNetwork')}</li>
+                <li>{t('home.tipPower')}</li>
+                <li>{t('home.tipFirewall')}</li>
+              </ul>
+            </details>
           </>
         }
         actions={
@@ -196,7 +206,9 @@ export default function Home() {
               role="status"
               className="mt-0.5 flex items-center gap-2 text-[13px] text-muted tabular-nums"
             >
-              {t('home.subtitleCount', { online: onlineCount, total: bulbs.length })}
+              {multiple
+                ? t('home.subtitleCount', { online: onlineCount, total: bulbs.length })
+                : t('home.subtitle')}
               {isDiscovering && (
                 <>
                   <span aria-hidden>·</span>
@@ -225,9 +237,10 @@ export default function Home() {
                   <LuPowerOff size={15} aria-hidden />
                   {t('home.allOff')}
                 </Button>
-                <IconButton tone="outline" label={t('home.sort')} onClick={handleStartSorting}>
-                  <LuArrowDownUp size={16} aria-hidden />
-                </IconButton>
+                <Button className="text-[13px]" onClick={handleStartSorting}>
+                  <LuArrowDownUp size={15} aria-hidden />
+                  {t('home.sort')}
+                </Button>
               </>
             )}
             <Button variant="primary" className="text-[13px]" onClick={() => setAddOpen(true)}>
@@ -241,7 +254,7 @@ export default function Home() {
           className={cn(
             'grid min-h-0 grow gap-4 @xl:grid-rows-[minmax(0,1fr)] @xl:items-start',
             multiple
-              ? '@xl:grid-cols-[13rem_minmax(0,1fr)] @4xl:grid-cols-[16rem_minmax(0,1fr)] @6xl:grid-cols-[18rem_minmax(0,68rem)]'
+              ? '@xl:grid-cols-[13rem_minmax(0,1fr)] @4xl:grid-cols-[17rem_minmax(0,1fr)] @6xl:grid-cols-[19rem_minmax(0,68rem)]'
               : ''
           )}
         >

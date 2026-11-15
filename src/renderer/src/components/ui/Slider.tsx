@@ -10,6 +10,8 @@ type SliderProps = {
   max?: number
   step?: number
   disabled?: boolean
+  /** Fill color (the bulb's own color); the primary color when omitted. */
+  rangeColor?: string
   'aria-label'?: string
   'aria-labelledby'?: string
   className?: string
@@ -23,6 +25,7 @@ export default function Slider({
   max = 100,
   step = 1,
   disabled,
+  rangeColor,
   className,
   ...aria
 }: SliderProps) {
@@ -42,7 +45,13 @@ export default function Slider({
       )}
     >
       <RadixSlider.Track className="relative h-2 grow cursor-pointer rounded-full bg-track">
-        <RadixSlider.Range className="absolute h-full rounded-full bg-primary" />
+        <RadixSlider.Range
+          className={cn(
+            'absolute h-full rounded-full transition-colors duration-300',
+            rangeColor ? 'shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)]' : 'bg-primary'
+          )}
+          style={rangeColor ? { backgroundColor: rangeColor } : undefined}
+        />
       </RadixSlider.Track>
       <RadixSlider.Thumb
         {...aria}

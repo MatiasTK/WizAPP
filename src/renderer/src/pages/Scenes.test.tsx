@@ -64,7 +64,7 @@ describe('Scenes page', () => {
 
   it('offers Retry above the grid when the active bulb is offline', async () => {
     const user = userEvent.setup()
-    seedStore(makeState([makeBulb({ online: false })]))
+    seedStore(makeState([makeBulb({ online: false, sceneId: 6 })]))
     renderApp(<Scenes />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Living is not responding')
@@ -100,23 +100,21 @@ describe('Scenes page', () => {
     expect(api.toggleFavoriteColor).toHaveBeenCalledWith(1)
   })
 
-  it('picks the target bulb from the pills; offline ones cannot be picked', async () => {
+  it('names the active bulb and applies its scene to all; an offline bulb disables the tiles', async () => {
     const user = userEvent.setup()
-    seedStore(
-      makeState([
-        makeBulb(),
-        makeBulb({ ip: '127.0.0.2', name: 'Desk' }),
-        makeBulb({ ip: '127.0.0.3', name: 'Hall', online: false })
-      ])
-    )
+    seedStore(makeState([makeBulb({ sceneId: 6 }), makeBulb({ ip: '127.0.0.2', name: 'Desk' })]))
+    const view = renderApp(<Scenes />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Cozy · Living')
+    await user.click(screen.getByRole('button', { name: 'Apply "Cozy" to all' }))
+    expect(api.applyToAll).toHaveBeenCalledWith(6)
+    view.unmount()
+
+    seedStore(makeState([makeBulb({ online: false })]))
     renderApp(<Scenes />)
-
-    const pills = within(screen.getByRole('group', { name: 'Bulb they are applied to' }))
-    expect(pills.getByRole('button', { name: 'Living' })).toHaveAttribute('aria-pressed', 'true')
-    expect(pills.getByRole('button', { name: 'Hall' })).toBeDisabled()
-
-    await user.click(pills.getByRole('button', { name: 'Desk' }))
-    expect(api.setActiveBulb).toHaveBeenCalledWith('127.0.0.2')
+    expect(screen.getByRole('button', { name: 'Ocean' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cozy' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getAllByRole('button', { name: 'Add Ocean to favorites' })[0]).toBeDisabled()
   })
 })
 
@@ -128,7 +126,7 @@ describe('Scene groups', () => {
 
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('heading', { name: 'Favorites' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'All scenes' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'More scenes' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Static' }))
     expect(screen.getByRole('button', { name: 'Static' })).toHaveAttribute('aria-pressed', 'true')

@@ -3,7 +3,7 @@ import Menu, { type MenuItem } from '@components/ui/Menu'
 import type { CatalogEntry } from '@renderer/lib/catalog'
 import { cn, focusRing } from '@renderer/lib/cn'
 import { useTranslation } from 'react-i18next'
-import { LuActivity, LuEllipsis, LuHeart } from 'react-icons/lu'
+import { LuActivity, LuCheck, LuEllipsis, LuHeart } from 'react-icons/lu'
 
 export type SceneTileProps = {
   entry: CatalogEntry
@@ -30,7 +30,7 @@ export default function SceneTile({
   const hasMenu = menuItems !== undefined && menuItems.length > 0
 
   return (
-    <div className="relative min-w-0">
+    <div className="group relative min-w-0">
       <button
         type="button"
         aria-pressed={active}
@@ -46,9 +46,15 @@ export default function SceneTile({
       >
         <span
           aria-hidden
-          className="h-16 w-full rounded-md"
+          className="relative h-16 w-full rounded-md"
           style={{ background: entry.swatch }}
-        />
+        >
+          {active && (
+            <span className="absolute top-1.5 left-1.5 flex size-[22px] items-center justify-center rounded-full bg-primary text-on-primary">
+              <LuCheck size={14} strokeWidth={3} aria-hidden />
+            </span>
+          )}
+        </span>
         <span className={cn('flex w-full items-center gap-1.5 px-1 pb-0.5', hasMenu && 'pr-7')}>
           <span className="min-w-0 grow truncate text-[13px] font-semibold">{entry.name}</span>
           {entry.group === 'dynamic' && (
@@ -65,10 +71,14 @@ export default function SceneTile({
         aria-label={t(favorite ? 'scenes.favorite.remove' : 'scenes.favorite.add', {
           name: entry.name
         })}
+        disabled={disabled}
         onClick={onToggleFavorite}
         className={cn(
-          'absolute top-3 right-3 flex size-[30px] cursor-pointer items-center justify-center rounded-full bg-knob/90',
-          favorite ? 'text-heart' : 'text-knob-fg',
+          'absolute top-3 right-3 flex size-[30px] cursor-pointer items-center justify-center rounded-full bg-knob/90 transition-opacity dark:bg-black/60',
+          'disabled:cursor-not-allowed',
+          favorite
+            ? 'text-heart disabled:opacity-50'
+            : 'text-knob-fg opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 disabled:opacity-0 dark:text-white',
           focusRing
         )}
       >
