@@ -16,7 +16,14 @@ beforeEach(() => {
 
 describe('Command palette', () => {
   it('lists favorites first when the field is empty', () => {
-    renderApp(<CommandPalette open onOpenChange={() => undefined} />)
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
 
     const options = screen.getAllByRole('option')
     expect(options[0]).toHaveTextContent('Warm white')
@@ -26,7 +33,14 @@ describe('Command palette', () => {
   it('filters, moves with the arrows and applies with Enter without the mouse', async () => {
     const user = userEvent.setup()
     const onOpenChange = vi.fn()
-    renderApp(<CommandPalette open onOpenChange={onOpenChange} />)
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={onOpenChange}
+      />
+    )
 
     await user.keyboard('oce')
     const combo = screen.getByRole('combobox')
@@ -40,7 +54,14 @@ describe('Command palette', () => {
 
   it('moves the selection with the arrow keys', async () => {
     const user = userEvent.setup()
-    renderApp(<CommandPalette open onOpenChange={() => undefined} />)
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
 
     const options = screen.getAllByRole('option')
     expect(options[0]).toHaveAttribute('aria-selected', 'true')
@@ -54,7 +75,14 @@ describe('Command palette', () => {
   it('finds scenes by their name in the current language, with or without accents', async () => {
     await i18n.changeLanguage('es')
     const user = userEvent.setup()
-    renderApp(<CommandPalette open onOpenChange={() => undefined} />)
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
     await i18n.changeLanguage('es')
 
     await user.keyboard('luz de dia')
@@ -68,10 +96,129 @@ describe('Command palette', () => {
 
   it('switches the active bulb and powers everything off', async () => {
     const user = userEvent.setup()
-    renderApp(<CommandPalette open onOpenChange={() => undefined} />)
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
 
     await user.keyboard('desk')
-    await user.click(screen.getByRole('option', { name: /Desk.*Make active/ }))
+    await user.click(screen.getByRole('option', { name: /Desk.*Use in Scenes/ }))
     expect(api.setActiveBulb).toHaveBeenCalledWith('127.0.0.2')
+  })
+
+  it('puts a bulb typed by name before the scenes that only mention it', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('living')
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent('Living')
+    expect(screen.queryByRole('option', { name: /Apply to Living/ })).not.toBeInTheDocument()
+  })
+
+  it('opens settings from the palette', async () => {
+    const user = userEvent.setup()
+    const onOpenSettings = vi.fn()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={onOpenSettings}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('settings{Enter}')
+    expect(onOpenSettings).toHaveBeenCalled()
+  })
+
+  it('applies a scene to another bulb named in the query', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('ocean desk')
+    await user.click(screen.getByRole('option', { name: /Ocean.*Apply to Desk/ }))
+    expect(api.setScene).toHaveBeenCalledWith(1, '127.0.0.2')
+  })
+
+  it('applies a scene to the active bulb when the query names it', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('ocean living')
+    await user.click(screen.getByRole('option', { name: /Ocean.*Apply to Living/ }))
+    expect(api.setScene).toHaveBeenCalledWith(1, '127.0.0.1')
+  })
+
+  it('sets a typed brightness for a named bulb', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('living 80')
+    await user.click(screen.getByRole('option', { name: /80%.*Living/ }))
+    expect(api.setBrightness).toHaveBeenCalledWith(80, '127.0.0.1')
+  })
+
+  it('reads "30%" without a space as a brightness', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('30%')
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent('30%')
+  })
+
+  it('offers Retry for an offline bulb typed by name', async () => {
+    seedStore(makeState([makeBulb(), makeBulb({ ip: '127.0.0.2', name: 'Desk', online: false })]))
+    const user = userEvent.setup()
+    renderApp(
+      <CommandPalette
+        onOpenSettings={vi.fn()}
+        onOpenHelp={vi.fn()}
+        open
+        onOpenChange={() => undefined}
+      />
+    )
+
+    await user.keyboard('desk')
+    await user.click(screen.getByRole('option', { name: /Desk.*Offline · Retry/ }))
+    expect(api.probeBulb).toHaveBeenCalledWith('127.0.0.2')
   })
 })

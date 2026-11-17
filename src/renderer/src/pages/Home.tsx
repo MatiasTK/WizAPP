@@ -1,7 +1,7 @@
 import BulbDetail from '@components/BulbDetail'
 import BulbDot from '@components/BulbDot'
 import BulbList from '@components/BulbList'
-import { useBulbStatus } from '@components/BulbShortcut'
+import { useBulbStatus } from '@components/ActiveBulbPicker'
 import AddDeviceModal from '@components/modals/AddDeviceModal'
 import BulbDetailsModal from '@components/modals/BulbDetailsModal'
 import EditNameModal from '@components/modals/EditNameModal'
@@ -12,11 +12,20 @@ import Button from '@components/ui/Button'
 import EmptyState from '@components/ui/EmptyState'
 import Spinner from '@components/ui/Spinner'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { useOverlayStore } from '@renderer/context/OverlayStore'
 import { cn } from '@renderer/lib/cn'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuArrowDownUp, LuCheck, LuLightbulbOff, LuPlus, LuPower, LuPowerOff } from 'react-icons/lu'
-import { useNavigate } from 'react-router'
+import {
+  LuArrowDownUp,
+  LuCheck,
+  LuLightbulbOff,
+  LuPlus,
+  LuPower,
+  LuPowerOff,
+  LuUndo2
+} from 'react-icons/lu'
+import { useLocation, useNavigate } from 'react-router'
 
 export default function Home() {
   const { t } = useTranslation()
@@ -50,7 +59,6 @@ export default function Home() {
   const find = (ip: string | null) => bulbs.find((b) => b.ip === ip) ?? null
   const selected = find(choice) ?? find(activeIp) ?? bulbs[0] ?? null
   const deleteTarget = find(deleteIp)
-  const anyOnline = bulbs.some((b) => b.online)
   const onlineCount = bulbs.filter((b) => b.online).length
 
   // Selecting a bulb also makes it the active one (sidebar, Scenes page) when it can answer.
@@ -64,14 +72,71 @@ export default function Home() {
     navigate('/scenes')
   }
 
+  const orderAtStart = useRef('')
+  const [orderNow, setOrderNow] = useState('')
+  // The mode swaps the whole page: the focus goes to "Done" on the way in and back to "Sort".
+  useEffect(() => {
+    if (!focusAfterSort.current) return
+    const selector = sorting ? '[data-sort="done"]' : '[data-sort="start"]'
+    window.setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus(), 0)
+  }, [sorting])
+  const focusAfterSort = useRef(false)
+
   const handleStartSorting = () => {
+    focusAfterSort.current = true
+    orderAtStart.current = bulbs.map((b) => b.ip).join()
+    setOrderNow(orderAtStart.current)
     setSorting(true)
   }
 
+  // Each move is saved as it happens; the toast only confirms that something changed.
   const handleDoneSorting = () => {
     setSorting(false)
-    pushToast('toast.orderSaved', 'success')
+    if (orderNow !== orderAtStart.current) {
+      pushToast('toast.orderSaved', 'success')
+    }
   }
+
+  // Back to the order the bulbs had when the sort mode opened.
+  const handleUndoSorting = () => {
+    // The last "moved to position N" no longer describes the list.
+    useBulbStore
+      .getState()
+      .toasts.filter((toast) => toast.message === 'sort.movedTo')
+      .forEach((toast) => useBulbStore.getState().dismissToast(toast.id))
+    pushToast('toast.orderRestored', 'info')
+    const ips = orderAtStart.current.split(',')
+    setOrderNow(orderAtStart.current)
+    void setBulbsOrder(ips)
+  }
+
+  // Esc leaves the sort mode, like a dialog, unless a dialog is open on top.
+  useEffect(() => {
+    if (!sorting) return undefined
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (useOverlayStore.getState().depth > 0) return
+      if (event.key === 'Escape') return handleDoneSorting()
+      // Ctrl+Z here means the sort mode's own Undo, not the last toast's.
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault()
+        event.stopPropagation()
+        if (orderNow !== orderAtStart.current) handleUndoSorting()
+      }
+    }
+    // Capture phase: a dialog closing on the same Esc has not lowered `depth` yet.
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  })
+
+  // The quick search can ask this page to open "add a bulb" or the sort mode.
+  const { state: intent } = useLocation() as { state: { intent?: string } | null }
+  useEffect(() => {
+    if (!intent?.intent) return
+    if (intent.intent === 'add') setAddOpen(true)
+    if (intent.intent === 'sort' && bulbs.length > 1) handleStartSorting()
+    navigate('.', { replace: true, state: null })
+    // Only a new intent matters, not the handlers it calls.
+  }, [intent])
 
   const renderEmpty = () => {
     if (isDiscovering) {
@@ -133,11 +198,26 @@ export default function Home() {
         open={deleteIp !== null}
         onOpenChange={(open) => !open && setDeleteIp(null)}
         title={t('bulb.removeTitle', { name: deleteTarget?.name ?? '' })}
-        description={t('bulb.removeMessage', { name: deleteTarget?.name ?? '' })}
+        description={t('bulb.removeMessage', {
+          name: deleteTarget?.name ?? '',
+          ip: deleteTarget?.ip ?? ''
+        })}
         confirmLabel={t('bulb.removeConfirm')}
         onConfirm={() => {
-          if (deleteIp) void deleteBulb(deleteIp)
+          if (deleteIp) {
+            void deleteBulb(deleteIp)
+            pushToast('bulb.removed', 'success', { name: deleteTarget?.name ?? '' })
+          }
           setDeleteIp(null)
+          // The menu that opened the dialog is gone with the bulb; land on the list instead.
+          window.setTimeout(
+            () =>
+              (
+                document.querySelector<HTMLElement>('[aria-current="true"]') ??
+                document.querySelector<HTMLElement>('main h1')
+              )?.focus({ preventScroll: true }),
+            50
+          )
         }}
       />
     </>
@@ -149,16 +229,30 @@ export default function Home() {
         title={t('home.sortTitle')}
         subtitle={t('home.sortHint')}
         actions={
-          <Button variant="primary" className="px-[18px]" onClick={handleDoneSorting}>
-            <LuCheck size={16} strokeWidth={2.4} aria-hidden />
-            {t('common.done')}
-          </Button>
+          <>
+            <Button disabled={orderNow === orderAtStart.current} onClick={handleUndoSorting}>
+              <LuUndo2 size={15} aria-hidden />
+              {t('common.undo')}
+            </Button>
+            <Button
+              data-sort="done"
+              variant="primary"
+              className="px-[18px]"
+              onClick={handleDoneSorting}
+            >
+              <LuCheck size={16} strokeWidth={2.4} aria-hidden />
+              {t('common.done')}
+            </Button>
+          </>
         }
       >
         <SortList
           aria-label={t('home.sortLabel')}
           className="max-w-[640px]"
-          onReorder={(ips) => void setBulbsOrder(ips)}
+          onReorder={(ips) => {
+            setOrderNow(ips.join())
+            void setBulbsOrder(ips)
+          }}
           items={bulbs.map((bulb) => ({
             id: bulb.ip,
             name: bulb.name,
@@ -194,18 +288,17 @@ export default function Home() {
     <div className="@container min-h-full @xl:h-full">
       <div
         className={cn(
-          'flex min-h-full w-full flex-col gap-4 px-6 pt-5 pb-5 @xl:h-full @6xl:px-8',
+          'flex min-h-full w-full flex-col gap-5 px-6 pt-5 pb-5 @xl:h-full',
           // The header ends where the content does.
           multiple ? 'max-w-[90rem]' : 'max-w-[72rem]'
         )}
       >
         <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-[-0.02em]">{t('home.title')}</h1>
-            <p
-              role="status"
-              className="mt-0.5 flex items-center gap-2 text-[13px] text-muted tabular-nums"
-            >
+            <h1 tabIndex={-1} className="text-2xl font-bold tracking-[-0.02em] outline-none">
+              {t('home.title')}
+            </h1>
+            <p role="status" className="mt-1 flex items-center gap-2 text-muted tabular-nums">
               {multiple
                 ? t('home.subtitleCount', { online: onlineCount, total: bulbs.length })
                 : t('home.subtitle')}
@@ -223,7 +316,7 @@ export default function Home() {
               <>
                 <Button
                   className="text-[13px]"
-                  disabled={!anyOnline}
+                  disabled={!bulbs.some((b) => b.online && !b.state)}
                   onClick={() => void setAllBulbs(true)}
                 >
                   <LuPower size={15} aria-hidden />
@@ -231,19 +324,19 @@ export default function Home() {
                 </Button>
                 <Button
                   className="text-[13px]"
-                  disabled={!anyOnline}
+                  disabled={!bulbs.some((b) => b.online && b.state)}
                   onClick={() => void setAllBulbs(false)}
                 >
                   <LuPowerOff size={15} aria-hidden />
                   {t('home.allOff')}
                 </Button>
-                <Button className="text-[13px]" onClick={handleStartSorting}>
+                <Button data-sort="start" className="text-[13px]" onClick={handleStartSorting}>
                   <LuArrowDownUp size={15} aria-hidden />
                   {t('home.sort')}
                 </Button>
               </>
             )}
-            <Button variant="primary" className="text-[13px]" onClick={() => setAddOpen(true)}>
+            <Button className="text-[13px]" onClick={() => setAddOpen(true)}>
               <LuPlus size={16} aria-hidden />
               {t('home.add.entry')}
             </Button>
@@ -254,7 +347,7 @@ export default function Home() {
           className={cn(
             'grid min-h-0 grow gap-4 @xl:grid-rows-[minmax(0,1fr)] @xl:items-start',
             multiple
-              ? '@xl:grid-cols-[13rem_minmax(0,1fr)] @4xl:grid-cols-[17rem_minmax(0,1fr)] @6xl:grid-cols-[19rem_minmax(0,68rem)]'
+              ? '@xl:grid-cols-[14.5rem_minmax(0,1fr)] @4xl:grid-cols-[17rem_minmax(0,1fr)] @6xl:grid-cols-[19rem_minmax(0,68rem)]'
               : ''
           )}
         >

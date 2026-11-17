@@ -45,7 +45,26 @@ function Toast({ toast }: { toast: AppToast }) {
     }
   }, [toast.id, toast.autoDismiss, paused, dismissToast])
 
+  // The toast goes away with the button that has the focus; the page heading takes it.
+  const keepFocus = () =>
+    (toast.origin?.isConnected
+      ? toast.origin
+      : document.querySelector<HTMLElement>('main h1')
+    )?.focus({ preventScroll: true })
+
+  const handleUndo = () => {
+    keepFocus()
+    dismissToast(toast.id)
+    toast.undo?.()
+  }
+
+  const handleClose = () => {
+    if (document.activeElement?.closest('[role="region"]')) keepFocus()
+    dismissToast(toast.id)
+  }
+
   const handleAction = () => {
+    keepFocus()
     dismissToast(toast.id)
     if (toast.retryAction === 'retry-discovery') void retryDiscovery()
     if (toast.retryAction === 'install-update') void installUpdate()
@@ -65,6 +84,15 @@ function Toast({ toast }: { toast: AppToast }) {
         {ICONS[toast.type]}
       </span>
       <p className="min-w-0 grow py-1">{t(toast.message, toast.params)}</p>
+      {toast.undo && (
+        <button
+          type="button"
+          onClick={handleUndo}
+          className={cn(pillButton, 'border border-on-toast/40 px-2.5 text-[13px] font-semibold')}
+        >
+          {t('common.undo')}
+        </button>
+      )}
       {toast.retryAction && (
         <button
           type="button"
@@ -77,7 +105,7 @@ function Toast({ toast }: { toast: AppToast }) {
       <button
         type="button"
         aria-label={t('common.close')}
-        onClick={() => dismissToast(toast.id)}
+        onClick={handleClose}
         className={cn(pillButton, 'w-7 opacity-80 hover:opacity-100')}
       >
         <LuX size={14} aria-hidden />
@@ -96,7 +124,7 @@ export function ToastContainer() {
       // so toasts stay announced above dialogs.
       aria-live="polite"
       aria-label={t('toast.region')}
-      className="pointer-events-none fixed inset-x-0 bottom-5 z-(--z-toast) flex flex-col items-center gap-2 px-4"
+      className="pointer-events-none fixed right-0 bottom-5 left-56 z-(--z-toast) flex flex-col items-center gap-2 px-4"
     >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} />

@@ -1,4 +1,5 @@
 import { cn, focusRing } from '@renderer/lib/cn'
+import { useSoftDisabled } from '@renderer/hooks/useSoftDisabled'
 import type { ComponentProps } from 'react'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'danger-soft'
@@ -28,7 +29,7 @@ const sizes: Record<ButtonSize, string> = {
 export const buttonClasses = (variant: ButtonVariant = 'secondary', size: ButtonSize = 'normal') =>
   cn(
     'inline-flex shrink-0 cursor-pointer items-center justify-center border font-semibold whitespace-nowrap transition-colors',
-    'disabled:cursor-not-allowed disabled:opacity-50',
+    'disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
     focusRing,
     variants[variant],
     sizes[size]
@@ -39,7 +40,19 @@ export default function Button({
   size = 'normal',
   type = 'button',
   className,
+  disabled,
+  onFocus,
+  onBlur,
+  onClick,
   ...rest
 }: ButtonProps) {
-  return <button type={type} className={cn(buttonClasses(variant, size), className)} {...rest} />
+  const soft = useSoftDisabled(disabled, { onFocus, onBlur, onClick })
+  return (
+    <button
+      type={type}
+      className={cn(buttonClasses(variant, size), className)}
+      {...rest}
+      {...soft}
+    />
+  )
 }

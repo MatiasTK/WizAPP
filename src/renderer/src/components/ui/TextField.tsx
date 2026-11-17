@@ -6,6 +6,8 @@ type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
   /** Error shown under the field, linked with `aria-describedby`. */
   error?: string | null
   hint?: string
+  /** `danger` while the value already breaks a rule the hint states (a length limit). */
+  hintTone?: 'muted' | 'danger'
   id?: string
   /** Decorative icon at the start of the field (a search glass, for instance). */
   icon?: ReactNode
@@ -19,6 +21,7 @@ export default function TextField({
   label,
   error,
   hint,
+  hintTone = 'muted',
   id,
   icon,
   hideLabel,
@@ -30,7 +33,10 @@ export default function TextField({
   const inputId = id ?? generated
   const errorId = `${inputId}-error`
   const hintId = `${inputId}-hint`
-  const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ')
+  // A neutral hint (a counter) stays next to an error; a hint already in red would only repeat
+  // what the error says, so the error replaces it.
+  const showHint = !!hint && !(error && hintTone === 'danger')
+  const describedBy = [error ? errorId : null, showHint ? hintId : null].filter(Boolean).join(' ')
 
   return (
     <div className={cn('flex flex-col gap-1.5', wrapperClassName)}>
@@ -60,15 +66,23 @@ export default function TextField({
             // `control` keeps the field edge at 3:1 against the surface (WCAG 1.4.11).
             error ? 'border-danger-text' : 'border-control',
             focusRing,
-            // One outline only: the ring replaces the border while focused.
+            // One outline only: the ring replaces the border while focused, red with an error.
             'focus-visible:border-transparent focus-visible:ring-offset-0',
+            error && 'focus-visible:ring-danger-text',
             className
           )}
           {...rest}
         />
       </div>
-      {hint && !error && (
-        <p id={hintId} className="text-[13px] text-muted">
+      {showHint && (
+        <p
+          id={hintId}
+          aria-live={hintTone === 'danger' ? 'polite' : undefined}
+          className={cn(
+            'text-[13px]',
+            hintTone === 'danger' ? 'font-medium text-danger-text' : 'text-muted'
+          )}
+        >
           {hint}
         </p>
       )}

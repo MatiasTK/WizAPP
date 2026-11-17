@@ -27,6 +27,15 @@ describe('IP validation', () => {
 })
 
 describe('Add bulb dialog', () => {
+  it('flags an IP already in the list while typing', async () => {
+    const user = userEvent.setup()
+    seedStore(makeState([makeBulb()]))
+    renderApp(<AddDeviceModal open onOpenChange={() => undefined} />)
+
+    await user.type(screen.getByLabelText('IP address'), '127.0.0.1')
+    expect(screen.getByText(/already in your list: .Living./)).toBeInTheDocument()
+  })
+
   it('links an invalid IP error to the field and does not call the backend', async () => {
     const user = userEvent.setup()
     renderApp(<AddDeviceModal open onOpenChange={() => undefined} />)
@@ -92,10 +101,10 @@ describe('Color dialog', () => {
     seedStore(makeState([makeBulb()]))
     renderApp(<CustomColorModal open onOpenChange={onOpenChange} />)
 
-    await user.type(screen.getByLabelText('Name'), 'Sunset')
+    await user.type(screen.getByLabelText('Name'), 'Dusk')
     await user.click(screen.getByRole('button', { name: 'Create color' }))
 
-    expect(api.addCustomColor).toHaveBeenCalledWith('Sunset', '#38c6c9')
+    expect(api.addCustomColor).toHaveBeenCalledWith('Dusk', '#38c6c9')
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
@@ -104,10 +113,17 @@ describe('Color dialog', () => {
     seedStore(makeState([makeBulb()]))
     renderApp(<CustomColorModal open onOpenChange={() => undefined} />)
 
-    const pink = screen.getByRole('button', { name: '#e2477a' })
+    const pink = screen.getByRole('radio', { name: 'Raspberry' })
     await user.click(pink)
-    expect(pink).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: '#38c6c9' })).toHaveAttribute('aria-pressed', 'false')
+    expect(pink).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('radio', { name: 'Turquoise' })).toHaveAttribute(
+      'aria-checked',
+      'false'
+    )
+    // Arrows move through the group and pick the next swatch.
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('radio', { name: 'Pink' })).toHaveAttribute('aria-checked', 'true')
+    await user.keyboard('{ArrowLeft}')
 
     await user.type(screen.getByLabelText('Name'), 'Pink')
     await user.click(screen.getByRole('button', { name: 'Create color' }))

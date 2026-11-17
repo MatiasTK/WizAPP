@@ -27,7 +27,7 @@ export default function BulbDetailsModal({ bulb, onOpenChange }: BulbDetailsModa
       onOpenChange={onOpenChange}
       title={bulb?.name ?? t('bulb.details')}
       footer={
-        <Button size="large" onClick={() => onOpenChange(false)}>
+        <Button size="large" data-autofocus onClick={() => onOpenChange(false)}>
           {t('common.close')}
         </Button>
       }

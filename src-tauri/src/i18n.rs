@@ -92,6 +92,14 @@ pub fn tray_labels(lang: &str) -> TrayLabels {
     }
 }
 
+/// Name for a newly found bulb ("Bulb 3" / "Bombilla 3"). The chip's module name
+/// (`ESP01_SHRGB1C_31`) means nothing to people; it stays visible under Information.
+pub fn default_bulb_name(lang: &str, n: usize) -> String {
+    let template =
+        translations(lang)["bulb"]["defaultName"].as_str().unwrap_or("Bulb {{n}}").to_owned();
+    template.replace("{{n}}", &n.to_string())
+}
+
 /// Display name of a built-in scene, `None` for ids that are not built in.
 pub fn scene_name(lang: &str, id: u32) -> Option<String> {
     let key = SCENE_KEYS.iter().find(|(i, _)| *i == id)?.1;
@@ -101,6 +109,12 @@ pub fn scene_name(lang: &str, id: u32) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_bulb_names_are_translated() {
+        assert_eq!(default_bulb_name("en", 3), "Bulb 3");
+        assert_eq!(default_bulb_name("es", 1), "Bombilla 1");
+    }
 
     #[test]
     fn normalizes_locales() {

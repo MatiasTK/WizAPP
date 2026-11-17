@@ -28,8 +28,8 @@ describe('Scenes page', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Filter scenes' }), 'COZY')
 
     expect(screen.getByRole('heading', { name: 'Results' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cozy' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Warm white' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Apply Cozy to /i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Apply Warm white to /i })).not.toBeInTheDocument()
     // Favorites step aside while filtering.
     expect(screen.queryByRole('heading', { name: 'Favorites' })).not.toBeInTheDocument()
   })
@@ -42,7 +42,7 @@ describe('Scenes page', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Filter scenes' }), 'zzzz')
 
     expect(screen.getByText('No results. Try a different name.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Rosa' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Apply Rosa to /i })).not.toBeInTheDocument()
   })
 
   it('shows an empty custom group with a New color action', async () => {
@@ -68,7 +68,7 @@ describe('Scenes page', () => {
     renderApp(<Scenes />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Living is not responding')
-    expect(screen.getByRole('button', { name: 'Cozy' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Apply Cozy to /i })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'Retry' }))
     expect(api.probeBulb).toHaveBeenCalledWith('127.0.0.1')
   })
@@ -78,13 +78,19 @@ describe('Scenes page', () => {
     seedStore(makeState([withColors({ sceneId: 6, favoriteColors: [] })]))
     renderApp(<Scenes />)
 
-    expect(screen.getByRole('button', { name: 'Cozy' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Ocean' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /^Apply Cozy to /i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    expect(screen.getByRole('button', { name: /^Apply Ocean to /i })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    )
 
-    await user.click(screen.getByRole('button', { name: 'Ocean' }))
+    await user.click(screen.getByRole('button', { name: /^Apply Ocean to /i }))
     expect(api.setScene).toHaveBeenCalledWith(1, '127.0.0.1')
 
-    await user.click(screen.getByRole('button', { name: 'Rosa' }))
+    await user.click(screen.getByRole('button', { name: /^Apply Rosa to /i }))
     expect(api.setCustomColor).toHaveBeenCalledWith(33, '127.0.0.1')
   })
 
@@ -105,16 +111,23 @@ describe('Scenes page', () => {
     seedStore(makeState([makeBulb({ sceneId: 6 }), makeBulb({ ip: '127.0.0.2', name: 'Desk' })]))
     const view = renderApp(<Scenes />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Cozy · Living')
-    await user.click(screen.getByRole('button', { name: 'Apply "Cozy" to all' }))
+    expect(screen.getByRole('status')).toHaveTextContent(/^Cozy · \d+%$/)
+    expect(screen.getByRole('combobox', { name: /^Active bulb: Living/ })).toHaveTextContent(
+      'Living'
+    )
+    await user.click(screen.getByRole('button', { name: 'Apply “Cozy” to all' }))
     expect(api.applyToAll).toHaveBeenCalledWith(6)
     view.unmount()
 
     seedStore(makeState([makeBulb({ online: false })]))
     renderApp(<Scenes />)
-    expect(screen.getByRole('button', { name: 'Ocean' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Cozy' })).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getAllByRole('button', { name: 'Add Ocean to favorites' })[0]).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Apply Ocean to /i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Apply Cozy to /i })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    )
+    // Favorites are global, so they stay editable while the bulb is offline.
+    expect(screen.getAllByRole('button', { name: 'Add Ocean to favorites' })[0]).toBeEnabled()
   })
 })
 
@@ -131,12 +144,12 @@ describe('Scene groups', () => {
     await user.click(screen.getByRole('button', { name: 'Static' }))
     expect(screen.getByRole('button', { name: 'Static' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('heading', { name: 'Static' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Ocean' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Apply Ocean to /i })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Favorites' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Custom' }))
-    expect(screen.getByRole('button', { name: 'Rosa' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Cozy' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Apply Rosa to /i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Apply Cozy to /i })).not.toBeInTheDocument()
   })
 })
 

@@ -3,10 +3,10 @@ import Dialog from '@components/ui/Dialog'
 import TextField from '@components/ui/TextField'
 import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-const MAX_NAME_LENGTH = 15
+const MAX_NAME_LENGTH = 24
 const FORM_ID = 'rename-bulb-form'
 
 type EditNameModalProps = {
@@ -20,13 +20,25 @@ function NameForm({ bulb, onDone }: { bulb: BulbState; onDone: () => void }) {
   const setBulbName = useBulbStore((s) => s.setBulbName)
   const [name, setName] = useState(bulb.name)
   const [error, setError] = useState<string | null>(null)
+  // Allowed, but two bulbs with one name are hard to tell apart in the list and in search.
+  const takenByOther = useBulbStore((s) =>
+    s.bulbs.some((b) => b.ip !== bulb.ip && b.name.toLowerCase() === name.trim().toLowerCase())
+  )
+  const inputRef = useRef<HTMLInputElement>(null)
+  const selectedOnce = useRef(false)
+
+  // The error is about the field, so the focus goes back to it.
+  useEffect(() => {
+    if (error) inputRef.current?.focus()
+  }, [error])
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const trimmed = name.trim()
     if (trimmed === '') return setError(t('errors.emptyName'))
     if (trimmed.length > MAX_NAME_LENGTH) return setError(t('errors.longName'))
-    if (trimmed === bulb.name) return setError(t('errors.sameName'))
+    // Saving the same name is not a mistake; there is just nothing to do.
+    if (trimmed === bulb.name) return onDone()
 
     void setBulbName(trimmed, bulb.ip)
     onDone()
@@ -39,8 +51,21 @@ function NameForm({ bulb, onDone }: { bulb: BulbState; onDone: () => void }) {
         placeholder={t('bulb.namePlaceholder')}
         value={name}
         error={error}
+        ref={inputRef}
+        hint={
+          takenByOther
+            ? `${t('bulb.nameTaken')} ${t('common.charCount', { count: name.trim().length, max: MAX_NAME_LENGTH })}`
+            : t('common.charCount', { count: name.trim().length, max: MAX_NAME_LENGTH })
+        }
+        hintTone={name.trim().length > MAX_NAME_LENGTH ? 'danger' : 'muted'}
         autoFocus
-        onFocus={(e) => e.currentTarget.select()}
+        data-autofocus
+        // Selected once, to replace it quickly; not when the focus comes back after an error.
+        onFocus={(e) => {
+          if (selectedOnce.current) return
+          selectedOnce.current = true
+          e.currentTarget.select()
+        }}
         onChange={(e) => {
           setName(e.target.value)
           setError(null)

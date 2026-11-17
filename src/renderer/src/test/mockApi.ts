@@ -13,6 +13,7 @@ export const api = {
   getLanguage: vi.fn(() => Promise.resolve('en')),
   toggleBulb: vi.fn(() => Promise.resolve()),
   toggleBulbByIp: vi.fn(() => Promise.resolve()),
+  setPower: vi.fn(() => Promise.resolve()),
   setBrightness: vi.fn(() => Promise.resolve()),
   setScene: vi.fn(() => Promise.resolve()),
   setCustomColor: vi.fn(() => Promise.resolve()),

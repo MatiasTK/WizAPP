@@ -214,7 +214,11 @@ async fn broadcast_with_empty_config_adopts_everything() {
     let s = h.settled().await;
     assert_eq!(s.bulbs.len(), 2);
     assert!(s.bulbs.iter().all(|b| b.online));
-    assert_eq!(s.bulbs[0].name, "ESP01_SHRGB_03");
+    // A readable name ("Bulb 1" / "Bombilla 1", by the system language), never the chip code,
+    // which stays available as the module name.
+    assert!(["Bulb 1", "Bombilla 1"].contains(&s.bulbs[0].name.as_str()), "{}", s.bulbs[0].name);
+    assert_ne!(s.bulbs[0].name, s.bulbs[1].name);
+    assert_eq!(s.bulbs[0].module_name, "ESP01_SHRGB_03");
     assert_eq!(s.active_bulb.as_ref().unwrap().ip, s.bulbs[0].ip);
     let disk = h.disk();
     assert_eq!(disk.bulbs.len(), 2);
@@ -521,6 +525,36 @@ async fn rename_delete_and_active_reassignment() {
 }
 
 #[tokio::test]
+async fn editing_a_color_in_use_resends_it_to_the_bulbs_showing_it() {
+    let (port, fakes) = fakes(2).await;
+    let cfg = config_with(vec![
+        entry(Some("aa0000000001"), "127.0.0.1", "Uno"),
+        entry(Some("aa0000000002"), "127.0.0.2", "Dos"),
+    ]);
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    h.handle.add_custom_color("Rojo".into(), "#ff0000".into()).await.unwrap();
+    h.handle.set_custom_color(Some("127.0.0.1".into()), 33).await.unwrap();
+    let before = [fakes[0].received().len(), fakes[1].received().len()];
+
+    h.handle.edit_custom_color(33, "Azul".into(), "#0000ff".into()).await.unwrap();
+    // The bulb showing it gets the new color; the other one is left alone.
+    let mut sent = false;
+    for _ in 0..50 {
+        let s = h.ui.last().unwrap();
+        if s.bulbs[0].b == Some(255) && s.bulbs[0].r == Some(0) {
+            sent = true;
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+    assert!(sent, "the bulb showing the color must get the new one");
+    assert!(fakes[0].received().len() > before[0]);
+    assert_eq!(fakes[1].received().len(), before[1]);
+}
+
+#[tokio::test]
 async fn colors_and_favorites_lifecycle_persists() {
     let (port, _f) = fakes(1).await;
     let h = Harness::start(port, AppConfig::default(), Some(vec![])).await;
@@ -619,6 +653,23 @@ async fn commands_by_ip_act_on_a_bulb_that_is_not_active() {
         h.handle.set_brightness(Some("10.9.9.9".into()), 40).await,
         Err(AppError::UnknownBulb { .. })
     ));
+}
+
+#[tokio::test]
+async fn set_power_is_absolute_not_a_toggle() {
+    let (port, fakes) = fakes(1).await;
+    let cfg = config_with(vec![entry(Some("aa0000000001"), "127.0.0.1", "Uno")]);
+    let h = Harness::start(port, cfg, Some(vec![])).await;
+    h.settled().await;
+
+    // Asking twice for "off" leaves it off; a toggle would switch it back on.
+    h.handle.set_power(Some("127.0.0.1".into()), false).await.unwrap();
+    h.handle.set_power(Some("127.0.0.1".into()), false).await.unwrap();
+    assert!(!h.ui.last().unwrap().bulbs[0].state);
+
+    h.handle.set_power(None, true).await.unwrap();
+    assert!(h.ui.last().unwrap().bulbs[0].state);
+    assert!(fakes[0].received().iter().any(|m| m == "setPilot"));
 }
 
 #[tokio::test]

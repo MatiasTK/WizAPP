@@ -34,11 +34,12 @@ const source = [
 // Keys that only Rust uses (tray menu and the toasts it emits).
 const RUST_KEYS = [
   /^tray\./,
+  /^bulb\.defaultName$/,
   /^toast\.(discoveryFailed|updateAvailable|configImported|configReset|legacyInstallFound)$/,
   /^scenes\.names\./
 ]
 // Keys built at runtime from a known prefix.
-const DYNAMIC_PREFIXES = ['scenes.names.', 'toast.error.']
+const DYNAMIC_PREFIXES = ['scenes.names.', 'toast.error.', 'scenes.color.swatches.']
 
 const base = (key: string) => key.replace(/_(one|other)$/, '')
 

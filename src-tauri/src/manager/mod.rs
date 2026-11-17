@@ -64,6 +64,8 @@ pub(crate) type Reply<T> = oneshot::Sender<Result<T, AppError>>;
 pub(crate) enum ManagerMsg {
     GetBulbs(oneshot::Sender<MultiBulbState>),
     Toggle(Target, Reply<()>),
+    /// Power one bulb on or off (not relative, unlike `Toggle`).
+    SetPower(Target, bool, Reply<()>),
     SetBrightness(Target, u32, Reply<()>),
     SetScene(Target, u32, Reply<()>),
     SetCustomColor(Target, u32, Reply<()>),
@@ -166,6 +168,11 @@ impl ManagerHandle {
 
     pub async fn toggle_bulb_by_ip(&self, ip: String) -> Result<(), AppError> {
         self.ask(|r| ManagerMsg::Toggle(Target::Ip(ip), r)).await
+    }
+
+    /// `ip: None` targets the active bulb.
+    pub async fn set_power(&self, ip: Option<String>, on: bool) -> Result<(), AppError> {
+        self.ask(|r| ManagerMsg::SetPower(Target::from_ip(ip), on, r)).await
     }
 
     /// `ip: None` targets the active bulb.

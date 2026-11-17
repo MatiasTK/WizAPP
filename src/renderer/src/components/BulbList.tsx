@@ -2,7 +2,7 @@ import BulbDot from '@components/BulbDot'
 import Switch from '@components/ui/Switch'
 import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
-import { useCatalog } from '@renderer/lib/catalog'
+import { bulbHex, useCatalog } from '@renderer/lib/catalog'
 import { cn, focusRing } from '@renderer/lib/cn'
 import { useTranslation } from 'react-i18next'
 import { LuWifiOff } from 'react-icons/lu'
@@ -19,11 +19,17 @@ export default function BulbList({ bulbs, selectedIp, onSelect }: BulbListProps)
   const { byId } = useCatalog()
   const toggleBulb = useBulbStore((s) => s.toggleBulb)
 
+  // Scene name and brightness apart: a long scene name truncates, the value never does.
   const status = (bulb: BulbState) => {
     if (!bulb.online) return t('bulb.offlineLabel')
     if (!bulb.state) return t('bulb.off')
     const scene = bulb.sceneId > 0 ? byId.get(bulb.sceneId) : undefined
-    return t('bulb.statusOn', { scene: scene?.name ?? t('bulb.on'), value: bulb.dimming ?? 0 })
+    return (
+      <>
+        <span className="min-w-0 truncate">{scene?.name ?? t('bulb.on')}</span>
+        <span className="shrink-0">· {t('common.percent', { value: bulb.dimming ?? 0 })}</span>
+      </>
+    )
   }
 
   return (
@@ -35,7 +41,8 @@ export default function BulbList({ bulbs, selectedIp, onSelect }: BulbListProps)
             key={bulb.ip}
             className={cn(
               'flex items-center gap-1 rounded-md pr-2 transition-colors',
-              selected ? 'bg-primary-soft' : 'hover:bg-raised'
+              // Selection is a neutral highlight; color belongs to the light itself.
+              selected ? 'bg-raised' : 'hover:bg-raised/60'
             )}
           >
             <button
@@ -50,14 +57,12 @@ export default function BulbList({ bulbs, selectedIp, onSelect }: BulbListProps)
             >
               <BulbDot bulb={bulb} size={14} />
               <span className="flex min-w-0 flex-col">
-                <span
-                  className={cn('truncate text-sm font-semibold', selected && 'text-primary-text')}
-                >
+                <span className={cn('truncate text-sm', selected ? 'font-bold' : 'font-semibold')}>
                   {bulb.name}
                 </span>
                 <span
                   className={cn(
-                    'flex items-center gap-1 truncate text-xs tabular-nums',
+                    'flex min-w-0 items-center gap-1 text-xs whitespace-nowrap tabular-nums',
                     bulb.online ? 'text-muted' : 'text-danger-text'
                   )}
                 >
@@ -71,6 +76,7 @@ export default function BulbList({ bulbs, selectedIp, onSelect }: BulbListProps)
                 size="sm"
                 label={t('bulb.power', { name: bulb.name })}
                 isOn={bulb.state}
+                color={bulbHex(bulb, byId)}
                 onToggle={() => void toggleBulb(bulb.ip)}
               />
             )}

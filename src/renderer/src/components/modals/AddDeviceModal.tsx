@@ -4,7 +4,7 @@ import Spinner from '@components/ui/Spinner'
 import TextField from '@components/ui/TextField'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { isValidIPv4 } from '@renderer/lib/ip'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 const FORM_ID = 'add-bulb-form'
@@ -24,8 +24,16 @@ function AddForm({
   const { t } = useTranslation()
   const addBulbByIp = useBulbStore((s) => s.addBulbByIp)
   const [ip, setIp] = useState('')
+  // Known while typing, like a taken name elsewhere; the submit still refuses it.
+  const existingName = useBulbStore((s) => s.bulbs.find((b) => b.ip === ip.trim())?.name)
   const [error, setError] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // The field is disabled while connecting, which drops the focus; give it back with the error.
+  useEffect(() => {
+    if (error && !connecting) inputRef.current?.focus()
+  }, [error, connecting])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -48,8 +56,15 @@ function AddForm({
         result.code === 'bulbUnreachable' ? t('errors.unreachable') : t('errors.addFailed')
       )
     }
-    if (result.outcome === 'added') return onDone()
-    setError(t('errors.duplicateBulb'))
+    if (result.outcome === 'added') {
+      // Select it and say so: it lands at the end of the list, maybe out of view.
+      const added = useBulbStore.getState().bulbs.find((b) => b.ip === value)
+      if (added) void useBulbStore.getState().setActiveBulb(value)
+      useBulbStore.getState().pushToast('home.add.added', 'success', { name: added?.name ?? value })
+      return onDone()
+    }
+    const existing = useBulbStore.getState().bulbs.find((b) => b.ip === value)
+    setError(t('errors.duplicateBulb', { name: existing?.name ?? value }))
   }
 
   return (
@@ -57,24 +72,27 @@ function AddForm({
       <TextField
         label={t('home.add.ipLabel')}
         placeholder={t('home.add.example')}
-        hint={t('home.add.hint')}
+        hint={existingName ? t('errors.duplicateBulb', { name: existingName }) : t('home.add.hint')}
+        hintTone={existingName ? 'danger' : 'muted'}
+        ref={inputRef}
         value={ip}
         error={error}
         autoFocus
+        data-autofocus
         inputMode="decimal"
         autoComplete="off"
-        disabled={connecting}
+        // Read-only, not disabled, so the focus stays in the field while it connects.
+        readOnly={connecting}
+        aria-busy={connecting || undefined}
         onChange={(e) => {
           setIp(e.target.value)
           setError(null)
         }}
       />
-      {connecting && (
-        <p role="status" className="flex items-center gap-2 text-[13px] text-muted">
-          <Spinner />
-          {t('home.add.connecting')}
-        </p>
-      )}
+      {/* Announced only; the submit button already shows the spinner and "Connecting". */}
+      <p role="status" className="sr-only">
+        {connecting ? t('home.add.connecting') : ''}
+      </p>
     </form>
   )
 }
@@ -86,16 +104,16 @@ export default function AddDeviceModal({ open, onOpenChange }: AddDeviceModalPro
   return (
     <Dialog
       open={open}
-      // It does not close while a connection attempt is running.
-      onOpenChange={(next) => (busy && !next ? undefined : onOpenChange(next))}
+      onOpenChange={onOpenChange}
       title={t('home.add.title')}
       description={t('home.add.description')}
       footer={
         <>
-          <Button size="large" disabled={busy} onClick={() => onOpenChange(false)}>
+          <Button size="large" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} variant="primary" size="large" disabled={busy}>
+            {busy && <Spinner />}
             {busy ? t('home.add.connecting') : t('common.add')}
           </Button>
         </>

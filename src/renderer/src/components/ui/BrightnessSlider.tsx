@@ -1,7 +1,8 @@
 import Slider from '@components/ui/Slider'
 import { useBulbStore } from '@renderer/context/BulbStore'
 import { cn, focusRing } from '@renderer/lib/cn'
-import { useEffect, useRef, useState } from 'react'
+import { ACCENT, accentStyle } from '@renderer/lib/light'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuSun } from 'react-icons/lu'
 
@@ -41,6 +42,7 @@ export default function BrightnessSlider({
   const setBrightness = useBulbStore((s) => s.setBrightness)
   const [value, setValue] = useState(dimming ?? 50)
   const editing = useRef(false)
+  const hintId = useId()
   const timer = useRef<number>(undefined)
 
   // Follow the bulb unless the user is in the middle of changing it.
@@ -71,7 +73,10 @@ export default function BrightnessSlider({
   }
 
   return (
-    <div className={cn('flex flex-col', size === 'sm' ? 'gap-2' : 'gap-2.5')}>
+    <div
+      className={cn('flex flex-col', size === 'sm' ? 'gap-2' : 'gap-2.5', color && ACCENT)}
+      style={color ? accentStyle(color) : undefined}
+    >
       <div
         className={cn(
           'flex items-center gap-2 text-muted',
@@ -83,20 +88,28 @@ export default function BrightnessSlider({
           {t('bulb.brightnessLabel')}
         </span>
         <span aria-hidden className="font-bold text-fg tabular-nums">
-          {value} %
+          {t('common.percent', { value })}
         </span>
       </div>
       <Slider
         aria-label={t('bulb.brightness', { name })}
+        aria-describedby={disabled ? hintId : undefined}
         value={value}
         min={MIN_BRIGHTNESS}
         max={MAX_BRIGHTNESS}
         step={5}
         disabled={disabled}
         rangeColor={color ?? undefined}
+        neutral={!color}
+        valueText={t('common.percent', { value })}
         onValueChange={handleChange}
         onValueCommit={handleCommit}
       />
+      {disabled && (
+        <p id={hintId} className="text-xs text-muted">
+          {t('bulb.brightnessOff')}
+        </p>
+      )}
       {presets && (
         <div className="flex gap-1.5">
           {PRESETS.map((preset) => (
@@ -111,12 +124,14 @@ export default function BrightnessSlider({
                 'h-[30px] flex-1 cursor-pointer rounded-sm border text-xs font-semibold transition-colors',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 value === preset
-                  ? 'border-primary bg-primary-soft text-primary-text'
+                  ? color
+                    ? 'border-(--accent) bg-[color-mix(in_srgb,var(--accent)_14%,var(--color-surface))] text-fg ring-1 ring-(--accent)'
+                    : 'border-control bg-raised text-fg'
                   : 'border-outline bg-surface text-fg hover:bg-raised',
                 focusRing
               )}
             >
-              {preset} %
+              {t('common.percent', { value: preset })}
             </button>
           ))}
         </div>

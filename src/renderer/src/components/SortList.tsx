@@ -64,6 +64,14 @@ function SortRow<T extends string | number>({
   onMove: (to: number) => void
 }) {
   const { t } = useTranslation()
+  const upRef = useRef<HTMLButtonElement>(null)
+  const downRef = useRef<HTMLButtonElement>(null)
+  // Reaching an end disables the button just pressed; the focus moves to the other one.
+  const handleMove = (to: number) => {
+    onMove(to)
+    if (to === 0) window.setTimeout(() => downRef.current?.focus(), 0)
+    if (to === count - 1) window.setTimeout(() => upRef.current?.focus(), 0)
+  }
   const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id
   })
@@ -92,8 +100,9 @@ function SortRow<T extends string | number>({
         tone="outline"
         tooltip={false}
         label={t('sort.moveUp', { name: item.name })}
+        ref={upRef}
         disabled={position === 0}
-        onClick={() => onMove(position - 1)}
+        onClick={() => handleMove(position - 1)}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <LuArrowUp size={16} aria-hidden />
@@ -102,8 +111,9 @@ function SortRow<T extends string | number>({
         tone="outline"
         tooltip={false}
         label={t('sort.moveDown', { name: item.name })}
+        ref={downRef}
         disabled={position === count - 1}
-        onClick={() => onMove(position + 1)}
+        onClick={() => handleMove(position + 1)}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <LuArrowDown size={16} aria-hidden />
@@ -135,8 +145,11 @@ export default function SortList<T extends string | number>({
   // A new order from the backend replaces the local one.
   const incoming = items.map((i) => i.id)
   const key = incoming.join('|')
-  const [local, setLocal] = useState({ key, ids: incoming })
-  const current = local.key === key ? local.ids : incoming
+  // A move shows at once (`local`) while the backend still sends the order it had (`base`).
+  // Once any other order arrives (the move confirmed, an undo, a change elsewhere) it wins.
+  const [local, setLocal] = useState<{ base: string; ids: T[] } | null>(null)
+  if (local && local.base !== key) setLocal(null)
+  const current = local && local.base === key ? local.ids : incoming
 
   const byId = new Map(items.map((i) => [i.id, i]))
   const rows = current.map((id) => byId.get(id)).filter((i): i is SortItem<T> => !!i)
@@ -146,7 +159,7 @@ export default function SortList<T extends string | number>({
   const move = (from: number, to: number) => {
     const next = moveItem(current, from, to)
     if (!next) return
-    setLocal({ key, ids: next })
+    setLocal({ base: key, ids: next })
     onReorder(next)
 
     // One announcement at a time, so a few quick moves do not pile up toasts.

@@ -10,6 +10,7 @@ import { getVersion } from '@tauri-apps/api/app'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LuHeart, LuLightbulb, LuPanelBottom, LuPlus, LuWifiOff } from 'react-icons/lu'
 
 type HelpModalProps = {
   open: boolean
@@ -18,6 +19,14 @@ type HelpModalProps = {
 
 const SOURCE_URL = 'https://github.com/MatiasTK/WizAPP'
 const AUTHOR_URL = 'https://github.com/MatiasTK'
+
+const HOW_TO = [
+  { title: 'help.howActiveTitle', body: 'help.howActive', icon: <LuLightbulb size={15} /> },
+  { title: 'help.howTrayTitle', body: 'help.howTray', icon: <LuPanelBottom size={15} /> },
+  { title: 'help.howFavoritesTitle', body: 'help.howFavorites', icon: <LuHeart size={15} /> },
+  { title: 'help.howOfflineTitle', body: 'help.howOffline', icon: <LuWifiOff size={15} /> },
+  { title: 'help.howAddTitle', body: 'help.howAdd', icon: <LuPlus size={15} /> }
+] as const
 
 const kbd = 'rounded-[6px] border border-border px-1.5 py-px font-sans text-xs text-fg'
 
@@ -87,6 +96,28 @@ export default function HelpModal({ open, onOpenChange }: HelpModalProps) {
           </InlineAlert>
         )}
 
+        <section aria-labelledby="help-how" className="flex flex-col gap-2">
+          <h3 id="help-how" className="font-semibold">
+            {t('help.howTitle')}
+          </h3>
+          <dl className="flex flex-col gap-3">
+            {HOW_TO.map(({ title, body, icon }) => (
+              <div key={title} className="flex gap-3">
+                <span
+                  aria-hidden
+                  className="mt-px flex size-7 shrink-0 items-center justify-center rounded-sm bg-sunken text-muted"
+                >
+                  {icon}
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <dt className="text-[13px] font-semibold">{t(title)}</dt>
+                  <dd className="text-[13px] text-muted">{t(body)}</dd>
+                </div>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         <section aria-labelledby="help-shortcuts" className="flex flex-col gap-1.5">
           <h3 id="help-shortcuts" className="font-semibold">
             {t('help.shortcuts')}
@@ -104,11 +135,17 @@ export default function HelpModal({ open, onOpenChange }: HelpModalProps) {
                 <kbd className={kbd}>Esc</kbd>
               </dd>
             </div>
+            <div className="flex justify-between">
+              <dt>{t('help.shortcutUndo')}</dt>
+              <dd>
+                <kbd className={kbd}>Ctrl Z</kbd>
+              </dd>
+            </div>
           </dl>
         </section>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="primary" disabled={isChecking} onClick={handleCheckForUpdates}>
+          <Button disabled={isChecking} onClick={handleCheckForUpdates}>
             {isChecking && <Spinner />}
             {isChecking ? t('help.checkingUpdates') : t('help.checkUpdates')}
           </Button>

@@ -86,7 +86,7 @@ describe('bulb list and detail', () => {
     const desk = detail('Desk')
     await user.click(desk.getByRole('button', { name: 'Apply Daylight to Desk' }))
     expect(api.setScene).toHaveBeenCalledWith(12, '127.0.0.2')
-    await user.click(desk.getByRole('button', { name: 'Set Desk to 75 %' }))
+    await user.click(desk.getByRole('button', { name: 'Set Desk to 75%' }))
     expect(api.setBrightness).toHaveBeenCalledWith(75, '127.0.0.2')
   })
 

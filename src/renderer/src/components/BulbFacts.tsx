@@ -67,6 +67,10 @@ type BulbFactsProps = {
 }
 
 /** IP, MAC, model, firmware and signal of one bulb as a definition list. */
+/** `a8bb50aabbcc` as routers show it: `A8:BB:50:AA:BB:CC`. Anything else is left as it is. */
+export const formatMac = (mac: string): string =>
+  /^[0-9a-f]{12}$/i.test(mac) ? mac.toUpperCase().match(/../g)!.join(':') : mac
+
 export default function BulbFacts({ bulb, copyable = false, status, className }: BulbFactsProps) {
   const { t } = useTranslation()
   const pushToast = useBulbStore((s) => s.pushToast)
@@ -103,7 +107,7 @@ export default function BulbFacts({ bulb, copyable = false, status, className }:
   const rows: [string, React.ReactNode][] = [
     ...(status ? [[t('information.fields.status'), status] as [string, string]] : []),
     [t('information.fields.ip'), copyValue(bulb.ip, 'ip')],
-    [t('information.fields.mac'), copyValue(bulb.mac, 'mac')],
+    [t('information.fields.mac'), copyValue(formatMac(bulb.mac), 'mac')],
     [t('information.fields.model'), bulb.moduleName || NONE],
     [t('information.fields.firmware'), bulb.fwVersion || NONE],
     [
@@ -121,7 +125,7 @@ export default function BulbFacts({ bulb, copyable = false, status, className }:
   return (
     <dl
       className={cn(
-        'grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5',
+        'grid grid-cols-[5.75rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5',
         className
       )}
     >

@@ -19,13 +19,13 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   const settings = useBulbStore((s) => s.settings)
   const setTheme = useBulbStore((s) => s.setTheme)
   const setLanguage = useBulbStore((s) => s.setLanguage)
-  const retryDiscovery = useBulbStore((s) => s.retryDiscovery)
+  const reconnect = useBulbStore((s) => s.reconnect)
   const deleteProfile = useBulbStore((s) => s.deleteProfile)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const handleSearchAgain = () => {
     onOpenChange(false)
-    void retryDiscovery()
+    void reconnect()
   }
 
   const handleDeleteProfile = () => {

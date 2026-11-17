@@ -67,6 +67,17 @@ function DialogBody({
       <RadixDialog.Overlay className="fixed inset-0 z-(--z-dialog) bg-scrim" />
       <RadixDialog.Content
         onCloseAutoFocus={onCloseAutoFocus}
+        // A field marked `data-autofocus` gets the focus, whatever opened the dialog. React's own
+        // autoFocus can lose against a menu that is still closing; this runs after it.
+        onOpenAutoFocus={(event) => {
+          const field = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
+            '[data-autofocus]'
+          )
+          if (!field) return
+          event.preventDefault()
+          field.focus()
+          if (field instanceof HTMLInputElement) field.select()
+        }}
         className={cn(
           'fixed top-1/2 left-1/2 z-(--z-dialog) flex max-h-[calc(100vh-3rem)] w-[calc(100vw-3rem)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface text-fg shadow-[0_24px_64px_rgb(0_0_0/0.28)]',
           className

@@ -16,6 +16,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/information': 'sidebar.information'
 }
 
+const TRAY_TIP_KEY = 'wizapp.trayTipShown'
+
 export default function Layout() {
   const { t, i18n } = useTranslation()
   const { pathname } = useLocation()
@@ -36,6 +38,20 @@ export default function Layout() {
     })
   }, [isReady])
 
+  // Once: closing the window does not quit the app, which people only find out by surprise.
+  const hasBulbs = useBulbStore((s) => s.bulbs.length > 0)
+  const pushToast = useBulbStore((s) => s.pushToast)
+  useEffect(() => {
+    if (!isReady || !hasBulbs) return
+    try {
+      if (localStorage.getItem(TRAY_TIP_KEY)) return
+      localStorage.setItem(TRAY_TIP_KEY, '1')
+    } catch {
+      return
+    }
+    pushToast('toast.trayTip', 'info', undefined, false)
+  }, [isReady, hasBulbs, pushToast])
+
   useEffect(() => {
     document.documentElement.lang = i18n.language
   }, [i18n.language])
@@ -47,8 +63,37 @@ export default function Layout() {
       firstRoute.current = false
       return
     }
-    mainRef.current?.focus()
+    // Each page opens at its top, not at the scroll position of the previous one.
+    mainRef.current?.scrollTo(0, 0)
+    mainRef.current?.focus({ preventScroll: true })
   }, [pathname, t])
+
+  // Ctrl+Z undoes the last action whose toast offers "Undo", outside text fields.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return
+      const target = event.target
+      if (target instanceof Element && target.closest('input, textarea, [contenteditable="true"]'))
+        return
+      if (useOverlayStore.getState().depth > 0) return
+      const { toasts, dismissToast } = useBulbStore.getState()
+      const last = [...toasts].reverse().find((toast) => toast.undo)
+      if (!last) return
+      event.preventDefault()
+      dismissToast(last.id)
+      last.undo?.()
+      // Undoing may unmount what had the focus; never leave it on <body>.
+      window.setTimeout(() => {
+        if (document.activeElement !== document.body) return
+        ;(last.origin?.isConnected
+          ? last.origin
+          : document.querySelector<HTMLElement>('main h1')
+        )?.focus({ preventScroll: true })
+      }, 100)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Ctrl+K opens the quick search, unless another dialog is already open.
   useEffect(() => {
@@ -70,14 +115,23 @@ export default function Layout() {
         onOpenHelp={() => setHelpOpen(true)}
       />
 
-      <main ref={mainRef} tabIndex={-1} className="min-w-0 grow overflow-y-auto focus:outline-none">
+      <main
+        ref={mainRef}
+        tabIndex={-1}
+        className="min-w-0 grow scroll-pt-28 overflow-y-auto [scrollbar-gutter:stable] focus:outline-none"
+      >
         <Outlet />
       </main>
 
       <ToastContainer />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
-      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <CommandPalette
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenHelp={() => setHelpOpen(true)}
+      />
     </div>
   )
 }

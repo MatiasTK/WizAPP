@@ -156,6 +156,7 @@ pub fn run() {
             commands::get_bulbs,
             commands::toggle_bulb,
             commands::toggle_bulb_by_ip,
+            commands::set_power,
             commands::set_brightness,
             commands::set_scene,
             commands::set_custom_color,

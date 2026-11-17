@@ -206,6 +206,12 @@ pub async fn toggle_bulb_by_ip(state: State<'_, AppState>, ip: String) -> Res<()
     state.manager.toggle_bulb_by_ip(ip).await
 }
 
+/// Powers one bulb on or off. `ip: None` acts on the active bulb.
+#[tauri::command]
+pub async fn set_power(state: State<'_, AppState>, on: bool, ip: Option<String>) -> Res<()> {
+    state.manager.set_power(ip, on).await
+}
+
 /// `ip: None` acts on the active bulb.
 #[tauri::command]
 pub async fn set_brightness(

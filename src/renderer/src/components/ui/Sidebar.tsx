@@ -28,8 +28,10 @@ const footerButton = cn(
 /** Full-height sidebar; it never scrolls with the page (only `main` does). */
 export default function Sidebar({ onOpenSearch, onOpenSettings, onOpenHelp }: SidebarProps) {
   const { t } = useTranslation()
-  // The Bulbs page already shows the selected bulb's controls, so its sidebar card would repeat them.
-  const hideBulbCard = useLocation().pathname === '/'
+  // The Bulbs page shows the selected bulb's controls and the Scenes banner has its own picker,
+  // so on those pages the sidebar card would repeat them.
+  const { pathname } = useLocation()
+  const hideBulbCard = pathname === '/' || pathname === '/scenes'
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col gap-[18px] overflow-y-auto border-r border-border bg-sidebar px-3.5 py-[18px]">

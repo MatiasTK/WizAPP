@@ -12,8 +12,16 @@ import { applyTheme } from '@renderer/lib/theme'
 import * as log from '@tauri-apps/plugin-log'
 import { create } from 'zustand'
 
-/** A toast; `params` fill the `{{placeholders}}` of the translated message. */
-export type AppToast = ToastMessage & { params?: Record<string, string | number> }
+/**
+ * A toast; `params` fill the `{{placeholders}}` of the translated message. `undo` (renderer-only)
+ * adds an "Undo" button that runs it.
+ */
+export type AppToast = ToastMessage & {
+  params?: Record<string, string | number>
+  undo?: () => void
+  /** Where the focus goes back after "Undo" (the control that started the action). */
+  origin?: HTMLElement | null
+}
 
 /** What the UI expects a bulb to look like while a command is in flight. */
 type Expected = Partial<Pick<BulbState, 'state' | 'dimming' | 'sceneId'>>
@@ -54,11 +62,15 @@ interface BulbStore {
 
   // One bulb; `ip` omitted means the active bulb.
   toggleBulb: (ip?: string) => Promise<void>
+  /** Absolute on/off (undo uses it: a toggle could flip a bulb that changed meanwhile). */
+  setPower: (on: boolean, ip?: string) => Promise<void>
   setBrightness: (brightness: number, ip?: string) => Promise<void>
   setScene: (sceneId: number, ip?: string) => Promise<void>
   setBulbName: (name: string, ip?: string) => Promise<void>
-  addCustomColor: (colorName: string, colorHex: string) => Promise<void>
-  editCustomColor: (colorId: number, colorName: string, colorHex: string) => Promise<void>
+  /** Resolves `true` once saved. */
+  addCustomColor: (colorName: string, colorHex: string) => Promise<boolean>
+  /** Resolves `true` once saved. */
+  editCustomColor: (colorId: number, colorName: string, colorHex: string) => Promise<boolean>
   removeCustomColor: (colorId: number) => Promise<void>
   toggleFavoriteColor: (colorId: number) => Promise<void>
   setFavoriteColorsOrder: (favoriteColors: number[]) => Promise<void>
@@ -77,6 +89,8 @@ interface BulbStore {
   /** Polls every bulb (the Information page's refresh). */
   probeAll: () => Promise<void>
   retryDiscovery: () => Promise<void>
+  /** Searches the saved bulbs again and says, in one toast, how many answer. */
+  reconnect: () => Promise<void>
 
   // Settings
   loadSettings: () => Promise<void>
@@ -207,12 +221,15 @@ const optimistic = async (
   settle(result ? [] : target ? [target] : [])
 }
 
-/** Runs an optimistic all-bulbs command and reports who did not answer. */
+/**
+ * Runs an optimistic all-bulbs command, reports who did not answer and returns their IPs
+ * (every online bulb when the call itself failed).
+ */
 const optimisticAll = async (
   label: string,
   values: Expected,
   fn: () => Promise<string[]>
-): Promise<void> => {
+): Promise<string[]> => {
   const online = useBulbStore
     .getState()
     .bulbs.filter((b) => b.online)
@@ -226,6 +243,7 @@ const optimisticAll = async (
     const names = missed.map((ip) => effective(ip)?.name ?? ip).join(', ')
     useBulbStore.getState().addToast(toast('toast.someDidNotRespond', 'error', { names }))
   }
+  return failed ?? online
 }
 
 export const useBulbStore = create<BulbStore>((set, get) => ({
@@ -256,7 +274,17 @@ export const useBulbStore = create<BulbStore>((set, get) => ({
     })
   },
 
-  addToast: (t) => set((s) => ({ toasts: [...s.toasts, t] })),
+  // The same message twice in a row replaces the first instead of stacking a copy.
+  addToast: (t) =>
+    set((s) => ({
+      toasts: [
+        ...s.toasts.filter(
+          (old) =>
+            !(old.message === t.message && JSON.stringify(old.params) === JSON.stringify(t.params))
+        ),
+        t
+      ]
+    })),
   pushToast: (message, type, params, autoDismiss = true) =>
     get().addToast(toast(message, type, params, autoDismiss)),
   dismissToast: (id) => {
@@ -275,6 +303,9 @@ export const useBulbStore = create<BulbStore>((set, get) => ({
       ip ? api.toggleBulbByIp(ip) : api.toggleBulb()
     )
   },
+  setPower: async (on, ip) => {
+    await optimistic('Setting power', ip, { state: on }, () => api.setPower(on, ip))
+  },
   setBrightness: async (brightness, ip) => {
     await optimistic('Setting brightness', ip, { dimming: brightness }, () =>
       api.setBrightness(brightness, ip)
@@ -292,10 +323,18 @@ export const useBulbStore = create<BulbStore>((set, get) => ({
     await call('Setting bulb name', () => api.setBulbName(name, ip))
   },
   addCustomColor: async (colorName, colorHex) => {
-    await call('Adding custom color', () => api.addCustomColor(colorName, colorHex))
+    const saved = await call('Adding custom color', async () => {
+      await api.addCustomColor(colorName, colorHex)
+      return true
+    })
+    return saved === true
   },
   editCustomColor: async (colorId, colorName, colorHex) => {
-    await call('Editing custom color', () => api.editCustomColor(colorId, colorName, colorHex))
+    const saved = await call('Editing custom color', async () => {
+      await api.editCustomColor(colorId, colorName, colorHex)
+      return true
+    })
+    return saved === true
   },
   removeCustomColor: async (colorId) => {
     await call('Removing custom color', () => api.removeCustomColor(colorId))
@@ -314,12 +353,53 @@ export const useBulbStore = create<BulbStore>((set, get) => ({
   },
 
   setAllBulbs: async (on) => {
-    await optimisticAll('Setting all bulbs', { state: on }, () => api.setAllBulbs(on))
+    // The bulbs this changes, so "Undo" switches back exactly those.
+    const changed = get()
+      .bulbs.filter((b) => b.online && b.state !== on)
+      .map((b) => b.ip)
+    const missed = await optimisticAll('Setting all bulbs', { state: on }, () =>
+      api.setAllBulbs(on)
+    )
+    // Only the bulbs that really changed count, and only those go back.
+    const done = changed.filter((ip) => !missed.includes(ip))
+    if (done.length === 0) return
+    get().addToast({
+      ...toast(on ? 'toast.allOnDone' : 'toast.allOffDone', 'success', { count: done.length }),
+      undo: () => done.forEach((ip) => void get().setPower(!on, ip)),
+      origin: document.activeElement as HTMLElement | null
+    })
   },
   applyToAll: async (id) => {
-    await optimisticAll('Applying to all bulbs', { state: true, sceneId: id }, () =>
+    const before = get()
+      .bulbs.filter((b) => b.online)
+      .map((b) => ({ ip: b.ip, state: b.state, sceneId: b.sceneId }))
+    const missed = await optimisticAll('Applying to all bulbs', { state: true, sceneId: id }, () =>
       api.applyToAll(id)
     )
+    // Like all on/off: only the bulbs that changed count (and go back on undo).
+    const done = before.filter((b) => !missed.includes(b.ip) && (!b.state || b.sceneId !== id))
+    if (done.length === 0) return
+    // A bulb that was on in plain white or a color picked elsewhere (scene 0) has nothing this
+    // app can set back, so undo leaves it as it is and says so.
+    const lost = done.filter((b) => b.state && b.sceneId === 0)
+    const undoable = done.filter((b) => !lost.includes(b))
+    get().addToast({
+      ...toast('toast.appliedToAll', 'success'),
+      origin: document.activeElement as HTMLElement | null,
+      undo:
+        undoable.length === 0
+          ? undefined
+          : () => {
+              undoable.forEach(async (b) => {
+                if (b.sceneId > 0 && b.sceneId !== id) await get().setScene(b.sceneId, b.ip)
+                if (!b.state) await get().setPower(false, b.ip)
+              })
+              if (lost.length > 0) {
+                const names = lost.map((b) => effective(b.ip)?.name ?? b.ip).join(', ')
+                get().addToast(toast('toast.undoPartial', 'info', { names }))
+              }
+            }
+    })
   },
 
   setActiveBulb: async (ip) => {
@@ -345,6 +425,38 @@ export const useBulbStore = create<BulbStore>((set, get) => ({
   },
   retryDiscovery: async () => {
     await call('Retrying discovery', () => api.retryDiscovery())
+  },
+  reconnect: async () => {
+    const searching = toast('home.searching', 'info', undefined, false)
+    get().addToast(searching)
+    // Wait for the search to start and end (the backend reports both through updates).
+    const finished = new Promise<void>((resolve) => {
+      let started = get().isDiscovering
+      const stop = useBulbStore.subscribe((s) => {
+        if (s.isDiscovering) started = true
+        else if (started) {
+          stop()
+          resolve()
+        }
+      })
+      window.setTimeout(() => {
+        stop()
+        resolve()
+      }, 30_000)
+    })
+    await get().retryDiscovery()
+    await finished
+    get().dismissToast(searching.id)
+    const { bulbs, discoveryFailed } = get()
+    // "No bulb found" already comes from the backend as its own toast.
+    if (discoveryFailed) return
+    const online = bulbs.filter((b) => b.online).length
+    get().addToast(
+      toast('toast.reconnected', online === bulbs.length ? 'success' : 'info', {
+        online,
+        total: bulbs.length
+      })
+    )
   },
 
   loadSettings: async () => {

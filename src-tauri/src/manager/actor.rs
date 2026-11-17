@@ -136,6 +136,9 @@ impl Actor {
                     let _ = reply.send(Err(e));
                 }
             },
+            ManagerMsg::SetPower(target, on, reply) => {
+                self.patch(&target, PilotPatch::state(on), Pending::Power(on), reply);
+            }
             ManagerMsg::SetBrightness(target, value, reply) => {
                 self.patch(&target, PilotPatch::dimming(value), Pending::Brightness(value), reply);
             }
@@ -339,6 +342,15 @@ impl Actor {
             .collect();
         self.store.config_mut().bulbs = entries;
         self.store.save().map_err(|e| AppError::Io { message: e.to_string() })
+    }
+
+    /// "Bulb N" in the UI language, with the first N no other bulb is called.
+    fn new_bulb_name(&self) -> String {
+        let lang = crate::i18n::resolve_language(self.store.config().language);
+        (self.bulbs.len() + 1..)
+            .map(|n| crate::i18n::default_bulb_name(lang, n))
+            .find(|name| !self.bulbs.iter().any(|b| &b.name == name))
+            .expect("an unused number always exists")
     }
 
     fn persist_logged(&mut self) {
@@ -629,7 +641,7 @@ impl Actor {
             return;
         }
         let sys = sys.unwrap_or_default();
-        let name = sys.module_name.clone().or_else(|| mac.clone()).unwrap_or_else(|| ip.to_owned());
+        let name = self.new_bulb_name();
         self.bulbs.push(Bulb {
             mac,
             ip: ip.to_owned(),
@@ -675,6 +687,20 @@ impl Actor {
         color.name = name;
         color.hex = hex.to_owned();
         self.persist()?;
+        // A bulb showing this color now shows the new one: otherwise the UI (which draws the
+        // color from the catalog) would describe a light the bulb is not giving.
+        let showing: Vec<String> = self
+            .bulbs
+            .iter()
+            .filter(|b| b.online && b.pilot.state == Some(true) && b.pilot.scene_id == Some(id))
+            .map(|b| b.ip.clone())
+            .collect();
+        if !showing.is_empty() {
+            let (patch, kind) = self.color_patch(id)?;
+            for ip in showing {
+                self.dispatch(&ip, WorkerOp::Patch(patch.clone()), kind.clone(), None);
+            }
+        }
         self.emit();
         Ok(())
     }
@@ -853,8 +879,7 @@ impl Actor {
             self.persist_logged();
         } else if via == Via::Broadcast && adopt && by_ip.is_none() {
             let sys = sys.unwrap_or_default();
-            let name =
-                sys.module_name.clone().or_else(|| seen_mac.clone()).unwrap_or_else(|| ip.clone());
+            let name = self.new_bulb_name();
             self.bulbs.push(Bulb { mac: seen_mac, ip, name, online: true, pilot, sys });
             self.ensure_active();
             self.persist_logged();

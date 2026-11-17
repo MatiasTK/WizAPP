@@ -15,6 +15,8 @@ export type CatalogEntry = {
   /** CSS background of the swatch: a gradient for dynamic scenes. */
   swatch: string
   group: 'static' | 'dynamic' | 'custom'
+  /** Translation key under `scenes.names` (built-in scenes only). */
+  key?: string
 }
 
 const EMPTY_COLORS: CustomColor[] = []
@@ -42,7 +44,8 @@ export const useCatalog = () => {
       name: t(`scenes.names.${s.name}`),
       hex: s.hex,
       swatch: swatchOf(s.hex, s.hex2),
-      group: s.type
+      group: s.type,
+      key: s.name
     }))
     const custom: CatalogEntry[] = colors.map((c) => ({
       id: c.id,

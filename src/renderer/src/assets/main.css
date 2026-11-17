@@ -177,6 +177,17 @@ a {
   -webkit-user-drag: none;
 }
 
+/* Thin scrollbars in the theme's colors instead of WebView2's grey ones with arrows. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--outline) transparent;
+}
+
+::selection {
+  background-color: var(--primary-soft);
+  color: var(--fg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -3,11 +3,14 @@ import BrightnessSlider from '@components/ui/BrightnessSlider'
 import Button from '@components/ui/Button'
 import IconButton from '@components/ui/IconButton'
 import Menu from '@components/ui/Menu'
+import Spinner from '@components/ui/Spinner'
 import Switch from '@components/ui/Switch'
 import type { BulbState } from '@renderer/bindings/BulbState'
 import { useBulbStore } from '@renderer/context/BulbStore'
+import { useRetry } from '@renderer/hooks/useRetry'
 import { useCatalog } from '@renderer/lib/catalog'
 import { cn, focusRing } from '@renderer/lib/cn'
+import { ACCENT, accentStyle } from '@renderer/lib/light'
 import { TINT } from '@renderer/lib/tint'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -44,8 +47,8 @@ export default function BulbDetail({
   const { byId, favorites } = useCatalog()
   const toggleBulb = useBulbStore((s) => s.toggleBulb)
   const setScene = useBulbStore((s) => s.setScene)
-  const probeBulb = useBulbStore((s) => s.probeBulb)
   const hex = useBulbHex(bulb)
+  const { retrying, stillOffline, retry } = useRetry(bulb.ip)
 
   const offline = !bulb.online
   const lit = !offline && bulb.state
@@ -57,6 +60,7 @@ export default function BulbDetail({
       : t('bulb.off')
 
   const menuItems = [
+    { label: t('bulb.rename'), icon: <LuPencil size={15} />, onSelect: onRename },
     { label: t('bulb.details'), icon: <LuClipboardList size={15} />, onSelect: onDetails },
     { label: t('bulb.remove'), icon: <LuTrash2 size={15} />, onSelect: onRemove, destructive: true }
   ]
@@ -74,18 +78,22 @@ export default function BulbDetail({
               key={entry.id}
               type="button"
               aria-pressed={active}
-              aria-label={t('bulb.applyTo', { scene: entry.name, name: bulb.name })}
+              // On a switched-off bulb a scene also turns it on; the name says so.
+              aria-label={t(bulb.state ? 'bulb.applyTo' : 'bulb.applyToOff', {
+                scene: entry.name,
+                name: bulb.name
+              })}
               title={entry.name}
               onClick={() => void setScene(entry.id, bulb.ip)}
               className={cn(
                 'flex h-[38px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden rounded-sm border bg-sunken py-0 pr-2 pl-[7px] text-left text-[13px] whitespace-nowrap text-fg hover:bg-raised',
-                active ? 'border-primary ring-1 ring-primary' : 'border-border',
+                active && lit ? 'border-(--accent) ring-1 ring-(--accent)' : 'border-border',
                 focusRing
               )}
             >
               <span
                 aria-hidden
-                className="size-6 shrink-0 rounded-[6px]"
+                className="size-6 shrink-0 rounded-[6px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-fg)_12%,transparent)]"
                 style={{ background: entry.swatch }}
               />
               <span className="truncate">{entry.name}</span>
@@ -99,7 +107,12 @@ export default function BulbDetail({
   return (
     <section
       aria-label={bulb.name}
-      className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-surface @xl:max-h-full"
+      // `--accent` (the bulb's color, readable on the card) for the favorite that is running.
+      style={hex ? accentStyle(hex) : undefined}
+      className={cn(
+        'flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-surface @xl:max-h-full',
+        ACCENT
+      )}
     >
       <div
         className={cn(
@@ -129,7 +142,8 @@ export default function BulbDetail({
           <p
             className={cn(
               'flex items-center gap-1.5 truncate text-[13px] tabular-nums',
-              offline ? 'text-danger-text' : 'text-muted'
+              // On the tinted header, grey would lose contrast: the foreground, softened.
+              offline ? 'text-danger-text' : lit ? 'text-fg/75' : 'text-muted'
             )}
           >
             {offline && <LuWifiOff size={14} aria-hidden />}
@@ -140,16 +154,18 @@ export default function BulbDetail({
           <Button
             size="dense"
             variant="primary"
-            onClick={() => void probeBulb(bulb.ip)}
+            disabled={retrying}
+            onClick={() => void retry()}
             aria-label={t('bulb.retryFor', { name: bulb.name })}
           >
-            <LuPlugZap size={14} aria-hidden />
+            {retrying ? <Spinner /> : <LuPlugZap size={14} aria-hidden />}
             {t('bulb.retry')}
           </Button>
         ) : (
           <Switch
             label={t('bulb.power', { name: bulb.name })}
             isOn={bulb.state}
+            color={hex}
             onToggle={() => void toggleBulb(bulb.ip)}
           />
         )}
@@ -164,7 +180,12 @@ export default function BulbDetail({
       </div>
 
       {offline ? (
-        <p className="p-4 text-[13px] text-muted">{t('bulb.offline', { name: bulb.name })}</p>
+        <p role="status" className="p-4 text-[13px] text-muted">
+          {stillOffline && (
+            <span className="font-semibold text-danger-text">{t('bulb.stillOffline')} </span>
+          )}
+          {t('bulb.offline', { name: bulb.name })}
+        </p>
       ) : (
         <div className="grid min-h-0 grow grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 pt-3.5 pb-4 @5xl:grid-cols-[17.5rem_minmax(0,1fr)] @5xl:grid-rows-1 @5xl:gap-6">
           <div className="self-start">
@@ -173,6 +194,7 @@ export default function BulbDetail({
               name={bulb.name}
               dimming={bulb.dimming}
               color={lit ? hex : null}
+              disabled={!lit}
               presets
             />
           </div>

@@ -14,12 +14,14 @@ export default function Information() {
   const { t } = useTranslation()
   const bulbs = useBulbStore((s) => s.bulbs)
   const probeAll = useBulbStore((s) => s.probeAll)
+  const pushToast = useBulbStore((s) => s.pushToast)
   const [refreshing, setRefreshing] = useState(false)
 
   const handleRefresh = async () => {
     setRefreshing(true)
     await probeAll()
     setRefreshing(false)
+    pushToast('information.refreshed', 'success')
   }
 
   return (
@@ -38,7 +40,7 @@ export default function Information() {
       ) : (
         <section
           aria-label={t('information.caption')}
-          className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-3.5"
+          className="grid grid-cols-[repeat(auto-fill,minmax(17.5rem,1fr))] gap-3.5"
         >
           {bulbs.map((bulb) => (
             <article

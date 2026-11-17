@@ -29,6 +29,7 @@ export const api = {
 
   // One bulb. `ip` omitted means the active bulb.
   toggleBulb: () => invoke<void>('toggle_bulb'),
+  setPower: (on: boolean, ip?: string) => invoke<void>('set_power', { on, ip }),
   setBrightness: (brightness: number, ip?: string) =>
     invoke<void>('set_brightness', { brightness, ip }),
   setBulbName: (name: string, ip?: string) => invoke<void>('set_bulb_name', { name, ip }),
