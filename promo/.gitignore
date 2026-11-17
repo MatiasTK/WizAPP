@@ -1,0 +1,5 @@
+out/
+renders/
+snapshots/
+.thumbnails/
+.hyperframes/

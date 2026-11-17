@@ -1,88 +1,125 @@
-import Modal from '@components/ui/Modal'
-import { useState } from 'react'
+import Button from '@components/ui/Button'
+import Dialog from '@components/ui/Dialog'
+import Spinner from '@components/ui/Spinner'
+import TextField from '@components/ui/TextField'
+import { useBulbStore } from '@renderer/context/BulbStore'
+import { isValidIPv4 } from '@renderer/lib/ip'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-type EditNameModalProps = {
-  isOpen: boolean
-  onClose: () => void
+const FORM_ID = 'add-bulb-form'
+
+type AddDeviceModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export default function AddDeviceModal({ isOpen, onClose }: EditNameModalProps) {
+function AddForm({
+  onDone,
+  onBusyChange
+}: {
+  onDone: () => void
+  onBusyChange: (busy: boolean) => void
+}) {
   const { t } = useTranslation()
+  const addBulbByIp = useBulbStore((s) => s.addBulbByIp)
+  const [ip, setIp] = useState('')
+  // Known while typing, like a taken name elsewhere; the submit still refuses it.
+  const existingName = useBulbStore((s) => s.bulbs.find((b) => b.ip === ip.trim())?.name)
   const [error, setError] = useState<string | null>(null)
-  const areErrors = error !== null
+  const [connecting, setConnecting] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const validateIP = (ip: string) => {
-    if (ip.length <= 0) {
-      setError('IP cannot be empty')
-      return false
-    }
+  // The field is disabled while connecting, which drops the focus; give it back with the error.
+  useEffect(() => {
+    if (error && !connecting) inputRef.current?.focus()
+  }, [error, connecting])
 
-    if (ip.length > 15) {
-      setError('IP cannot be longer than 15 characters')
-      return false
-    }
-
-    if (ip.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) === null) {
-      setError('Invalid IP address')
-      return false
-    }
-
-    resetError()
-    return true
-  }
-
-  const resetError = () => {
-    if (areErrors) {
-      setError(null)
-    }
-  }
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    if (connecting) return
 
-    if (!validateIP(event.target.ip.value)) {
-      return
+    const value = ip.trim()
+    if (value === '') return setError(t('errors.emptyIp'))
+    if (!isValidIPv4(value)) return setError(t('errors.invalidIP'))
+
+    setError(null)
+    setConnecting(true)
+    onBusyChange(true)
+    const result = await addBulbByIp(value)
+    setConnecting(false)
+    onBusyChange(false)
+
+    // On failure the dialog stays open and keeps what was typed.
+    if ('code' in result) {
+      return setError(
+        result.code === 'bulbUnreachable' ? t('errors.unreachable') : t('errors.addFailed')
+      )
     }
-
-    window.api.addBulbByIp(event.target.ip.value)
-
-    onClose()
+    if (result.outcome === 'added') {
+      // Select it and say so: it lands at the end of the list, maybe out of view.
+      const added = useBulbStore.getState().bulbs.find((b) => b.ip === value)
+      if (added) void useBulbStore.getState().setActiveBulb(value)
+      useBulbStore.getState().pushToast('home.add.added', 'success', { name: added?.name ?? value })
+      return onDone()
+    }
+    const existing = useBulbStore.getState().bulbs.find((b) => b.ip === value)
+    setError(t('errors.duplicateBulb', { name: existing?.name ?? value }))
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('home.add.title')}>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="ip" className="text-neutral-400 block mb-2">
-          IP
-        </label>
-        <input
-          type="text"
-          id="ip"
-          name="ip"
-          placeholder={t('home.add.example')}
-          onChange={resetError}
-          className={`w-full bg-secondary-700 text-white p-2 rounded-lg border ${areErrors ? 'border-red-500' : 'border-neutral-600'} focus:outline-none focus:border-primary focus:border-2 `}
-        />
+    <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
+      <TextField
+        label={t('home.add.ipLabel')}
+        placeholder={t('home.add.example')}
+        hint={existingName ? t('errors.duplicateBulb', { name: existingName }) : t('home.add.hint')}
+        hintTone={existingName ? 'danger' : 'muted'}
+        ref={inputRef}
+        value={ip}
+        error={error}
+        autoFocus
+        data-autofocus
+        inputMode="decimal"
+        autoComplete="off"
+        // Read-only, not disabled, so the focus stays in the field while it connects.
+        readOnly={connecting}
+        aria-busy={connecting || undefined}
+        onChange={(e) => {
+          setIp(e.target.value)
+          setError(null)
+        }}
+      />
+      {/* Announced only; the submit button already shows the spinner and "Connecting". */}
+      <p role="status" className="sr-only">
+        {connecting ? t('home.add.connecting') : ''}
+      </p>
+    </form>
+  )
+}
 
-        {areErrors && <p className="text-red-500 text-sm mt-1 ms-1 font-medium">{error}</p>}
+export default function AddDeviceModal({ open, onOpenChange }: AddDeviceModalProps) {
+  const { t } = useTranslation()
+  const [busy, setBusy] = useState(false)
 
-        <footer className="flex items-center justify-end gap-2 mt-6">
-          <button
-            className="text-white mt-4 mr-2 cursor-pointer transition-colors bg-secondary hover:bg-secondary-600 py-2 px-4 rounded-lg"
-            type="button"
-            onClick={onClose}
-          >
-            {t('modals.cancel')}
-          </button>
-          <button
-            type="submit"
-            className="mt-4 px-4 bg-primary rounded-lg text-white py-2 transition-colors cursor-pointer font-medium hover:bg-primary-600"
-          >
-            {t('modals.add')}
-          </button>
-        </footer>
-      </form>
-    </Modal>
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('home.add.title')}
+      description={t('home.add.description')}
+      footer={
+        <>
+          <Button size="large" onClick={() => onOpenChange(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" form={FORM_ID} variant="primary" size="large" disabled={busy}>
+            {busy && <Spinner />}
+            {busy ? t('home.add.connecting') : t('common.add')}
+          </Button>
+        </>
+      }
+    >
+      <AddForm onDone={() => onOpenChange(false)} onBusyChange={setBusy} />
+    </Dialog>
   )
 }

@@ -1,5 +1,8 @@
 node_modules
 dist
 out
+src-tauri
+wizapp-tauri
 .gitignore
-src/lib/*
+testing
+promo
